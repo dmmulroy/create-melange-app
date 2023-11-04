@@ -1,0 +1,6 @@
+(library
+ (name app)
+ (modes melange)
+ (libraries reason-react melange.belt)
+ (preprocess
+  (pps melange.ppx reason-react-ppx)))

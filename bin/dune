@@ -1,0 +1,4 @@
+; (executable
+;  (public_name create_melange_app)
+;  (name main)
+;  (libraries create_melange_app))

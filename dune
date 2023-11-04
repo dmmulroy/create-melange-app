@@ -1,0 +1,27 @@
+(dirs :standard \ node_modules)
+
+; (alias
+;  (name all)
+;  (deps
+;   (alias_rec create-melange-app)))
+
+(melange.emit
+ (target build)
+ (alias create-melange-app)
+ (emit_stdlib true)
+ (libraries app)
+ (module_systems es6))
+
+; (rule
+;  (alias vite)
+;  (deps
+;   (alias_rec ghostty)
+;   (:vite_config ./vite.config.js)
+;   (:pkg_json ./package.json)
+;   (:index_html ./index.html))
+;  (targets
+;   (dir dist))
+;  (action
+;   (run bun run vite-build))
+;  (mode
+;   (promote (until-clean))))
