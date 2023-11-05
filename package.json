@@ -1,19 +1,29 @@
 {
   "name": "create-melange-app",
   "version": "0.0.1",
-  "description": "",
+  "description": "create-melange-app",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "npm run build && concurrently 'npm:vite-dev' 'npm:dune-watch'",
+    "build": "dune build",
+    "vite-dev": "vite _build/default",
+    "vite-build": "vite build",
+    "vite-preview": "vite preview",
+    "dune-watch": "dune build @create_melange_app -w"
   },
   "repository": {
     "type": "git",
     "url": "github.com/dmmulroy/create-melange-app"
   },
-  "author": "",
+  "author": "Dillon Mulroy <dillon.mulroy@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "ink": "^4.4.1",
-    "react": "^17.0.0"
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "concurrently": "^8.2.2"
   }
 }

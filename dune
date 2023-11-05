@@ -10,18 +10,19 @@
  (alias create-melange-app)
  (emit_stdlib true)
  (libraries app)
+ (promote (until-clean))
  (module_systems es6))
 
 ; (rule
-;  (alias vite)
+;  (alias rollup)
 ;  (deps
-;   (alias_rec ghostty)
+;   (alias_rec create-melange-app))
 ;   (:vite_config ./vite.config.js)
 ;   (:pkg_json ./package.json)
 ;   (:index_html ./index.html))
 ;  (targets
 ;   (dir dist))
 ;  (action
-;   (run bun run vite-build))
+;   (run npm run vite-build))
 ;  (mode
 ;   (promote (until-clean))))
