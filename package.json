@@ -19,6 +19,7 @@
   "author": "Dillon Mulroy <dillon.mulroy@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "@inkjs/ui": "^1.0.0",
     "ink": "^4.4.1",
     "react": "^18.0.0"
   },
