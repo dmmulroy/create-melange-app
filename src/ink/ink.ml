@@ -1,7 +1,13 @@
 module Box = Box
 module Instance = Instance
+module Newline = Newline
+module Spacer = Spacer
+module Static = Static
+module Style = Style
 module Text = Text
+module Transform = Transform
 
+(* TODO: 1. Investigate if Melange as Stream types or 2. Write stream.ml bindings*)
 type write_stream
 type read_stream
 

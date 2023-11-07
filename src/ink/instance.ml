@@ -1,5 +1,4 @@
 type t
-type error
 
 external render : React.element -> t = "render" [@@mel.send.pipe: t]
 external cleanup : unit -> unit = "cleanup" [@@mel.send.pipe: t]
@@ -10,12 +9,12 @@ external wait_until_exit : unit -> unit Js.Promise.t = "waitUntilExit"
 
 (* TODO: Hide via mli *)
 external unmount' :
-  ([ `Error of error | `Int of int | `Null of 'null Js.null_undefined ]
+  ([ `Error of Error.t | `Int of int | `Null of 'null Js.null_undefined ]
   [@mel.unwrap]) ->
   unit = "unmount"
 [@@mel.send.pipe: t]
 
-type unmount_error = Error of error | Int of int | Null
+type unmount_error = Error of Error.t | Int of int | Null
 
 let unmount = function
   | Error e -> unmount' (`Error e)

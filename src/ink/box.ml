@@ -72,5 +72,5 @@ external make :
   ?borderRight:bool ->
   ?borderBottom:bool ->
   children:React.element ->
-  React.element = "Text"
+  React.element = "Box"
 [@@mel.module "ink"] [@@react.component]
