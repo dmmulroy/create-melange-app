@@ -1,20 +1,19 @@
 module Box = Box
 module Instance = Instance
+module Hooks = Hooks
+module Key = Key
 module Newline = Newline
 module Spacer = Spacer
 module Static = Static
+module Stream = Stream
 module Style = Style
 module Text = Text
 module Transform = Transform
 
-(* TODO: 1. Investigate if Melange as Stream types or 2. Write stream.ml bindings*)
-type write_stream
-type read_stream
-
 type render_options = {
-  stdout : write_stream option; [@optional]
-  stdin : read_stream option; [@optional]
-  stderr : write_stream option; [@optional]
+  stdout : Stream.write option; [@optional]
+  stdin : Stream.read option; [@optional]
+  stderr : Stream.write option; [@optional]
   debug : bool option; [@optional]
   exit_on_ctrl_c : bool option; [@optional]
   patch_console : bool option; [@optional]
