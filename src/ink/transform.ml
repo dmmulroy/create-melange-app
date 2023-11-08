@@ -1,3 +1,4 @@
-external make : children:((string -> int -> React.element)[@u]) -> React.element
+external make :
+  transform:(string -> int -> string) -> children:React.element -> React.element
   = "Transform"
 [@@mel.module "ink"] [@@react.component]
