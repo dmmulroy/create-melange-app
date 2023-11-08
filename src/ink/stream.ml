@@ -1,0 +1,2 @@
+type read
+type write
