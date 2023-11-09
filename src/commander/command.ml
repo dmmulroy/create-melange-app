@@ -84,3 +84,44 @@ external add_help_command :
   t = "addHelpCommand"
 [@@mel.send.pipe: t]
 (** Override default decision whether to add implicit help command. *)
+
+external option :
+  flags:string ->
+  ?description:string ->
+  ?default_value:Commander_option.value ->
+  t = "option"
+[@@mel.send.pipe: t]
+(**
+   * Define option with `flags`, `description`, and optional argument parsing function or `defaultValue` or both.
+   *
+   * The `flags` string contains the short and/or long flags, separated by comma, a pipe or space. A required
+   * option-argument is indicated by `<>` and an optional option-argument by `[]`.
+   *)
+
+external option_extended :
+  flags:string ->
+  description:string ->
+  parse_arg:
+    ((value:string -> previous:Commander_option.value -> Commander_option.value)
+    [@mel.uncurry]) ->
+  ?default_value:Commander_option.value ->
+  t = "option"
+[@@mel.send.pipe: t]
+(**
+   * Define option with `flags`, `description`, and optional argument parsing function or `defaultValue` or both.
+   *
+   * The `flags` string contains the short and/or long flags, separated by comma, a pipe or space. A required
+   * option-argument is indicated by `<>` and an optional option-argument by `[]`.
+   *)
+
+type parse_options
+
+external parse : ?argv:string array -> ?options:parse_options -> t = "parse"
+[@@mel.send.pipe: t]
+(** Parse `argv`, setting options and invoking commands when defined. *)
+
+type option_values
+
+external opts : unit -> option_values = "opts"
+[@@mel.send.pipe: t]
+(** Return options values, excluding the implicit help option. *)
