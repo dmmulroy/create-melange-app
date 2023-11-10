@@ -10,8 +10,7 @@ type t = {
 }
 [@@deriving abstract]
 
-external argument : ?flags:string -> ?description:string -> unit -> t
-  = "Argument"
+external make : name:string -> ?description:string -> unit -> t = "Argument"
 [@@mel.new] [@@mel.module "commander"]
 
 external name : unit -> string = "name"
@@ -32,10 +31,10 @@ external choices : values:string array -> t = "choices"
 [@@mel.send.pipe: t]
 (** Only allow argument value to be one of choices. *)
 
-external arg_required : unit -> t = "argRequired"
+external arg_required : t = "argRequired"
 [@@mel.send.pipe: t]
 (** Make argument required. *)
 
-external arg_optional : unit -> t = "argOptional"
+external arg_optional : t = "argOptional"
 [@@mel.send.pipe: t]
 (** Make argument optional. *)

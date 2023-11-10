@@ -11,20 +11,20 @@ type t = {
   args : string array;
   processed_args : dynamic array; [@mel.as "processedArgs"]
   commands : string array;
-  options : Commander_option.t array;
+  options : Opt.t array;
   registered_arguments : Argument.t array; [@mel.as "registeredArgs"]
   parent : t option;
 }
 
 (* TODO: Create odoc comments for these functions *)
-external program : ?name:string -> unit -> t = "Command"
-[@@mel.new] [@@mel.module "commander"]
-
+external make : string -> t = "Command" [@@mel.new] [@@mel.module "commander"]
 external version : t -> string = "version"
 
 external set_version :
   version:string -> ?flags:string -> ?description:string -> t = "version"
 [@@mel.send.pipe: t]
+
+external set_description : string -> t = "description" [@@mel.send.pipe: t]
 
 external command : name_and_args:string -> ?options:command_option array -> t
   = "command"
@@ -37,11 +37,11 @@ external executable_command :
   t = "command"
 [@@mel.send.pipe: t]
 
-external create_command : name:string -> t = "createCommand"
+external create_command : string -> t = "createCommand"
+[@@mel.send.pipe: t]
 (** Factory routine to create a new unattached command.*)
 
-external add_command : cmd:t -> ?options:command_option array -> t
-  = "addCommand"
+external add_command : ?options:command_option array -> t -> t = "addCommand"
 [@@mel.send.pipe: t]
 (** Add a prepared subcommand. *)
 
@@ -61,7 +61,7 @@ external argument :
    *)
 
 external argument_extended :
-  flags:string ->
+  name:string ->
   ?description:string ->
   fn:((value:string -> previous:Argument.value -> Argument.value)[@mel.uncurry]) ->
   ?default_value:Argument.value ->
@@ -73,6 +73,10 @@ external argument_extended :
    * The default is that the argument is required, and you can explicitly
    * indicate this with <> around the name. Put [] around the name for an optional argument.
    *)
+
+external add_argument : Argument.t -> t = "addArgument"
+[@@mel.send.pipe: t]
+(** Define argument syntax for command, adding a prepared argument. *)
 
 external arguments : names:string -> t = "argument"
 [@@mel.send.pipe: t]
@@ -86,10 +90,8 @@ external add_help_command :
 (** Override default decision whether to add implicit help command. *)
 
 external option :
-  flags:string ->
-  ?description:string ->
-  ?default_value:Commander_option.value ->
-  t = "option"
+  flags:string -> ?description:string -> ?default_value:Opt.value -> t
+  = "option"
 [@@mel.send.pipe: t]
 (**
    * Define option with `flags`, `description`, and optional argument parsing function or `defaultValue` or both.
@@ -101,10 +103,8 @@ external option :
 external option_extended :
   flags:string ->
   description:string ->
-  parse_arg:
-    ((value:string -> previous:Commander_option.value -> Commander_option.value)
-    [@mel.uncurry]) ->
-  ?default_value:Commander_option.value ->
+  parse_arg:((value:string -> previous:Opt.value -> Opt.value)[@mel.uncurry]) ->
+  ?default_value:Opt.value ->
   t = "option"
 [@@mel.send.pipe: t]
 (**

@@ -2,13 +2,14 @@
 
 ## commands
 
-- init
+- init, i
+- env-check, ec
 
 ### init
 
 '''bash
 
-> npmx create-melange-app init
+> npx create-melange-app init [dir]
 > [create-melange-app] Performing system requirement checks...
 > ✅ opam version 2.1.5 found
 > ✅ node version v20.0.0 found
@@ -38,6 +39,11 @@ Select your npm dependencies:
 > [create-melange-app] Bootstrapping npm dependencies...
 > [create-melange-app] Project successfully created 🎉
 > [create-melange-app] Run `cd my-app && dune build @dev` to launch the dev server
+> '''
+
+'''bash
+
+> npx create-melange-app [dir]
 > '''
 
 ## ux ideas/brainstorming

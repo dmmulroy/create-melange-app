@@ -21,10 +21,8 @@
 
 (package
  (name create_melange_app)
- (synopsis
-  "A cli tool for generating and managing Melange apps")
- (description
-  "A cli tool for generating and managing Melange apps")
+ (synopsis "A cli tool for generating and managing Melange apps")
+ (description "A cli tool for generating and managing Melange apps")
  (allow_empty)
  (depends
   (ocaml
@@ -38,6 +36,7 @@
    (>= 3.10.0))
   (reason-react
    (>= 0.13.0))
-  reason-react-ppx)
+  reason-react-ppx
+  ppx_deriving)
  (tags
   (cli, react, reasonml, ocaml, melange)))

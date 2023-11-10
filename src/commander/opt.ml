@@ -20,6 +20,8 @@ type t = {
   arg_choices : string array option; [@mel.as "argChoices"]
 }
 
-external commander_option : ?flags:string -> ?description:string -> unit -> t
-  = "Option"
+external make : ?description:string -> string -> t = "Option"
 [@@mel.new] [@@mel.module "commander"]
+
+external set_default : ?description:string -> value -> t = "default"
+[@@mel.send.pipe: t]
