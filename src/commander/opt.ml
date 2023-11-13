@@ -1,4 +1,4 @@
-type value = [ `bool of bool | `string of string | `strings of string array ]
+type value = [ `Bool of bool | `String of string | `Strings of string array ]
 
 type t = {
   flags : string;

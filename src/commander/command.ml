@@ -20,11 +20,12 @@ type t = {
 external make : string -> t = "Command" [@@mel.new] [@@mel.module "commander"]
 external version : t -> string = "version"
 
-external set_version :
-  version:string -> ?flags:string -> ?description:string -> t = "version"
+external set_version : string -> ?flags:string -> ?description:string -> t
+  = "version"
 [@@mel.send.pipe: t]
 
 external set_description : string -> t = "description" [@@mel.send.pipe: t]
+external set_name : string -> t = "name" [@@mel.send.pipe: t]
 
 external command : name_and_args:string -> ?options:command_option array -> t
   = "command"
@@ -82,8 +83,25 @@ external arguments : names:string -> t = "argument"
 [@@mel.send.pipe: t]
 (** Override default decision whether to add implicit help command. *)
 
+external add_action :
+  ('a -> [ `Void of unit | `Promise_void of unit Js.Promise.t ]) -> t = "action"
+[@@mel.send.pipe: t]
+(** Register callback `fn` for the command.*)
+
+external add_action2 :
+  ('a -> 'b -> [ `Void of unit | `Promise_void of unit Js.Promise.t ]) -> t
+  = "action"
+[@@mel.send.pipe: t]
+(** Register callback `fn` for the command.*)
+
+external add_action3 :
+  ('a -> 'b -> 'c -> [ `Void of unit | `Promise_void of unit Js.Promise.t ]) ->
+  t = "action"
+[@@mel.send.pipe: t]
+(** Register callback `fn` for the command.*)
+
 external add_help_command :
-  enable_or_name_and_args:[ `bool of bool | `string of string ] ->
+  enable_or_name_and_args:[ `Bool of bool | `String of string ] ->
   ?description:string ->
   t = "addHelpCommand"
 [@@mel.send.pipe: t]

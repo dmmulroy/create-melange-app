@@ -99,7 +99,7 @@ module Commander_js = struct
   (* val make_argument : Argument.t -> Commander.Argument.t *)
   let make_argument (argument : Argument.t) =
     let default_value =
-      argument.default_value |> Option.map (fun value -> `string value)
+      argument.default_value |> Option.map (fun value -> `String value)
     in
     let arg =
       Commander.Argument.make ~name:argument.name
@@ -158,15 +158,15 @@ module Commander_js = struct
     in
     match opt.default_value with
     | None -> opt'
-    | Some (String value) -> opt' |> Commander.Opt.set_default (`string value)
+    | Some (String value) -> opt' |> Commander.Opt.set_default (`String value)
     | Some (Strings value) ->
-        opt' |> Commander.Opt.set_default (`strings (Array.of_list value))
-    | Some (Bool value) -> opt' |> Commander.Opt.set_default (`bool value)
+        opt' |> Commander.Opt.set_default (`Strings (Array.of_list value))
+    | Some (Bool value) -> opt' |> Commander.Opt.set_default (`Bool value)
 
   let make (program : Program.t) =
     program.root_command
     |> Option.fold ~none:Commander.program ~some:make_command
-    |> Commander.Command.set_version ~version:program.version
+    |> Commander.Command.set_version program.version
     |> fun root_command ->
     List.fold_left
       (fun program' command ->
