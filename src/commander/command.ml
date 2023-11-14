@@ -82,19 +82,31 @@ external arguments : names:string -> t = "argument"
 [@@mel.send.pipe: t]
 (** Override default decision whether to add implicit help command. *)
 
+(* TODO: make sure add_action, and its variants take *)
 external add_action :
-  ('a -> [ `Void of unit | `Promise_void of unit Js.Promise.t ]) -> t = "action"
+  (unit -> t -> [ `Void of unit | `Promise_void of unit Js.Promise.t ]) -> t
+  = "action"
+[@@mel.send.pipe: t]
+
+(** Register callback `fn` for the command.*)
+external add_action1 :
+  ('a -> t -> [ `Void of unit | `Promise_void of unit Js.Promise.t ]) -> t
+  = "action"
 [@@mel.send.pipe: t]
 (** Register callback `fn` for the command.*)
 
 external add_action2 :
-  ('a -> 'b -> [ `Void of unit | `Promise_void of unit Js.Promise.t ]) -> t
+  ('a -> 'b -> t -> [ `Void of unit | `Promise_void of unit Js.Promise.t ]) -> t
   = "action"
 [@@mel.send.pipe: t]
 (** Register callback `fn` for the command.*)
 
 external add_action3 :
-  ('a -> 'b -> 'c -> [ `Void of unit | `Promise_void of unit Js.Promise.t ]) ->
+  ('a ->
+  'b ->
+  'c ->
+  t ->
+  [ `Void of unit | `Promise_void of unit Js.Promise.t ]) ->
   t = "action"
 [@@mel.send.pipe: t]
 (** Register callback `fn` for the command.*)

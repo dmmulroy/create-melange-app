@@ -1,6 +1,6 @@
 (library
  (name app)
  (modes melange)
- (libraries reason-react melange.belt melange.js ink commander)
+ (libraries reason-react melange.js melange.node ink commander)
  (preprocess
   (pps melange.ppx reason-react-ppx)))
