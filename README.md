@@ -9,8 +9,7 @@
 
 '''bash
 
-> npx create-melange-app init [dir]
-> [create-melange-app] Performing system requirement checks...
+> npx create-melange-app init [dir] > [create-melange-app] Performing system requirement checks...
 > ✅ opam version 2.1.5 found
 > ✅ node version v20.0.0 found
 

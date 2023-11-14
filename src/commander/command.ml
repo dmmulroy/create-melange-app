@@ -27,8 +27,7 @@ external set_version : string -> ?flags:string -> ?description:string -> t
 external set_description : string -> t = "description" [@@mel.send.pipe: t]
 external set_name : string -> t = "name" [@@mel.send.pipe: t]
 
-external command : name_and_args:string -> ?options:command_option array -> t
-  = "command"
+external command : string -> ?options:command_option array -> t = "command"
 [@@mel.send.pipe: t]
 
 external executable_command :
@@ -42,7 +41,7 @@ external create_command : string -> t = "createCommand"
 [@@mel.send.pipe: t]
 (** Factory routine to create a new unattached command.*)
 
-external add_command : ?options:command_option array -> t -> t = "addCommand"
+external add_command : t -> ?options:command_option array -> t = "addCommand"
 [@@mel.send.pipe: t]
 (** Add a prepared subcommand. *)
 

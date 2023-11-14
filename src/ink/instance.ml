@@ -4,7 +4,7 @@ external render : React.element -> t = "render" [@@mel.send.pipe: t]
 external cleanup : unit -> unit = "cleanup" [@@mel.send.pipe: t]
 external clear : unit -> unit = "clear" [@@mel.send.pipe: t]
 
-external wait_until_exit : unit -> unit Js.Promise.t = "waitUntilExit"
+external wait_until_exit : unit Js.Promise.t = "waitUntilExit"
 [@@mel.send.pipe: t]
 
 (* TODO: Hide via mli *)
