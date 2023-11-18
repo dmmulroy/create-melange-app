@@ -43,6 +43,8 @@ external use_focus : ?options:use_focus_options -> unit -> use_focus_return
   = "useFocus"
 [@@mel.module "ink"]
 
+let _ = use_focus ~options:{ auto_focus = true; is_active = true; id = None } ()
+
 type use_focus_manager_return = {
   enable_focus : unit -> unit; [@mel.as "enableFocus"]
   disable_focus : unit -> unit; [@mel.as "disableFocus"]

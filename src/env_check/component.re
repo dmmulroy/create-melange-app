@@ -1,25 +1,60 @@
-let prefix = {js|[create-melange-app]: |js};
+let prefix = {js|[create-melange-app]:|js};
 
-let print = (~without_prefix=false, msg) =>
-  if (without_prefix) {
-    msg;
-  } else {
-    prefix ++ msg;
+module Missing_dependency = {
+  [@react.component]
+  let make = (~name, ~help_message) => {
+    <>
+      <Ink.Text color="red">
+        {prefix
+         ++ {js| ⚠️  Missing dependency: |js}
+         ++ name
+         |> React.string}
+      </Ink.Text>
+      <Ink.Text> {React.string(help_message)} </Ink.Text>
+    </>;
   };
+};
+
+module Successful_env_check = {
+  [@react.component]
+  let make = (~node: Dependency.Node.t, ~opam: Dependency.Opam.t) => {
+    <>
+      <Ink.Text>
+        {prefix
+         ++ {js| ✅ |js}
+         ++ opam.name
+         ++ " version "
+         ++ opam.version
+         ++ " found"
+         |> React.string}
+      </Ink.Text>
+      <Ink.Text>
+        {prefix
+         ++ {js| ✅ |js}
+         ++ node.name
+         ++ " version "
+         ++ node.version
+         ++ " found"
+         |> React.string}
+      </Ink.Text>
+      <Ink.Text>
+        {React.string(
+           {js|Your environment dependencies are ready to go 🚀|js},
+         )}
+      </Ink.Text>
+    </>;
+  };
+};
 
 [@react.component]
 let make = () => {
-  let (loading, setLoading) = React.useState(() => false);
-  let (env_check_status, set_env_check_status) = React.useState(() => None);
+  let (dependency_results, set_dependency_results) =
+    React.useState(() => None);
 
   React.useEffect0(() => {
-    setLoading(_ => true);
+    let results = Action.run();
 
-    let result = Action.run();
-
-    setLoading(_ => false);
-
-    set_env_check_status(_ => Some(result));
+    set_dependency_results(_ => Some(results));
 
     None;
   });
@@ -27,66 +62,16 @@ let make = () => {
   /* render section */
   <>
     <Ink.Text>
-      {{js|Checking environment dependencies 🔎 |js} |> print |> React.string}
+      {React.string(prefix ++ {js|Checking environment dependencies 🔎 |js})}
     </Ink.Text>
-    {switch (loading, env_check_status) {
+    {switch (dependency_results) {
      // Initial state
-     | (false, None) =>
-       <Ink.Text>
-         {{js|Preparing to check environment dependencies|js}
-          |> print
-          |> React.string}
-       </Ink.Text>
-     // Loading state
-     | (true, _) =>
-       <Ink.Text>
-         {{js|Checking environment dependencies 🔎 |js}
-          |> print
-          |> React.string}
-       </Ink.Text>
-     // Failure state
-     | (_, Some(Error(missing_dependencies))) =>
-       <Ink.Text color="red">
-         {"Missing dependency: "
-          ++ String.concat(", ", missing_dependencies)
-          |> print
-          |> React.string}
-       </Ink.Text>
+     | None => React.null
+     // Failure state which is indicative of a missing dependency
+     | Some(Error((name, help_message))) =>
+       <Missing_dependency name help_message />
      // Success state
-     | (_, Some(Ok(dependencies))) =>
-       <>
-         {React.array(
-            Array.of_list(
-              List.map(
-                dependency => {
-                  let name = Dependency.name(dependency);
-                  let version = Dependency.version(dependency);
-                  <Ink.Text key=name>
-                    {{js|✅ |js}
-                     ++ name
-                     ++ " version "
-                     ++ version
-                     ++ " found"
-                     |> print
-                     |> React.string}
-                  </Ink.Text>;
-                },
-                dependencies,
-              ),
-            ),
-          )}
-         <Ink.Text>
-           {{js|Your environment dependencies are ready to go 🚀|js}
-            |> print
-            |> React.string}
-         </Ink.Text>
-         <Ink.Text>
-           {{js|Enter your app's name: super-dope-ocaml-webapp|js}
-            |> print
-            |> React.string}
-         </Ink.Text>
-       </>
+     | Some(Ok((node, opam))) => <Successful_env_check node opam />
      }}
   </>;
 };
-// Format.sprintf({js|✅ %s version %s found\n|js}, (Dependency.name dependency), (Dependency.version dependency))
