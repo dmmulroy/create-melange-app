@@ -60,7 +60,6 @@ module Opam : S = Make (struct
 
   let name = "opam"
   let parse_version version = Ok (String.trim version)
-  (* let parse_version _version = Error "Not implemented" *)
 end)
 
 module Node : S = Make (struct

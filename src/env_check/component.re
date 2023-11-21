@@ -1,17 +1,16 @@
+open Ink;
+open Common;
 let prefix = {js|[create-melange-app]:|js};
 
 module Missing_dependency = {
   [@react.component]
   let make = (~name, ~help_message) => {
-    <>
-      <Ink.Text color="red">
-        {prefix
-         ++ {js| ⚠️  Missing dependency: |js}
-         ++ name
-         |> React.string}
-      </Ink.Text>
-      <Ink.Text> {React.string(help_message)} </Ink.Text>
-    </>;
+    <Prefix>
+      <Text color="red">
+        {{js| ⚠️  Missing dependency: |js} ++ name |> React.string}
+      </Text>
+      <Text> {React.string(help_message)} </Text>
+    </Prefix>;
   };
 };
 
@@ -19,35 +18,39 @@ module Successful_env_check = {
   [@react.component]
   let make = (~node: Dependency.Node.t, ~opam: Dependency.Opam.t) => {
     <>
-      <Ink.Text>
-        {prefix
-         ++ {js| ✅ |js}
-         ++ opam.name
-         ++ " version "
-         ++ opam.version
-         ++ " found"
-         |> React.string}
-      </Ink.Text>
-      <Ink.Text>
-        {prefix
-         ++ {js| ✅ |js}
-         ++ node.name
-         ++ " version "
-         ++ node.version
-         ++ " found"
-         |> React.string}
-      </Ink.Text>
-      <Ink.Text>
-        {React.string(
-           {js|Your environment dependencies are ready to go 🚀|js},
-         )}
-      </Ink.Text>
+      <Prefix>
+        <Text>
+          {{js| ✅ |js}
+           ++ opam.name
+           ++ " version "
+           ++ opam.version
+           ++ " found"
+           |> React.string}
+        </Text>
+      </Prefix>
+      <Prefix>
+        <Text>
+          {{js| ✅ |js}
+           ++ node.name
+           ++ " version "
+           ++ node.version
+           ++ " found"
+           |> React.string}
+        </Text>
+      </Prefix>
+      <Prefix>
+        <Text>
+          {React.string(
+             {js|Your environment dependencies are ready to go 🚀|js},
+           )}
+        </Text>
+      </Prefix>
     </>;
   };
 };
 
 [@react.component]
-let make = () => {
+let make = (~on_env_check=?) => {
   let (dependency_results, set_dependency_results) =
     React.useState(() => None);
 
@@ -56,14 +59,21 @@ let make = () => {
 
     set_dependency_results(_ => Some(results));
 
+    switch (on_env_check) {
+    | Some(on_env_check) => on_env_check(results)
+    | None => ()
+    };
+
     None;
   });
 
   /* render section */
   <>
-    <Ink.Text>
-      {React.string(prefix ++ {js|Checking environment dependencies 🔎 |js})}
-    </Ink.Text>
+    <Prefix>
+      <Text>
+        {React.string({js|Checking environment dependencies 🔎 |js})}
+      </Text>
+    </Prefix>
     {switch (dependency_results) {
      // Initial state
      | None => React.null

@@ -8,11 +8,11 @@ external make :
   ?strikethrough:bool ->
   ?inverse:bool ->
   ?wrap:
-    ([ `wrap
-     | `truncate
-     | `truncate_start [@mel.as "truncate-start"]
-     | `truncate_middle [@mel.as "truncate-middle"]
-     | `truncate_end [@mel.as "truncate-end"] ]
+    ([ `Wrap
+     | `Truncate
+     | `Truncate_start [@mel.as "truncate-start"]
+     | `Truncate_middle [@mel.as "truncate-middle"]
+     | `Truncate_end [@mel.as "truncate-end"] ]
     [@mel.string]) ->
   children:React.element ->
   React.element = "Text"

@@ -1,3 +1,5 @@
+external __dirname: string = "__dirname";
+
 let main = () => {
   open Commander;
 
@@ -12,13 +14,10 @@ let main = () => {
          ~name="[dir]",
          ~description=
            "The name of the application, as well as the name of the directory to create",
+         ~default_value=`String(__dirname),
        )
-    |> Command.add_action1((_dir: string, _this) => {
-         Ink.render(
-           <Ink.Text color="blue">
-             {"Not implemented" |> Log.log |> React.string}
-           </Ink.Text>,
-         )
+    |> Command.add_action1((dir: string, _this) => {
+         Ink.render(<Init.Component dir />)
          |> Ink.Instance.wait_until_exit
          |> (exit_promise => `Promise_void(exit_promise))
        })

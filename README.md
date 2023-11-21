@@ -14,7 +14,8 @@
 > ✅ node version v20.0.0 found
 
 Enter your app name: my-app
-Select your npmdler:
+
+Select your bundler:
 
 > [x] vite (default)
 

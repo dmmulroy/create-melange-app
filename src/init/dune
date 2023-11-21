@@ -1,0 +1,13 @@
+(library
+ (name init)
+ (modes melange)
+ (libraries
+  reason-react
+  melange.js
+  melange.node
+  ink
+  commander
+  common
+  env_check)
+ (preprocess
+  (pps melange.ppx reason-react-ppx)))

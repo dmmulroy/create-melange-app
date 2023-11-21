@@ -50,8 +50,12 @@ external create_argument : name:string -> ?description:string -> Argument.t
 (** Factory routine to create a new unattached argument.*)
 
 external argument :
-  name:string -> ?description:string -> ?default_value:Argument.value -> t
-  = "argument"
+  name:string ->
+  ?description:string ->
+  ?default_value:
+    ([ `Bool of bool | `String of string | `Strings of string array ]
+    [@mel.unwrap]) ->
+  t = "argument"
 [@@mel.send.pipe: t]
 (**
    * Define argument syntax for command.

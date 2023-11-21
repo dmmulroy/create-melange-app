@@ -1,6 +1,6 @@
 (library
  (name "common")
  (modes "melange")
- (libraries melange.js)
+ (libraries reason-react melange.js melange.node ink)
  (preprocess
-  (pps melange.ppx)))
+  (pps melange.ppx reason-react-ppx)))
