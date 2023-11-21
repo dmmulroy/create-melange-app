@@ -1,3 +1,4 @@
+module Big_text = Big_text
 module Box = Box
 module Gradient = Gradient
 module Hooks = Hooks

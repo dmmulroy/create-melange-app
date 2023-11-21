@@ -10,5 +10,5 @@ let banner = {js|
 
 [@react.component]
 let make = () => {
-  <Text> {React.string(banner)} </Text>;
+  <Text> <Big_text text="create-melange-app" /> </Text>;
 };

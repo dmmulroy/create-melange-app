@@ -34,6 +34,6 @@ external make :
   ?lineHeight:float ->
   ?space:bool ->
   ?maxLength:int ->
-  children:React.element ->
+  text:string ->
   React.element = "default"
-[@@mel.module ""] [@@react.component]
+[@@mel.module "ink-big-text"] [@@react.component]
