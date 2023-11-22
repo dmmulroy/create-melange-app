@@ -11,6 +11,7 @@ module Stream = Stream
 module Style = Style
 module Text = Text
 module Transform = Transform
+module Ui = Ui
 
 type render_options = {
   stdout : Stream.write option; [@optional]
