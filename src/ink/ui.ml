@@ -1,13 +1,28 @@
 module Text_input = struct
   external make :
-    ?is_disabled:bool ->
+    ?isDisabled:bool ->
     ?placeholder:string ->
-    ?default_value:string ->
+    ?defaultValue:string ->
     ?suggestions:string array ->
-    ?on_change:(string -> unit) ->
+    ?onChange:(string -> unit) ->
     ?value:string ->
-    ?on_submit:(string -> unit) ->
+    ?onSubmit:(string -> unit) ->
     unit ->
     React.element = "TextInput"
+  [@@mel.module "@inkjs/ui"] [@@react.component]
+end
+
+module Select = struct
+  type select_option = { label : string; value : string }
+
+  external make :
+    ?isDisabled:bool ->
+    ?visibleOptionCount:int ->
+    ?highlightText:string ->
+    ?defaultValue:string ->
+    options:select_option array ->
+    ?onChange:(string -> unit) ->
+    unit ->
+    React.element = "Select"
   [@@mel.module "@inkjs/ui"] [@@react.component]
 end
