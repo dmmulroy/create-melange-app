@@ -50,7 +50,7 @@ module Successful_env_check = {
 };
 
 [@react.component]
-let make = (~on_env_check=?) => {
+let make = (~onEnvCheck=?) => {
   let (dependency_results, set_dependency_results) =
     React.useState(() => None);
 
@@ -59,8 +59,8 @@ let make = (~on_env_check=?) => {
 
     set_dependency_results(_ => Some(results));
 
-    switch (on_env_check) {
-    | Some(on_env_check) => on_env_check(results)
+    switch (onEnvCheck) {
+    | Some(onEnvCheck) => onEnvCheck(results)
     | None => ()
     };
 

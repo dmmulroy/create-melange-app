@@ -18,7 +18,7 @@ external make :
      | `Center [@mel.as "center"]
      | `Right [@mel.as "right"] ]
     [@mel.string]) ->
-  ?colors:string list ->
+  ?colors:string array ->
   ?backgroundColor:
     ([ `Transparent [@mel.as "transparent"]
      | `Black [@mel.as "black"]

@@ -1,9 +1,5 @@
 (dirs :standard \ node_modules)
 
-; (alias
-;  (name all)
-;  (deps
-;   (alias_rec create-melange-app)))
 
 (melange.emit
  (target build)
@@ -12,17 +8,3 @@
  (libraries app)
  (promote (until-clean))
  (module_systems es6))
-
-; (rule
-;  (alias rollup)
-;  (deps
-;   (alias_rec create-melange-app))
-;   (:vite_config ./vite.config.js)
-;   (:pkg_json ./package.json)
-;   (:index_html ./index.html))
-;  (targets
-;   (dir dist))
-;  (action
-;   (run npm run vite-build))
-;  (mode
-;   (promote (until-clean))))

@@ -1,5 +1,5 @@
 external make :
-  name:
+  ?name:
     ([ `Cristal [@mel.as "cristal"]
      | `Teen [@mel.as "teen"]
      | `Mind [@mel.as "mind"]
@@ -14,6 +14,7 @@ external make :
      | `Pastel [@mel.as "pastel"]
      | `Rainbow [@mel.as "rainbow"] ]
     [@mel.string]) ->
+  ?colors:string array ->
   children:React.element ->
   React.element = "default"
 [@@mel.module "ink-gradient"] [@@react.component]

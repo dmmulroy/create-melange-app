@@ -1,2 +1,2 @@
-external make : children:React.element -> React.element = "Spacer"
+external make : unit -> React.element = "Spacer"
 [@@mel.module "ink"] [@@react.component]
