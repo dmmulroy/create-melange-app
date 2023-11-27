@@ -34,18 +34,24 @@ let configuration_to_string = config => {
 module Step = {
   [@react.component]
   let make = (~visible, ~children) => {
-    visible ? <> children </> : <> React.null </>;
+    let display =
+      if (visible == true) {
+        `flex;
+      } else {
+        `none;
+      };
+    <Box display> children </Box>;
   };
 };
 
 module Name = {
   [@react.component]
-  let make = (~onSubmit) => {
+  let make = (~onSubmit, ~disabled) => {
     <Box flexDirection=`column gap=1>
       <Spacer />
       <Box flexDirection=`row gap=1>
         <Text> {React.string("What will your project be called?")} </Text>
-        <Ui.Text_input onSubmit />
+        <Ui.Text_input onSubmit isDisabled=disabled />
       </Box>
     </Box>;
   };
@@ -67,7 +73,7 @@ module Bundler = {
   |];
 
   [@react.component]
-  let make = (~onSubmit as onChange) => {
+  let make = (~onSubmit as onChange, ~disabled as _disabled) => {
     <Box flexDirection=`column gap=1>
       <Text> {React.string("Which bundler would you like to use?")} </Text>
       <Ui.Select options=bundler_select_options onChange />
@@ -75,13 +81,26 @@ module Bundler = {
   };
 };
 
+type step =
+  | Name
+  | Bundler;
+
 [@react.component]
 let make = (~name as initial_name, ~onComplete) => {
+  let (active_step, set_active_step) =
+    React.useState(() =>
+      if (Option.is_none(initial_name)) {
+        Name;
+      } else {
+        Bundler;
+      }
+    );
   let (name, set_name) = React.useState(() => initial_name);
   let (_bundler, set_bundler) = React.useState(() => (None: option(string)));
 
   let onSubmitName = (new_name: string) => {
     set_name(_ => Some(new_name));
+    set_active_step(_ => Bundler);
   };
 
   let onSubmitBundler =
@@ -102,9 +121,11 @@ let make = (~name as initial_name, ~onComplete) => {
   let show_bundler_step = Option.is_some(name);
 
   <Box flexDirection=`column gap=1>
-    <Step visible=show_name_step> <Name onSubmit=onSubmitName /> </Step>
+    <Step visible=show_name_step>
+      <Name onSubmit=onSubmitName disabled={active_step != Name} />
+    </Step>
     <Step visible=show_bundler_step>
-      <Bundler onSubmit=onSubmitBundler />
+      <Bundler onSubmit=onSubmitBundler disabled={active_step != Bundler} />
     </Step>
   </Box>;
 };
