@@ -1,6 +1,16 @@
 (library
  (name app)
  (modes melange)
- (libraries reason-react melange.js melange.node ink commander env_check init common handlebars)
+ (libraries
+  reason-react
+  melange.js
+  melange.node
+  ink
+  commander
+  env_check
+  init
+  common
+  handlebars
+  nodejs)
  (preprocess
   (pps melange.ppx reason-react-ppx)))

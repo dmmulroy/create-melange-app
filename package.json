@@ -22,7 +22,7 @@
     "@inkjs/ui": "^1.0.0",
     "commander": "^11.1.0",
     "handlebars": "^4.7.8",
-    "ink": "4.3.1",
+    "ink": "v4.3.1",
     "ink-big-text": "^2.0.0",
     "ink-gradient": "^3.0.0",
     "liquidjs": "^10.9.4",
