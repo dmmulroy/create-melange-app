@@ -32,12 +32,12 @@ let make = (~name as initial_name) => {
     <Wizard name=initial_name onComplete=on_complete_wizard />
     {if (Option.is_some(configuration)) {
        <Box marginY=1>
-         <Text>
+         <Prefix>
            {React.string(
-              "Configuration: "
+              "Configuration: \n"
               ++ Wizard.configuration_to_string(Option.get(configuration)),
             )}
-         </Text>
+         </Prefix>
        </Box>;
      } else {
        React.null;

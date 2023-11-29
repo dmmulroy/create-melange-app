@@ -32,7 +32,14 @@ type configuration = {
 };
 
 let configuration_to_string = config => {
-  "name: " ++ config.name ++ " bundler: " ++ bundler_to_string(config.bundler);
+  " Name: "
+  ++ config.name
+  ++ " Bundler: "
+  ++ bundler_to_string(config.bundler)
+  ++ " Initialize git: "
+  ++ string_of_bool(config.initialize_git)
+  ++ " Initialize npm: "
+  ++ string_of_bool(config.initialize_npm);
 };
 
 module Step = {
@@ -53,8 +60,10 @@ module Name = {
   let make = (~onSubmit, ~isDisabled) => {
     <Box flexDirection=`column gap=1>
       <Spacer />
-      <Box flexDirection=`row gap=1>
-        <Text> {React.string("What will your project be called?")} </Text>
+      <Box flexDirection=`row>
+        <Common.Prefix>
+          {React.string("What will your project be called? ")}
+        </Common.Prefix>
         <Ui.Text_input onSubmit isDisabled />
       </Box>
     </Box>;
@@ -82,8 +91,10 @@ module Bundler = {
       onSubmit(bundler_of_string(bundler_str));
     };
 
-    <Box flexDirection=`column gap=1>
-      <Text> {React.string("Which bundler would you like to use?")} </Text>
+    <Box flexDirection=`column>
+      <Common.Prefix>
+        {React.string("Which bundler would you like to use?")}
+      </Common.Prefix>
       <Ui.Select options=bundler_select_options onChange isDisabled />
     </Box>;
   };
@@ -97,7 +108,6 @@ module Git = {
 
   [@react.component]
   let make = (~onSubmit, ~isDisabled) => {
-    Js.log("Git isDisabled: " ++ string_of_bool(isDisabled));
     let onChange =
       React.useCallback1(
         (value: string) => {
@@ -108,12 +118,12 @@ module Git = {
         },
         [|onSubmit|],
       );
-    <Box flexDirection=`column gap=1>
-      <Text>
+    <Box flexDirection=`column>
+      <Common.Prefix>
         {React.string(
            "Should we initialize a Git repository and stage the changes?",
          )}
-      </Text>
+      </Common.Prefix>
       <Ui.Select options=git_select_options onChange isDisabled />
     </Box>;
   };
@@ -137,8 +147,10 @@ module Npm = {
         },
         [|onSubmit|],
       );
-    <Box flexDirection=`column gap=1>
-      <Text> {React.string("Should we run 'npm install' for you?")} </Text>
+    <Box flexDirection=`column>
+      <Common.Prefix>
+        {React.string("Should we run 'npm install' for you?")}
+      </Common.Prefix>
       <Ui.Select options=git_select_options onChange isDisabled />
     </Box>;
   };
@@ -175,8 +187,6 @@ let make = (~name as initial_name, ~onComplete) => {
     React.useState(() => (None: option(bool)));
   let (_initialize_npm, set_initialize_npm) =
     React.useState(() => (None: option(bool)));
-
-  Js.log("active_step: " ++ step_to_string(active_step));
 
   Ink.Hooks.use_input(
     (~input as _input, ~key as _key) => (),
