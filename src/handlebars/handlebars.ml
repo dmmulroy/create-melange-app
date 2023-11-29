@@ -127,3 +127,4 @@ external compile :
 let compile s ?options () =
   let template = compile s ?options () in
   fun a ?runtime_options () -> (template a ~runtime_options () [@u])
+;;

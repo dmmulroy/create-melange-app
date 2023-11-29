@@ -35,6 +35,7 @@ module Make (M : Config.S) : S = struct
     with _ ->
       (* TODO: Add level logging: "Error running command: %s for dependency: %s" "Error running command: %s for dependency: %s" *)
       Error (M.name, M.help)
+  ;;
 end
 
 module Opam : S = Make (struct
@@ -57,6 +58,7 @@ module Opam : S = Make (struct
 
       For more information, visit https://ocaml.org/docs/installing-ocaml#installing-ocaml 
   |}
+  ;;
 
   let name = "opam"
   let parse_version version = Ok (String.trim version)
@@ -79,6 +81,7 @@ module Node : S = Make (struct
     On Windows: Download the official Windows Installer from the Node.js website. Alternatively, you can use a package manager like Chocolatey and run `choco install nodejs`.
 
     For detailed installation instructions and downloads, visit the official Node.js website: https://nodejs.org/en/download/|}
+  ;;
 
   let command = "node --version"
   let parse_version version = Ok (String.trim version)
@@ -91,9 +94,11 @@ let check_all () =
   let@ node = Node.check () in
   let@ opam = Opam.check () in
   Ok (node, opam)
+;;
 
 let name = function Node _ -> Node.name | Opam _ -> Opam.name
 
 let version = function
   | Node node -> Node.version node
   | Opam opam -> Opam.version opam
+;;

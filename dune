@@ -1,6 +1,5 @@
 (dirs :standard \ node_modules)
 
-
 (melange.emit
  (target build)
  (alias create-melange-app)

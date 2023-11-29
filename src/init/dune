@@ -8,6 +8,7 @@
   ink
   commander
   common
-  env_check)
+  env_check
+  fs_extra)
  (preprocess
   (pps melange.ppx reason-react-ppx)))

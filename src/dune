@@ -11,6 +11,7 @@
   init
   common
   handlebars
-  nodejs)
+  nodejs
+  fs_extra)
  (preprocess
   (pps melange.ppx reason-react-ppx)))

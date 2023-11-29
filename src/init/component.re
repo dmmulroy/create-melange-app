@@ -13,7 +13,7 @@ let make = (~name as initial_name) => {
     React.useState(() => None);
 
   let (configuration, set_configuration) =
-    React.useState(() => (None: option(Wizard.configuration)));
+    React.useState(() => (None: option(Configuration.t)));
 
   let on_env_check = (result: env_check_result) => {
     switch (result) {
@@ -35,7 +35,7 @@ let make = (~name as initial_name) => {
          <Prefix>
            {React.string(
               "Configuration: \n"
-              ++ Wizard.configuration_to_string(Option.get(configuration)),
+              ++ Configuration.to_string(Option.get(configuration)),
             )}
          </Prefix>
        </Box>;

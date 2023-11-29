@@ -6,6 +6,7 @@ let trim_dashes str =
   else if StringLabels.starts_with ~prefix:"-" str then
     StringLabels.sub ~pos:1 ~len:(String.length str - 1) str
   else str
+;;
 
 (* A CLI for creating applications with melange *)
 module Argument = struct
@@ -18,6 +19,7 @@ module Argument = struct
 
   let make ?default_value ~required ~name ~description () =
     { name; description; required; default_value }
+  ;;
 end
 
 module Opt = struct
@@ -36,6 +38,7 @@ module Opt = struct
     match short_name with
     | None -> ""
     | Some short_name -> Format.sprintf "-%s" short_name
+  ;;
 
   let name_to_formatted_string (name : string) = Format.sprintf "--%s" name
 
@@ -49,6 +52,7 @@ module Opt = struct
       default_value;
       value_name;
     }
+  ;;
 end
 
 module Command = struct
@@ -66,22 +70,26 @@ module Command = struct
     match cmd.arguments with
     | [] -> { cmd with arguments = [ arg ] }
     | args -> { cmd with arguments = arg :: args }
+  ;;
 
   (** [add_option opt cmd] adds [opt] to [cmd] *)
   let add_option opt cmd =
     match cmd.options with
     | [] -> { cmd with options = [ opt ] }
     | opts -> { cmd with options = opt :: opts }
+  ;;
 
   (** [add_sub_command child parent] adds [child] as a subcommand of [parent] *)
   let add_sub_command child parent =
     match parent.sub_commands with
     | [] -> { parent with sub_commands = [ child ] }
     | children -> { parent with sub_commands = child :: children }
+  ;;
 
   let make ?(aliases = []) ?(arguments = []) ?(sub_commands = [])
       ?(options = []) ~name ~description () =
     { name; aliases; arguments; sub_commands; options; description }
+  ;;
 end
 
 module Program = struct
@@ -93,6 +101,7 @@ module Program = struct
 
   let make ?root_command ?(commands = []) ~version () =
     { version; commands; root_command }
+  ;;
 end
 
 module Commander_js = struct
@@ -112,11 +121,13 @@ module Commander_js = struct
     in
     if argument.required then arg |> Commander.Argument.arg_required
     else arg |> Commander.Argument.arg_optional
+  ;;
 
   let make_command_name ?(aliases = []) name =
     match aliases with
     | [] -> name
     | aliases -> List.map trim_dashes (name :: aliases) |> String.concat ", "
+  ;;
 
   (* val make_command : Command.t -> Commander.Command.t *)
   let rec make_command (command : Command.t) =
@@ -136,6 +147,7 @@ module Commander_js = struct
         cmd command.sub_commands
     in
     cmd
+  ;;
 
   let opt_to_flags (opt : Opt.t) =
     let value_name =
@@ -150,6 +162,7 @@ module Commander_js = struct
         Format.sprintf "-%s, --%s %s" short_name opt.name value_name
     | Some short_name, None -> Format.sprintf "-%s, --%s" short_name opt.name
     | None, None -> Format.sprintf "--%s" opt.name
+  ;;
 
   (* val make_option : Opt.t -> Commander.Option.t *)
   let make_option (opt : Opt.t) =
@@ -162,6 +175,7 @@ module Commander_js = struct
     | Some (Strings value) ->
         opt' |> Commander.Opt.set_default (`Strings (Array.of_list value))
     | Some (Bool value) -> opt' |> Commander.Opt.set_default (`Bool value)
+  ;;
 
   let make (program : Program.t) =
     program.root_command
@@ -172,4 +186,5 @@ module Commander_js = struct
       (fun program' command ->
         Commander.Command.add_command (make_command command) program')
       root_command program.commands
+  ;;
 end

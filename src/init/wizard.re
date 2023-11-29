@@ -1,47 +1,5 @@
 open Ink;
 
-type bundler =
-  | Vite
-  | Webpack
-  | None;
-
-let bundler_to_string =
-  fun
-  | Vite => "vite"
-  | Webpack => "webpack"
-  | None => "none";
-
-let bundler_of_string =
-  fun
-  | "vite" => Vite
-  | "webpack" => Webpack
-  | _ => None;
-
-type partial_configuration = {
-  name: option(string),
-  bundler: option(bundler),
-  initialize_git: option(bool),
-  initialize_npm: option(bool),
-};
-
-type configuration = {
-  name: string,
-  bundler,
-  initialize_git: bool,
-  initialize_npm: bool,
-};
-
-let configuration_to_string = config => {
-  " Name: "
-  ++ config.name
-  ++ " Bundler: "
-  ++ bundler_to_string(config.bundler)
-  ++ " Initialize git: "
-  ++ string_of_bool(config.initialize_git)
-  ++ " Initialize npm: "
-  ++ string_of_bool(config.initialize_npm);
-};
-
 module Step = {
   [@react.component]
   let make = (~visible, ~children) => {
@@ -71,12 +29,12 @@ module Name = {
 };
 
 module Bundler = {
-  type t = bundler;
+  type t = Bundler.t;
 
   let to_select_option = bundler =>
     Ui.Select.{
-      value: bundler_to_string(bundler),
-      label: bundler_to_string(bundler) |> String.capitalize_ascii,
+      value: Bundler.to_string(bundler),
+      label: Bundler.to_string(bundler) |> String.capitalize_ascii,
     };
 
   let bundler_select_options: array(Ui.Select.select_option) = [|
@@ -88,7 +46,7 @@ module Bundler = {
   [@react.component]
   let make = (~onSubmit, ~isDisabled) => {
     let onChange = (bundler_str: string) => {
-      onSubmit(bundler_of_string(bundler_str));
+      onSubmit(Bundler.of_string(bundler_str));
     };
 
     <Box flexDirection=`column>
@@ -182,7 +140,8 @@ let make = (~name as initial_name, ~onComplete) => {
       }
     );
   let (name, set_name) = React.useState(() => initial_name);
-  let (bundler, set_bundler) = React.useState(() => (None: option(bundler)));
+  let (bundler, set_bundler) =
+    React.useState(() => (None: option(Bundler.t)));
   let (initialize_git, set_initialize_git) =
     React.useState(() => (None: option(bool)));
   let (_initialize_npm, set_initialize_npm) =
@@ -227,7 +186,14 @@ let make = (~name as initial_name, ~onComplete) => {
         switch (name, bundler, initialize_git) {
         | (Some(name), Some(bundler), Some(initialize_git)) =>
           set_active_step(_ => Complete);
-          onComplete({name, bundler, initialize_git, initialize_npm: value});
+          onComplete(
+            Configuration.make(
+              ~name,
+              ~bundler,
+              ~initialize_git,
+              ~initialize_npm=value,
+            ),
+          );
         | _ => ()
         };
       },

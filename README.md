@@ -64,3 +64,5 @@ Select your npm dependencies:
 > [create-melange-app] Installing from opam...
 > [create-melange-app] Successfully added `melange-fetch` to your project 🎉
 > '''
+
+TODO: Consider the following command `create-melange-app lib lib_name`

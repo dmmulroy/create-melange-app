@@ -20,5 +20,6 @@ let unmount = function
   | Error e -> unmount' (`Error e)
   | Int i -> unmount' (`Int i)
   | Null -> unmount' (`Null Js.Nullable.null)
+;;
 
 let rerender = render
