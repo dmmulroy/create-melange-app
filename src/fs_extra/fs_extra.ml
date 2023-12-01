@@ -10,6 +10,8 @@ external existsSync : string -> bool = "existsSync" [@@mel.module "fs-extra"]
 external renameSync : string -> string -> unit = "renameSync"
 [@@mel.module "fs-extra"]
 
+external removeSync : string -> unit = "removeSync" [@@mel.module "fs-extra"]
+
 let renameSync ~src ~dest =
   let src_path = Node.Path.join [| src |] in
   let dest_path = Node.Path.join [| dest |] in
@@ -17,4 +19,7 @@ let renameSync ~src ~dest =
 ;;
 
 let readdirSync = Node.Fs.readdirSync
+let readFileSync = Node.Fs.readFileSync
+let writeFileSync = Node.Fs.writeFileSync
+
 (* function ensureDirSync(path: string): void *)

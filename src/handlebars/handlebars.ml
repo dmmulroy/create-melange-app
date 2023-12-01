@@ -112,10 +112,6 @@ end = struct
   type 'a t = String of string | Delegate of 'a delegate
 end
 
-(* export function registerPartial(name: string, fn: HandlebarsTemplateDelegate): void; *)
-(* export function template<T = any>(precompiled: HandlebarsTemplateDelegate<T>, options?: RuntimeOptions): HandlebarsTemplateDelegate<T>; *)
-
-(* export function compile<T = any>(input: any, options?: CompileOptions): HandlebarsTemplateDelegate<T>; *)
 external compile :
   string ->
   ?options:Options.t ->

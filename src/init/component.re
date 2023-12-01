@@ -9,7 +9,7 @@ type env_check_result =
 
 [@react.component]
 let make = (~name as initial_name) => {
-  let (_env_check_result: option([ | `Pass | `Fail]), set_env_check_result) =
+  let (env_check_result: option([ | `Pass | `Fail]), set_env_check_result) =
     React.useState(() => None);
 
   let (configuration, set_configuration) =
@@ -34,7 +34,10 @@ let make = (~name as initial_name) => {
   <Box flexDirection=`column gap=1>
     <Banner />
     <Env_check.Component onEnvCheck=on_env_check />
-    <Wizard name=initial_name onComplete=on_complete_wizard />
+    {switch (env_check_result) {
+     | Some(_) => <Wizard name=initial_name onComplete=on_complete_wizard />
+     | None => React.null
+     }}
     {switch (configuration) {
      | Some(configuration) => <Scaffold configuration />
      | None => React.null
