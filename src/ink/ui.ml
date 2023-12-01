@@ -26,3 +26,8 @@ module Select = struct
     React.element = "Select"
   [@@mel.module "@inkjs/ui"] [@@react.component]
 end
+
+module Spinner = struct
+  external make : label:string -> React.element = "Spinner"
+  [@@mel.module "@inkjs/ui"] [@@react.component]
+end

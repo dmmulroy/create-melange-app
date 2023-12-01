@@ -147,11 +147,6 @@ let make = (~name as initial_name, ~onComplete) => {
   let (_initialize_npm, set_initialize_npm) =
     React.useState(() => (None: option(bool)));
 
-  Ink.Hooks.use_input(
-    (~input as _input, ~key as _key) => (),
-    ~options={is_active: Some(active_step != Complete)},
-  );
-
   let onSubmitName = (new_name: string) =>
     if (active_step == Name) {
       set_name(_ => Some(new_name));

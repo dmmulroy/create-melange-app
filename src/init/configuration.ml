@@ -11,7 +11,7 @@ let make ~name ~bundler ~initialize_git ~initialize_npm =
 
 let to_string config =
   Printf.sprintf
-    "Name: %s\nBunder: %s\bInitialize git: %b\nInitialize npm: %b\n" config.name
+    "Name: %s\nBunder: %s\nInitialize git: %b\nInitialize npm: %b\n" config.name
     (Bundler.to_string config.bundler)
     config.initialize_git config.initialize_npm
 ;;

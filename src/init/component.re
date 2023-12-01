@@ -26,21 +26,18 @@ let make = (~name as initial_name) => {
     set_configuration(_ => Some(configuration));
   };
 
-  <Box flexDirection=`column>
+  Ink.Hooks.use_input(
+    (~input as _input, ~key as _key) => (),
+    ~options={is_active: Some(true)},
+  );
+
+  <Box flexDirection=`column gap=1>
     <Banner />
     <Env_check.Component onEnvCheck=on_env_check />
     <Wizard name=initial_name onComplete=on_complete_wizard />
-    {if (Option.is_some(configuration)) {
-       <Box marginY=1>
-         <Prefix>
-           {React.string(
-              "Configuration: \n"
-              ++ Configuration.to_string(Option.get(configuration)),
-            )}
-         </Prefix>
-       </Box>;
-     } else {
-       React.null;
+    {switch (configuration) {
+     | Some(configuration) => <Scaffold configuration />
+     | None => React.null
      }}
   </Box>;
 };
