@@ -46,9 +46,7 @@ module Compile_templates = {
       React.useState(() => None);
 
     React.useEffect0(() => {
-      // todo
-      let compilation_result = Template.compile_all(configuration);
-      set_compilation_result(_ => Some(compilation_result));
+      set_compilation_result(_ => Some(Template.compile_all(configuration)));
 
       None;
     });
