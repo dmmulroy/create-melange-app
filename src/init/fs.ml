@@ -26,19 +26,22 @@ let get_template_file_names dir =
          else None)
 ;;
 
-let read_template file_path =
+let read_template ~dir file_name =
+  let file_path = Node.Path.join [| dir; file_name |] in
   try Ok (Fs_extra.readFileSync file_path `utf8)
   with exn ->
     Error
-      (Printf.sprintf {js|Failed to read file %s from %s: %s|js} file_path
+      (Printf.sprintf {js|Failed to read file %s from %s: %s|js} file_name
          (Node.Process.cwd ()) (Printexc.to_string exn))
 ;;
 
-let write_template file_name content =
+let write_template ~dir file_name content =
   try
     let new_file_name = String.sub file_name 0 (String.length file_name - 5) in
-    Fs_extra.writeFileSync new_file_name content `utf8;
-    Fs_extra.removeSync file_name;
+    let new_file_path = Node.Path.join [| dir; new_file_name |] in
+    Fs_extra.writeFileSync new_file_path content `utf8;
+    let template_file_path = Node.Path.join [| dir; file_name |] in
+    Fs_extra.removeSync template_file_path;
     Ok ()
   with exn ->
     Error
