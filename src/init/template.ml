@@ -91,7 +91,6 @@ module Package_json = struct
     let json = to_json pkg in
     let@ contents = Fs.read_template ~dir:pkg.name name in
     let template = Handlebars.compile contents () in
-    let _ = Js.Json.parseExn in
     let compiled_contents = template json () in
     Fs.write_template ~dir:pkg.name name compiled_contents
   ;;
