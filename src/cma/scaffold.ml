@@ -16,6 +16,8 @@ module Template = struct
     val compile : t -> (unit, string) result
   end
 
+  type instance = Instance : 'a * (module S with type t = 'a) -> instance
+
   module Config = struct
     module type S = sig
       type t
@@ -29,15 +31,12 @@ module Template = struct
   module Make (M : Config.S) : S with type t = M.t = struct
     type t = M.t
 
-    (** Check if the template exists in the base directory or in an extension directory.
-        If it does not exist, fail. *)
     let validate () =
       let template_path = Node.Path.join [| base_dir; M.name |] in
       let template_exists = Fs.exists template_path in
       if not template_exists then
-        failwith @@ Printf.sprintf "Template %s does not exist" template_path
-        (* Result.error
-           @@ Printf.sprintf "Template %s does not exist" template_path *)
+        Result.error
+        @@ Printf.sprintf "Template %s does not exist" template_path
       else Ok ()
     ;;
 
@@ -67,7 +66,7 @@ end)
 module Context = struct
   type t = {
     configuration : Configuration.t;
-    templates : (module Template.S) String_map.t;
+    templates : Template.instance String_map.t;
     pkg_json : Package_json.t;
   }
 
@@ -75,7 +74,8 @@ module Context = struct
     let templates =
       String_map.empty
       |> String_map.add Package_json_template.name
-           (module Package_json_template : Template.S)
+           (Template.Instance
+              (Package_json.empty, (module Package_json_template)))
     in
     { configuration; templates; pkg_json = Package_json.empty }
   ;;
@@ -108,7 +108,7 @@ let handle_webpack (ctx : Context.t) =
   |> Result.ok
 ;;
 
-let handle_vite_config = Ok ()
+let handle_vite_config ctx = Ok ctx
 
 let handle_extensions (ctx : Context.t) =
   match ctx.configuration.bundler with
@@ -116,6 +116,8 @@ let handle_extensions (ctx : Context.t) =
   | Vite -> Ok ctx
   | None -> Ok ctx
 ;;
+
+let compile_template _ctx = Ok ()
 
 (*
    let run (config : Configuration.t) =
@@ -132,5 +134,6 @@ let run (config : Configuration.t) =
   let ctx = Context.make config in
   let@ _ = copy_base_dir ctx in
   let@ _ = handle_extensions ctx in
+  let@ _ = compile_template ctx in
   Ok ()
 ;;
