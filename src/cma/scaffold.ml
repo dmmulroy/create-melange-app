@@ -13,6 +13,7 @@ module Template = struct
   let root_dir = "templates"
   let base_dir = Node.Path.join [| root_dir; "base" |]
   let extensions_dir = Node.Path.join [| root_dir; "extensions" |]
+  let dir_to_string = function `Base -> "./" | `Extension dir -> dir
 
   module type S = sig
     type t
@@ -25,7 +26,7 @@ module Template = struct
     module type S = sig
       type t
 
-      val dir : string
+      val dir : [ `Base | `Extension of string ]
       val name : string
       val to_json : t -> Js.Json.t
     end
@@ -34,10 +35,22 @@ module Template = struct
   module Make (M : Config.S) : S with type t = M.t = struct
     type t = M.t
 
+    (** Check if the template exists in the base directory or in an extension directory.
+        If it does not exist, fail. *)
+    let validate () =
+      let template_path = Node.Path.join [| base_dir; M.name |] in
+      let template_exists = Fs.exists template_path in
+      if not template_exists then
+        Result.error
+        @@ Printf.sprintf "Template %s does not exist" template_path
+      else Ok ()
+    ;;
+
     let name = M.name
 
     let compile template =
-      let dir = M.dir in
+      let@ _ = validate () in
+      let dir = dir_to_string M.dir in
       let name = M.name in
       let json = M.to_json template in
       let@ contents = Fs.read_template ~dir name in
@@ -52,7 +65,7 @@ module Package_json_template = Template.Make (struct
   type t = Package_json.t
 
   let name = "pakage.json.tmpl"
-  let dir = Template.base_dir
+  let dir = `Base
   let to_json = Package_json.to_json
 end)
 

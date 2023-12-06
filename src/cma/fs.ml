@@ -1,17 +1,24 @@
+(* DEPRECATED: TODO Delete/*)
 let project_dir_exists = Fs_extra.existsSync
-let project_dir_is_empty dir = Fs_extra.readdirSync dir |> Array.length = 0
 
-let template_dir =
+(* DEPRECATED: TODO Delete/*)
+let project_dir_is_empty dir = Fs_extra.readdirSync dir |> Array.length = 0
+let exists = Fs_extra.existsSync
+let dir_is_empty dir = Fs_extra.readdirSync dir |> Array.length = 0
+
+(* DEPRECATED: TODO Delete/*)
+
+let base_template_dir =
   Node.Path.join [| [%mel.raw "__dirname"]; ".."; "templates"; "base" |]
 ;;
 
 let copy_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
   try
     match overwrite with
-    | None -> Ok (Fs_extra.copySync template_dir dir)
+    | None -> Ok (Fs_extra.copySync base_template_dir dir)
     | Some overwrite ->
         if overwrite = `Clear then Fs_extra.emptyDirSync dir;
-        Ok (Fs_extra.copySync template_dir dir)
+        Ok (Fs_extra.copySync base_template_dir dir)
   with exn ->
     Error
       (Printf.sprintf {js|Failed to create directory %s: %s|js} dir
@@ -22,10 +29,10 @@ let copy_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
 let create_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
   try
     match overwrite with
-    | None -> Ok (Fs_extra.copySync template_dir dir)
+    | None -> Ok (Fs_extra.copySync base_template_dir dir)
     | Some overwrite ->
         if overwrite = `Clear then Fs_extra.emptyDirSync dir;
-        Ok (Fs_extra.copySync template_dir dir)
+        Ok (Fs_extra.copySync base_template_dir dir)
   with exn ->
     Error
       (Printf.sprintf {js|Failed to create directory %s: %s|js} dir

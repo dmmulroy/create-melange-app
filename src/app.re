@@ -21,6 +21,7 @@ let main = () => {
     |> Command.add_command(Env_check.command)
     |> Command.parse;
 
+  // print_endline(Cma.Scaffold.Package_json_template.name);
   ();
 };
 
