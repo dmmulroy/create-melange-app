@@ -12,7 +12,7 @@ let base_template_dir =
   Node.Path.join [| [%mel.raw "__dirname"]; ".."; "templates"; "base" |]
 ;;
 
-let copy_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
+let copy_base_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
   try
     match overwrite with
     | None -> Ok (Fs_extra.copySync base_template_dir dir)
@@ -24,6 +24,9 @@ let copy_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
       (Printf.sprintf {js|Failed to create directory %s: %s|js} dir
          (Printexc.to_string exn))
 ;;
+
+(* TODO: Rename shit and keep your fn defintions consistent *)
+let copy_file ~dest file_path = Fs_extra.copySync file_path dest
 
 (* DEPRECATED - TODO: Delete *)
 let create_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =

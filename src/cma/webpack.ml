@@ -11,13 +11,16 @@ let dev_dependencies =
 ;;
 
 let scripts =
-  String_map.empty
-  |> String_map.add "bundle"
-       "webpack --mode production --entry \
-        ./_build/default/src/output/src/app.js"
-  |> String_map.add "server"
-       "webpack serve --open --mode development --entry \
-        ./_build/default/src/output/src/app.js"
+  [
+    Script.make ~name:"bundle"
+      ~script:
+        "webpack --mode production --entry \
+         ./_build/default/src/output/src/app.js";
+    Script.make ~name:"server"
+      ~script:
+        "webpack serve --open --mode development --entry \
+         ./_build/default/src/output/src/app.js";
+  ]
 ;;
 
 let files =

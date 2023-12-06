@@ -1,13 +1,7 @@
 open Common
 open Syntax
 open Let
-(* 1. Copy base directory - Done
-   2. Check if any configuration options require extensions (e.g. webpack, vite)
-      For each extension:
-      2.1. Copy any files from the extension directory if required
-      2.2. Extend any existing templates (TODO: How do we relate an extension to a template?)
-      3. Compile templates
-   4. Run any actions(?) (e.g. npm install, opam init, opam install) *)
+module String_map = Map.Make (String)
 
 module Template = struct
   let root_dir = "templates"
@@ -41,8 +35,9 @@ module Template = struct
       let template_path = Node.Path.join [| base_dir; M.name |] in
       let template_exists = Fs.exists template_path in
       if not template_exists then
-        Result.error
-        @@ Printf.sprintf "Template %s does not exist" template_path
+        failwith @@ Printf.sprintf "Template %s does not exist" template_path
+        (* Result.error
+           @@ Printf.sprintf "Template %s does not exist" template_path *)
       else Ok ()
     ;;
 
@@ -69,51 +64,73 @@ module Package_json_template = Template.Make (struct
   let to_json = Package_json.to_json
 end)
 
-let copy_base_dir (config : Configuration.t) =
-  Fs.copy_dir ?overwrite:config.overwrite config.name
+module Context = struct
+  type t = {
+    configuration : Configuration.t;
+    templates : (module Template.S) String_map.t;
+    pkg_json : Package_json.t;
+  }
+
+  let make configuration =
+    let templates =
+      String_map.empty
+      |> String_map.add Package_json_template.name
+           (module Package_json_template : Template.S)
+    in
+    { configuration; templates; pkg_json = Package_json.empty }
+  ;;
+
+  let set_pkg_json pkg_json ctx = { ctx with pkg_json }
+end
+
+(* 1. Copy base directory - Done
+   2. Check if any configuration options require extensions (e.g. webpack, vite)
+      For each extension:
+      2.1. Copy any files from the extension directory if required
+      2.2. Extend any existing templates (TODO: How do we relate an extension to a template?)
+      3. Compile templates
+   4. Run any actions(?) (e.g. npm install, opam init, opam install) *)
+
+let copy_base_dir (ctx : Context.t) =
+  Fs.copy_base_dir ?overwrite:ctx.configuration.overwrite ctx.configuration.name
 ;;
 
-let handle_webpack _config = Ok ()
-let handle_vite _config = Ok ()
-
-let handle_extensions (config : Configuration.t) =
-  match config.bundler with
-  | Webpack -> handle_webpack config
-  | Vite -> handle_vite config
-  | None -> Ok ()
+let handle_webpack (ctx : Context.t) =
+  List.iter (Fs.copy_file ~dest:ctx.configuration.name) Webpack.files;
+  let ctx' =
+    Webpack.dev_dependencies
+    |> List.fold_left (Fun.flip Package_json.add_dependency) ctx.pkg_json
+    |> (Fun.flip Context.set_pkg_json) ctx
+  in
+  Webpack.scripts
+  |> List.fold_left (Fun.flip Package_json.add_script) ctx.pkg_json
+  |> (Fun.flip Context.set_pkg_json) ctx'
+  |> Result.ok
 ;;
 
-(* module Context = struct
-     type 'a t = {
-       value : 'a;
-       templates : (module Template.S) String_map.t;
-       extensions : (module Extension.S) String_map.t;
-     }
+let handle_vite_config = Ok ()
 
-     let make ?(templates = String_map.empty) ?(extensions = String_map.empty)
-         value =
-       { value; templates; extensions }
-     ;;
+let handle_extensions (ctx : Context.t) =
+  match ctx.configuration.bundler with
+  | Webpack -> handle_webpack ctx
+  | Vite -> Ok ctx
+  | None -> Ok ctx
+;;
 
-     let find_template_opt ~name ctx = String_map.find_opt name ctx.templates
-     let find_extension_opt ~name ctx = String_map.find_opt name ctx.extensions
+(*
+   let run (config : Configuration.t) =
+     let ctx = Context.make config.name in
+     let copy_base_dir = copy_base_dir ctx in
+     let handle_extensions = handle_extensions ctx in
+     let compile_templates = compile_templates ctx in
+     let run_actions = run_actions ctx in
+     Ok ()
+   ;;
+*)
 
-     let register_template ~name ~template ctx =
-       { ctx with templates = String_map.add name template ctx.templates }
-     ;;
-
-     let compile_template _ctx template =
-       let module Template = (val template : Template.S) in
-       let tmpl = Template.base in
-       let@ () = Template.compile tmpl in
-       Ok ()
-     ;;
-   end
-
-   let _ =
-     Context.make "string ctx"
-     |> Context.register_template ~name:"package.json"
-          ~template:(module Package_json)
-     |> Context.register_template ~name:"dune-project"
-          ~template:(module Dune_project)
-   ;; *)
+let run (config : Configuration.t) =
+  let ctx = Context.make config in
+  let@ _ = copy_base_dir ctx in
+  let@ _ = handle_extensions ctx in
+  Ok ()
+;;

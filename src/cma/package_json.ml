@@ -21,6 +21,8 @@ end
 
 module Script = struct
   type t = { name : string; script : string }
+
+  let make ~name ~script = { name; script }
 end
 
 type t = {
@@ -59,8 +61,8 @@ let add_dependency dependency pkg =
       }
 ;;
 
-let add_script name script pkg =
-  { pkg with scripts = String_map.add name script pkg.scripts }
+let add_script (script : Script.t) pkg =
+  { pkg with scripts = String_map.add script.name script pkg.scripts }
 ;;
 
 let depedencies_to_json dependencies =
