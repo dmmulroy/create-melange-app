@@ -100,6 +100,25 @@ module Package_json = struct
       val enrich : unit -> t
     end
 
+    module Vite = struct
+      let scripts =
+        String_map.empty
+        |> String_map.add "bundle" "vite build"
+        |> String_map.add "serve" "vite"
+        |> String_map.add "dev" "vite"
+      ;;
+
+      let dependencies = String_map.empty
+
+      let dev_dependencies =
+        String_map.empty
+        |> String_map.add "vite-plugin-melange" "^2.2.0"
+        |> String_map.add "vite" "^5.0.5"
+      ;;
+
+      let enrich () = make ~name:"" ~scripts ~dependencies ~dev_dependencies
+    end
+
     module Webpack : S = struct
       let scripts =
         String_map.empty
@@ -130,7 +149,46 @@ module Package_json = struct
 end
 
 module Dune_project = struct
-  type t = { name : string; depends : (string * string option) list }
+  type t = { name : string; depends : string option String_map.t }
+
+  let name = "dune-project.tmpl"
+  let empty = { name = ""; depends = String_map.empty }
+  let make ~name ~depends = { name; depends }
+  let set_name name dune_project = { dune_project with name }
+
+  let add_depends ~name ?version_constraint dune_project =
+    {
+      dune_project with
+      depends = String_map.add name version_constraint dune_project.depends;
+    }
+  ;;
+
+  let to_json dune_project =
+    let obj = Js.Dict.empty () in
+    Js.Dict.set obj "name" (Js.Json.string dune_project.name);
+    let depends =
+      String_map.to_list dune_project.depends
+      |> List.map (fun (key, (value : string option)) ->
+             ( key,
+               if Option.is_some value then Js.Json.string (Option.get value)
+               else Js.Json.null ))
+      |> Js.Dict.fromList |> Js.Json.object_
+    in
+    Js.Dict.set obj "depends" depends;
+    Js.Json.object_ obj
+  ;;
+
+  let compile dune_project =
+    let json = to_json dune_project in
+    let@ contents =
+      Fs.read_template ~dir:dune_project.name "dune-project.tmpl"
+    in
+
+    let template = Handlebars.compile contents () in
+    let compiled_contents = template json () in
+    Fs.write_template ~dir:dune_project.name "dune-project.tmpl"
+      compiled_contents
+  ;;
 end
 
 let compile_pkg_json (configuration : Configuration.t) =
@@ -144,6 +202,13 @@ let compile_pkg_json (configuration : Configuration.t) =
   Package_json.compile pkg_json
 ;;
 
+let compile_dune_project (configuration : Configuration.t) =
+  let dune_project = Dune_project.(empty |> set_name configuration.name) in
+  Dune_project.compile dune_project
+;;
+
 let compile_all (configuration : Configuration.t) =
-  compile_pkg_json configuration
+  let@ _ = compile_pkg_json configuration in
+  let@ _ = compile_dune_project configuration in
+  Ok ()
 ;;

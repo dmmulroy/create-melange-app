@@ -25,9 +25,10 @@
   "Enter a synopsis of your app here")
  (description
   "Enter a description of your app here")
- (allow_empty)
+ (allow_empty) 
  (depends
-  ocaml 
+  (ocaml
+   (>= 5.1.0))
   (dune
    (>= 3.11))
   (melange
@@ -37,6 +38,8 @@
    (>= 3.10.0))
   (reason-react
    (>= 0.13.0))
-  reason-react-ppx)
+  reason-react-ppx
+  ppx_deriving)
  (tags
   (reasonml, ocaml, melange)))
+

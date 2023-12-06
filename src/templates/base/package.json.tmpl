@@ -4,17 +4,17 @@
   "description": "Enter a description of your app here",
   "scripts": {
     {{#each scripts}}
-    "{{@key}}": "{{this}}",
+    "{{@key}}": "{{this}}"{{#unless @last}},{{/unless}}
     {{/each}}
   },
   "dependencies": {
     {{#each dependencies}}
-    "{{@key}}": "{{this}}",
+    "{{@key}}": "{{this}}"{{#unless @last}},{{/unless}}
     {{/each}}
   },
   "devDependencies": {
     {{#each devDependencies}}
-    "{{@key}}": "{{this}}",
+    "{{@key}}": "{{this}}"{{#unless @last}},{{/unless}}
     {{/each}}
   }
 }
