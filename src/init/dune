@@ -10,6 +10,7 @@
   handlebars
   common
   env_check
-  fs_extra)
+  fs_extra
+  cma)
  (preprocess
   (pps melange.ppx reason-react-ppx)))

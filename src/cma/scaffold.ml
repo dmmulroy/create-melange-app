@@ -12,11 +12,10 @@ module Template = struct
   module type S = sig
     type t
 
+    val key : t Hmap.key
     val name : string
     val compile : t -> (unit, string) result
   end
-
-  type instance = Instance : 'a * (module S with type t = 'a) -> instance
 
   module Config = struct
     module type S = sig
@@ -31,8 +30,10 @@ module Template = struct
   module Make (M : Config.S) : S with type t = M.t = struct
     type t = M.t
 
+    let key = Hmap.Key.create ()
+
     let validate () =
-      let template_path = Node.Path.join [| base_dir; M.name |] in
+      let template_path = Node.Path.join [| "./foobar"; M.name |] in
       let template_exists = Fs.exists template_path in
       if not template_exists then
         Result.error
@@ -42,11 +43,11 @@ module Template = struct
 
     let name = M.name
 
-    let compile template =
+    let compile value =
       let@ _ = validate () in
       let dir = dir_to_string M.dir in
       let name = M.name in
-      let json = M.to_json template in
+      let json = M.to_json value in
       let@ contents = Fs.read_template ~dir name in
       let template = Handlebars.compile contents () in
       let compiled_contents = template json () in
@@ -58,54 +59,77 @@ end
 module Package_json_template = Template.Make (struct
   type t = Package_json.t
 
-  let name = "pakage.json.tmpl"
+  let name = "package.json.tmpl"
   let dir = `Base
   let to_json = Package_json.to_json
+end)
+
+module Dune_project_template = Template.Make (struct
+  type t = Dune_project.t
+
+  let name = "dune-project.tmpl"
+  let dir = `Base
+  let to_json _ = Js.Json.null
 end)
 
 module Context = struct
   type t = {
     configuration : Configuration.t;
-    templates : Template.instance String_map.t;
-    pkg_json : Package_json.t;
+    (* Template name -> Template module *)
+    templates : (module Template.S) String_map.t;
+    (* Template key -> Template value*)
+    template_values : Hmap.t;
   }
 
   let make configuration =
+    let template_values =
+      Hmap.empty |> Hmap.add Package_json_template.key Package_json.empty
+      (* |> Hmap.add Dune_project_template.key Dune_project.empty *)
+    in
     let templates =
       String_map.empty
       |> String_map.add Package_json_template.name
-           (Template.Instance
-              (Package_json.empty, (module Package_json_template)))
+           (module Package_json_template : Template.S)
+      (* |> String_map.add Dune_project_template.name *)
+      (*      (module Dune_project_template : Template.S) *)
     in
-    { configuration; templates; pkg_json = Package_json.empty }
+    { configuration; templates; template_values }
   ;;
-
-  let set_pkg_json pkg_json ctx = { ctx with pkg_json }
 end
-
-(* 1. Copy base directory - Done
-   2. Check if any configuration options require extensions (e.g. webpack, vite)
-      For each extension:
-      2.1. Copy any files from the extension directory if required
-      2.2. Extend any existing templates (TODO: How do we relate an extension to a template?)
-      3. Compile templates
-   4. Run any actions(?) (e.g. npm install, opam init, opam install) *)
 
 let copy_base_dir (ctx : Context.t) =
   Fs.copy_base_dir ?overwrite:ctx.configuration.overwrite ctx.configuration.name
 ;;
 
 let handle_webpack (ctx : Context.t) =
-  List.iter (Fs.copy_file ~dest:ctx.configuration.name) Webpack.files;
-  let ctx' =
-    Webpack.dev_dependencies
-    |> List.fold_left (Fun.flip Package_json.add_dependency) ctx.pkg_json
-    |> (Fun.flip Context.set_pkg_json) ctx
+  (* Copy webpack files *)
+  List.iter
+    (fun file_path ->
+      let file_name = Node.Path.basename file_path in
+      let dest = Node.Path.join [| ctx.configuration.name; "/"; file_name |] in
+      Fs.copy_file ~dest file_path)
+    Webpack.files;
+  let@ pkg_json =
+    Hmap.find Package_json_template.key ctx.template_values
+    |> Option.to_result
+         ~none:"package.json template not found in scaffold context"
   in
-  Webpack.scripts
-  |> List.fold_left (Fun.flip Package_json.add_script) ctx.pkg_json
-  |> (Fun.flip Context.set_pkg_json) ctx'
-  |> Result.ok
+  (* Add dependencies to package.json *)
+  let pkg_json =
+    Webpack.dev_dependencies
+    |> List.fold_left (Fun.flip Package_json.add_dependency) pkg_json
+  in
+  (* Add scripts to package.json *)
+  let pkg_json =
+    Webpack.scripts
+    |> List.fold_left (Fun.flip Package_json.add_script) pkg_json
+  in
+  Ok
+    {
+      ctx with
+      template_values =
+        Hmap.add Package_json_template.key pkg_json ctx.template_values;
+    }
 ;;
 
 let handle_vite_config ctx = Ok ctx
@@ -117,18 +141,22 @@ let handle_extensions (ctx : Context.t) =
   | None -> Ok ctx
 ;;
 
-let compile_template _ctx = Ok ()
+let fold_compilation_results (ctx : Context.t) (acc : (unit, string) result)
+    (_, (module Template : Template.S)) =
+  if Result.is_error acc then acc
+  else
+    let template_value = Hmap.find Template.key ctx.template_values in
+    match template_value with
+    | None ->
+        Error
+          (Printf.sprintf "A value for Template %s was not found" Template.name)
+    | Some value -> Template.compile value
+;;
 
-(*
-   let run (config : Configuration.t) =
-     let ctx = Context.make config.name in
-     let copy_base_dir = copy_base_dir ctx in
-     let handle_extensions = handle_extensions ctx in
-     let compile_templates = compile_templates ctx in
-     let run_actions = run_actions ctx in
-     Ok ()
-   ;;
-*)
+let compile_template (ctx : Context.t) =
+  String_map.to_list ctx.templates
+  |> List.fold_left (fold_compilation_results ctx) (Ok ())
+;;
 
 let run (config : Configuration.t) =
   let ctx = Context.make config in
@@ -137,3 +165,21 @@ let run (config : Configuration.t) =
   let@ _ = compile_template ctx in
   Ok ()
 ;;
+
+(* 1. Copy base directory - Done
+   2. Check if any configuration options require extensions (e.g. webpack, vite)
+      For each extension:
+      2.1. Copy any files from the extension directory if required
+      2.2. Extend any existing templates (TODO: How do we relate an extension to a template?)
+      3. Compile templates
+   4. Run any actions(?) (e.g. npm install, opam init, opam install) *)
+(*
+   let run (config : Configuration.t) =
+     let ctx = Context.make config.name in
+     let copy_base_dir = copy_base_dir ctx in
+     let handle_extensions = handle_extensions ctx in
+     let compile_templates = compile_templates ctx in
+     let run_actions = run_actions ctx in (* running opam init, npm install, git init*) 
+     Ok ()
+   ;;
+*)

@@ -25,8 +25,17 @@ let copy_base_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
          (Printexc.to_string exn))
 ;;
 
+type exn += Fs_extra_error of string
+
 (* TODO: Rename shit and keep your fn defintions consistent *)
-let copy_file ~dest file_path = Fs_extra.copySync file_path dest
+let copy_file ~dest file_path =
+  try Fs_extra.copySync file_path dest
+  with exn ->
+    raise
+      (Fs_extra_error
+         (Printf.sprintf {js|Failed to copy file %s to %s: %s|js} file_path dest
+            (Printexc.to_string exn)))
+;;
 
 (* DEPRECATED - TODO: Delete *)
 let create_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =

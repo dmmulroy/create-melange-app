@@ -191,7 +191,7 @@ module Dune_project = struct
   ;;
 end
 
-let compile_pkg_json (configuration : Configuration.t) =
+let compile_pkg_json (configuration : Cma.Configuration.t) =
   let pkg_json = Package_json.(empty |> set_name configuration.name) in
   let pkg_json =
     match configuration.bundler with
@@ -202,12 +202,12 @@ let compile_pkg_json (configuration : Configuration.t) =
   Package_json.compile pkg_json
 ;;
 
-let compile_dune_project (configuration : Configuration.t) =
+let compile_dune_project (configuration : Cma.Configuration.t) =
   let dune_project = Dune_project.(empty |> set_name configuration.name) in
   Dune_project.compile dune_project
 ;;
 
-let compile_all (configuration : Configuration.t) =
+let compile_all (configuration : Cma.Configuration.t) =
   let@ _ = compile_pkg_json configuration in
   let@ _ = compile_dune_project configuration in
   Ok ()

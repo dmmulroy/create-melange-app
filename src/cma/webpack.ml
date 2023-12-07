@@ -24,5 +24,15 @@ let scripts =
 ;;
 
 let files =
-  [ Node.Path.join [| "templates"; "extras"; "webpack"; "webpack.config.js" |] ]
+  [
+    Node.Path.join
+      [|
+        [%mel.raw "__dirname"];
+        "..";
+        "templates";
+        "extensions";
+        "webpack";
+        "webpack.config.js";
+      |];
+  ]
 ;;

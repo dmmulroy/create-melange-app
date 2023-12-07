@@ -22,7 +22,11 @@ module Overwrite = {
 
   [@react.component]
   let make =
-      (~configuration: Configuration.t, ~onSubmit as onChange, ~isDisabled) => {
+      (
+        ~configuration: Cma.Configuration.t,
+        ~onSubmit as onChange,
+        ~isDisabled,
+      ) => {
     <Box flexDirection=`column gap=1>
       // TODO: colorize this warning
 
@@ -49,14 +53,14 @@ module Overwrite = {
 module Compile_templates = {
   open Ui;
   [@react.component]
-  let make = (~configuration: Configuration.t) => {
+  let make = (~configuration: Cma.Configuration.t) => {
     let (compilation_result, set_compilation_result) =
       React.useState(() => None);
 
     React.useEffect0(() => {
       set_compilation_result(curr =>
         if (Option.is_none(curr)) {
-          Some(Template.compile_all(configuration));
+          Some(Cma.Scaffold.run(configuration));
         } else {
           curr;
         }
@@ -85,13 +89,13 @@ module Copy_template = {
   let make =
       (
         ~overwrite: option([> | `Clear | `Overwrite])=?,
-        ~configuration: Configuration.t,
+        ~configuration: Cma.Configuration.t,
       ) => {
     let (copy_complete, set_copy_complete) = React.useState(() => false);
     let (error, set_error) = React.useState(() => None);
 
     React.useEffect0(() => {
-      // todo
+      // todo use Cma.Fs
       let result = Fs.create_dir(~overwrite?, configuration.name);
 
       switch (result) {
@@ -118,11 +122,11 @@ module Copy_template = {
 };
 
 [@react.component]
-let make = (~configuration: Configuration.t) => {
+let make = (~configuration as initial_configuration: Cma.Configuration.t) => {
+  let (configuration, set_configuration) =
+    React.useState(() => initial_configuration);
   let (project_dir_exists, _set_project_dir_exists) =
     React.useState(() => Fs.project_dir_exists(configuration.name));
-
-  let (overwrite, set_overwrite) = React.useState(() => None);
 
   let onSubmit =
     React.useCallback0((value: string) => {
@@ -132,17 +136,24 @@ let make = (~configuration: Configuration.t) => {
         exit(1);
       };
 
-      set_overwrite(_ => Some(overwrite));
+      let overwrite =
+        switch (overwrite) {
+        | `Clear => Some(`Clear)
+        | `Overwrite => Some(`Overwrite)
+        | _ => assert(false)
+        };
+
+      set_configuration(prev_config => {...prev_config, overwrite});
     });
 
   <Box flexDirection=`column gap=1>
-    {switch (project_dir_exists, overwrite) {
+    {switch (project_dir_exists, configuration.overwrite) {
      | (true, None) => <Overwrite configuration onSubmit isDisabled=false />
      | (true, Some(`Overwrite))
      | (true, Some(`Clear)) =>
        <>
          <Overwrite configuration onSubmit isDisabled=true />
-         <Copy_template configuration overwrite />
+         <Copy_template configuration overwrite={configuration.overwrite} />
        </>
      | _ => <Copy_template configuration />
      }}

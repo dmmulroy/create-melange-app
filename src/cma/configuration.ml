@@ -22,6 +22,8 @@ let make ~name ~bundler ~initialize_git ~initialize_npm ~overwrite =
   { name; bundler; initialize_git; initialize_npm; overwrite }
 ;;
 
+let set_overwrite overwrite config = { config with overwrite = Some overwrite }
+
 let to_string config =
   Printf.sprintf
     "Name: %s\nBunder: %s\nInitialize git: %b\nInitialize npm: %b\n" config.name
