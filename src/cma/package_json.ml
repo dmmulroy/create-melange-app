@@ -1,4 +1,5 @@
 module String_map = Map.Make (String)
+module Make_template = Template.Make
 
 module Dependency = struct
   type descriptor = { name : string; version : string }
@@ -95,3 +96,12 @@ let to_json pkg =
   Js.Dict.set dict "devDependencies" dev_dependencies;
   Js.Json.object_ dict
 ;;
+
+module Template = struct
+  include Make_template (struct
+    type nonrec t = t
+
+    let name = "package.json.tmpl"
+    let to_json = to_json
+  end)
+end

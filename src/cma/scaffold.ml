@@ -18,7 +18,7 @@ let handle_webpack (ctx : Context.t) =
       Fs.copy_file ~dest file_path)
     Webpack.files;
   let@ pkg_json =
-    Hmap.find Template.Package_json_template.key ctx.template_values
+    Hmap.find Package_json.Template.key ctx.template_values
     |> Option.to_result
          ~none:"package.json template not found in scaffold context"
   in
@@ -36,7 +36,7 @@ let handle_webpack (ctx : Context.t) =
     {
       ctx with
       template_values =
-        Hmap.add Template.Package_json_template.key pkg_json ctx.template_values;
+        Hmap.add Package_json.Template.key pkg_json ctx.template_values;
     }
 ;;
 
@@ -49,7 +49,7 @@ let handle_vite (ctx : Context.t) =
       Fs.copy_file ~dest file_path)
     Vite.files;
   let@ pkg_json =
-    Hmap.find Template.Package_json_template.key ctx.template_values
+    Hmap.find Package_json.Template.key ctx.template_values
     |> Option.to_result
          ~none:"package.json template not found in scaffold context"
   in
@@ -66,7 +66,7 @@ let handle_vite (ctx : Context.t) =
     {
       ctx with
       template_values =
-        Hmap.add Template.Package_json_template.key pkg_json ctx.template_values;
+        Hmap.add Package_json.Template.key pkg_json ctx.template_values;
     }
 ;;
 

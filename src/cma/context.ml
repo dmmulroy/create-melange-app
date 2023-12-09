@@ -15,15 +15,23 @@ let make (configuration : Configuration.t) =
   in
   let template_values =
     Hmap.empty
-    |> Hmap.add Template.Package_json_template.key pkg
+    |> Hmap.add Package_json.Template.key pkg
     |> Hmap.add Template.Dune_project_template.key dune_project
   in
   let templates =
     String_map.empty
-    |> String_map.add Template.Package_json_template.name
-         (module Template.Package_json_template : Template.S)
+    |> String_map.add Package_json.Template.name
+         (module Package_json.Template : Template.S)
     |> String_map.add Template.Dune_project_template.name
          (module Template.Dune_project_template : Template.S)
   in
   { configuration; templates; template_values }
+;;
+
+let get_template template_name ctx =
+  String_map.find_opt template_name ctx.templates
+;;
+
+let get_template_value template_key ctx =
+  Hmap.find template_key ctx.template_values
 ;;

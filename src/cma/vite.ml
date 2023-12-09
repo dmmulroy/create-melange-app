@@ -31,4 +31,21 @@ let files =
   ]
 ;;
 
-let _ = Node.Path.basename
+module Extension = struct
+  include Plugin.Make_extension (struct
+    include Package_json.Template
+
+    let extend_template pkg_json =
+      (* Add dependencies to package.json *)
+      let pkg_json =
+        dev_dependencies
+        |> List.fold_left (Fun.flip Package_json.add_dependency) pkg_json
+      in
+      (* Add scripts to package.json *)
+      let pkg_json =
+        scripts |> List.fold_left (Fun.flip Package_json.add_script) pkg_json
+      in
+      Ok pkg_json
+    ;;
+  end)
+end

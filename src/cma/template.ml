@@ -40,13 +40,6 @@ module Make (M : Config.S) : S with type t = M.t = struct
   ;;
 end
 
-module Package_json_template = Make (struct
-  type t = Package_json.t
-
-  let name = "package.json.tmpl"
-  let to_json = Package_json.to_json
-end)
-
 module Dune_project_template = Make (struct
   type t = Dune_project.t
 
