@@ -21,15 +21,17 @@
 
 (package
  (name {{name}})
- (synopsis
-  "Enter a synopsis of your app here")
- (description
-  "Enter a description of your app here")
+ (synopsis "Enter a synopsis of your app here")
+ (description "Enter a description of your app here")
  (allow_empty) 
  (depends
-  {{#each depends}}
-  ({{@key}}{{#if this}} ({{{this}}}){{/if}})
-  {{/each}})
+{{#each depends}}
+  {{#if this}}
+  ({{@key}} ({{{this}}}))
+  {{else}}
+  {{@key}}
+  {{/if}}
+{{/each}})
  (tags
   (reasonml, ocaml, melange)))
 

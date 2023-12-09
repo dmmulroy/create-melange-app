@@ -89,6 +89,7 @@ end
 
 let copy_base_dir (ctx : Context.t) =
   Fs.copy_base_dir ?overwrite:ctx.configuration.overwrite ctx.configuration.name
+  |> Result.map (fun _ -> ctx)
 ;;
 
 (* TODO: Think about a potential helper for mapping template values in the context *)
@@ -123,12 +124,40 @@ let handle_webpack (ctx : Context.t) =
     }
 ;;
 
-let handle_vite_config ctx = Ok ctx
+let handle_vite (ctx : Context.t) =
+  (* Copy vite files *)
+  List.iter
+    (fun file_path ->
+      let file_name = Node.Path.basename file_path in
+      let dest = Node.Path.join [| ctx.configuration.name; "/"; file_name |] in
+      Fs.copy_file ~dest file_path)
+    Vite.files;
+  let@ pkg_json =
+    Hmap.find Package_json_template.key ctx.template_values
+    |> Option.to_result
+         ~none:"package.json template not found in scaffold context"
+  in
+  (* Add dependencies to package.json *)
+  let pkg_json =
+    Vite.dev_dependencies
+    |> List.fold_left (Fun.flip Package_json.add_dependency) pkg_json
+  in
+  (* Add scripts to package.json *)
+  let pkg_json =
+    Vite.scripts |> List.fold_left (Fun.flip Package_json.add_script) pkg_json
+  in
+  Ok
+    {
+      ctx with
+      template_values =
+        Hmap.add Package_json_template.key pkg_json ctx.template_values;
+    }
+;;
 
 let handle_extensions (ctx : Context.t) =
   match ctx.configuration.bundler with
   | Webpack -> handle_webpack ctx
-  | Vite -> Ok ctx
+  | Vite -> handle_vite ctx
   | None -> Ok ctx
 ;;
 
@@ -148,31 +177,14 @@ let fold_compilation_results (ctx : Context.t) (acc : (unit, string) result)
 let compile_template (ctx : Context.t) =
   String_map.to_list ctx.templates
   |> List.fold_left (fold_compilation_results ctx) (Ok ())
+  |> Result.map (fun _ -> ctx)
 ;;
 
-(* TODO: use Result.map*)
+let bind_result = Fun.flip Result.bind
+
 let run (config : Configuration.t) =
-  let ctx = Context.make config in
-  let@ _ = copy_base_dir ctx in
-  let@ ctx' = handle_extensions ctx in
-  let@ _ = compile_template ctx' in
-  Ok ()
+  Context.make config |> copy_base_dir
+  |> bind_result handle_extensions
+  |> bind_result compile_template
+  |> Result.map (fun _ -> ())
 ;;
-
-(* 1. Copy base directory - Done
-   2. Check if any configuration options require extensions (e.g. webpack, vite)
-      For each extension:
-      2.1. Copy any files from the extension directory if required
-      2.2. Extend any existing templates (TODO: How do we relate an extension to a template?)
-      3. Compile templates
-   4. Run any actions(?) (e.g. npm install, opam init, opam install) *)
-(*
-   let run (config : Configuration.t) =
-     let ctx = Context.make config.name in
-     let copy_base_dir = copy_base_dir ctx in
-     let handle_extensions = handle_extensions ctx in
-     let compile_templates = compile_templates ctx in
-     let run_actions = run_actions ctx in (* running opam init, npm install, git init*) 
-     Ok ()
-   ;;
-*)

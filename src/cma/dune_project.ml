@@ -13,9 +13,9 @@ end
 
 let default_dependencies =
   [
-    Dependency.make ~version:">=5.1.0" "ocaml";
+    Dependency.make ~version:">= 5.1.0" "ocaml";
     Dependency.make ~version:">= 3.11" "dune";
-    Dependency.make ~version:">=2.1.0" "melange";
+    Dependency.make ~version:">= 2.1.0" "melange";
     Dependency.make ~version:">= 3.10.0" "reason";
     Dependency.make "opam-check-npm-deps";
     Dependency.make "ppx_deriving";
