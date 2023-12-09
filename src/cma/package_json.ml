@@ -41,6 +41,8 @@ let empty =
   }
 ;;
 
+let set_name name pkg = { pkg with name }
+
 let add_dependency dependency pkg =
   match dependency with
   | Dependency.Regular _ ->

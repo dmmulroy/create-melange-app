@@ -41,8 +41,8 @@ let add_depends (dependency : Dependency.t) dune_project =
 ;;
 
 let to_json dune_project =
-  let obj = Js.Dict.empty () in
-  Js.Dict.set obj "name" (Js.Json.string dune_project.name);
+  let dict = Js.Dict.empty () in
+  Js.Dict.set dict "name" (Js.Json.string dune_project.name);
   let depends =
     String_map.to_list dune_project.depends
     |> List.map (fun (key, (dependency : Dependency.t)) ->
@@ -54,6 +54,6 @@ let to_json dune_project =
            (key, version_json))
     |> Js.Dict.fromList |> Js.Json.object_
   in
-  Js.Dict.set obj "depends" depends;
-  Js.Json.object_ obj
+  Js.Dict.set dict "depends" depends;
+  Js.Json.object_ dict
 ;;

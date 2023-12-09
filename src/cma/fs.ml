@@ -19,8 +19,8 @@ let copy_base_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
     | Some overwrite ->
         if overwrite = `Clear then Fs_extra.emptyDirSync dir;
         Ok (Fs_extra.copySync base_template_dir dir)
-  with exn ->
-    Error
+    with exn ->
+      Error
       (Printf.sprintf {js|Failed to create directory %s: %s|js} dir
          (Printexc.to_string exn))
 ;;
@@ -45,18 +45,18 @@ let create_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
     | Some overwrite ->
         if overwrite = `Clear then Fs_extra.emptyDirSync dir;
         Ok (Fs_extra.copySync base_template_dir dir)
-  with exn ->
-    Error
+    with exn ->
+      Error
       (Printf.sprintf {js|Failed to create directory %s: %s|js} dir
          (Printexc.to_string exn))
 ;;
 
 let get_template_file_names dir =
   Fs_extra.readdirSync dir |> Array.to_list
-  |> List.filter_map (fun file_name ->
-         if Js.String.endsWith ".tmpl" file_name then
-           Some (Node.Path.join [| dir; file_name |])
-         else None)
+    |> List.filter_map (fun file_name ->
+        if Js.String.endsWith ".tmpl" file_name then
+          Some (Node.Path.join [| dir; file_name |])
+        else None)
 ;;
 
 let read_template ~dir file_name =
@@ -64,8 +64,17 @@ let read_template ~dir file_name =
   try Ok (Fs_extra.readFileSync file_path `utf8)
   with exn ->
     Error
-      (Printf.sprintf {js|Failed to read file %s from %s: %s|js} file_name
+      (Printf.sprintf {js|Failed to read template %s from %s: %s|js} file_name
          (Node.Process.cwd ()) (Printexc.to_string exn))
+;;
+
+let validate_template_exists ~dir file_name =
+  let file_path = Node.Path.join [| dir; file_name |] in
+  let template_exists = exists file_path in
+  if not template_exists then
+    Result.error
+    @@ Printf.sprintf "Template %s does not exist at %s" file_name file_path
+  else Ok ()
 ;;
 
 let write_template ~dir file_name content =

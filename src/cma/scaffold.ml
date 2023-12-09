@@ -14,14 +14,13 @@ module Template = struct
 
     val key : t Hmap.key
     val name : string
-    val compile : t -> (unit, string) result
+    val compile : dir:string -> t -> (unit, string) result
   end
 
   module Config = struct
     module type S = sig
       type t
 
-      val dir : [ `Base | `Extension of string ]
       val name : string
       val to_json : t -> Js.Json.t
     end
@@ -31,24 +30,12 @@ module Template = struct
     type t = M.t
 
     let key = Hmap.Key.create ()
-
-    let validate () =
-      let template_path = Node.Path.join [| "./foobar"; M.name |] in
-      let template_exists = Fs.exists template_path in
-      if not template_exists then
-        Result.error
-        @@ Printf.sprintf "Template %s does not exist" template_path
-      else Ok ()
-    ;;
-
     let name = M.name
 
-    let compile value =
-      let@ _ = validate () in
-      let dir = dir_to_string M.dir in
-      let name = M.name in
+    let compile ~dir value =
+      let@ _ = Fs.validate_template_exists ~dir M.name in
       let json = M.to_json value in
-      let@ contents = Fs.read_template ~dir name in
+      let@ contents = Fs.read_template ~dir M.name in
       let template = Handlebars.compile contents () in
       let compiled_contents = template json () in
       Fs.write_template ~dir name compiled_contents
@@ -60,7 +47,6 @@ module Package_json_template = Template.Make (struct
   type t = Package_json.t
 
   let name = "package.json.tmpl"
-  let dir = `Base
   let to_json = Package_json.to_json
 end)
 
@@ -68,8 +54,7 @@ module Dune_project_template = Template.Make (struct
   type t = Dune_project.t
 
   let name = "dune-project.tmpl"
-  let dir = `Base
-  let to_json _ = Js.Json.null
+  let to_json = Dune_project.to_json
 end)
 
 module Context = struct
@@ -81,17 +66,22 @@ module Context = struct
     template_values : Hmap.t;
   }
 
-  let make configuration =
+  let make (configuration : Configuration.t) =
+    let pkg = Package_json.empty |> Package_json.set_name configuration.name in
+    let dune_project =
+      Dune_project.empty |> Dune_project.set_name configuration.name
+    in
     let template_values =
-      Hmap.empty |> Hmap.add Package_json_template.key Package_json.empty
-      (* |> Hmap.add Dune_project_template.key Dune_project.empty *)
+      Hmap.empty
+      |> Hmap.add Package_json_template.key pkg
+      |> Hmap.add Dune_project_template.key dune_project
     in
     let templates =
       String_map.empty
       |> String_map.add Package_json_template.name
            (module Package_json_template : Template.S)
-      (* |> String_map.add Dune_project_template.name *)
-      (*      (module Dune_project_template : Template.S) *)
+      |> String_map.add Dune_project_template.name
+           (module Dune_project_template : Template.S)
     in
     { configuration; templates; template_values }
   ;;
@@ -101,6 +91,7 @@ let copy_base_dir (ctx : Context.t) =
   Fs.copy_base_dir ?overwrite:ctx.configuration.overwrite ctx.configuration.name
 ;;
 
+(* TODO: Think about a potential helper for mapping template values in the context *)
 let handle_webpack (ctx : Context.t) =
   (* Copy webpack files *)
   List.iter
@@ -146,11 +137,12 @@ let fold_compilation_results (ctx : Context.t) (acc : (unit, string) result)
   if Result.is_error acc then acc
   else
     let template_value = Hmap.find Template.key ctx.template_values in
+    let dir = Node.Path.join [| "./"; ctx.configuration.name |] in
     match template_value with
     | None ->
         Error
           (Printf.sprintf "A value for Template %s was not found" Template.name)
-    | Some value -> Template.compile value
+    | Some value -> Template.compile ~dir value
 ;;
 
 let compile_template (ctx : Context.t) =
@@ -158,11 +150,12 @@ let compile_template (ctx : Context.t) =
   |> List.fold_left (fold_compilation_results ctx) (Ok ())
 ;;
 
+(* TODO: use Result.map*)
 let run (config : Configuration.t) =
   let ctx = Context.make config in
   let@ _ = copy_base_dir ctx in
-  let@ _ = handle_extensions ctx in
-  let@ _ = compile_template ctx in
+  let@ ctx' = handle_extensions ctx in
+  let@ _ = compile_template ctx' in
   Ok ()
 ;;
 

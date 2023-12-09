@@ -27,19 +27,9 @@
   "Enter a description of your app here")
  (allow_empty) 
  (depends
-  (ocaml
-   (>= 5.1.0))
-  (dune
-   (>= 3.11))
-  (melange
-   (>= 2.1.0))
-  opam-check-npm-deps
-  (reason
-   (>= 3.10.0))
-  (reason-react
-   (>= 0.13.0))
-  reason-react-ppx
-  ppx_deriving)
+  {{#each depends}}
+  ({{@key}}{{#if this}} ({{{this}}}){{/if}})
+  {{/each}})
  (tags
   (reasonml, ocaml, melange)))
 
