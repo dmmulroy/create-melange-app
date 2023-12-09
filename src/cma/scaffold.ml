@@ -87,17 +87,17 @@ let handle_git (ctx : Context.t) =
     Git.run ctx |> Result.ok |> Result.map (fun _ -> ctx)
 ;;
 
+let handle_npm (ctx : Context.t) =
+  if not ctx.configuration.initialize_npm then Ok ctx
+  else Npm.run ctx |> Result.ok |> Result.map (fun _ -> ctx)
+;;
+
 let handle_bundler (ctx : Context.t) =
   match ctx.configuration.bundler with
   | Webpack -> handle_webpack ctx
   | Vite -> handle_vite ctx
   | None -> Ok ctx
 ;;
-
-(* in
-   match ctx.configuration.initialize_git with
-   | true -> handle_git ctx
-   | false -> Ok ctx *)
 
 let fold_compilation_results (ctx : Context.t) (acc : (unit, string) result)
     (_, (module Template : Template.S)) =
@@ -123,6 +123,6 @@ let bind_result = Fun.flip Result.bind
 let run (config : Configuration.t) =
   Context.make config |> copy_base_dir |> bind_result handle_bundler
   |> bind_result compile_template
-  |> bind_result handle_git
+  |> bind_result handle_npm |> bind_result handle_git
   |> Result.map (fun _ -> ())
 ;;
