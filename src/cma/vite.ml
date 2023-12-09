@@ -31,21 +31,42 @@ let files =
   ]
 ;;
 
-module Extension = struct
-  include Plugin.Make_extension (struct
-    include Package_json.Template
+module Plugin = struct
+  module Extension = struct
+    include Scaffold_v2.Plugin.Make_extension (struct
+      include Package_json.Template
 
-    let extend_template pkg_json =
-      (* Add dependencies to package.json *)
-      let pkg_json =
-        dev_dependencies
-        |> List.fold_left (Fun.flip Package_json.add_dependency) pkg_json
-      in
-      (* Add scripts to package.json *)
-      let pkg_json =
-        scripts |> List.fold_left (Fun.flip Package_json.add_script) pkg_json
-      in
-      Ok pkg_json
-    ;;
-  end)
+      let extend_template pkg =
+        (* Add dependencies to package.json *)
+        let pkg =
+          dev_dependencies
+          |> List.fold_left (Fun.flip Package_json.add_dependency) pkg
+        in
+        (* Add scripts to package.json *)
+        scripts
+        |> List.fold_left (Fun.flip Package_json.add_script) pkg
+        |> Result.ok
+      ;;
+    end)
+  end
+
+  module Command = struct
+    include Scaffold_v2.Plugin.Make_command (struct
+      let name = "webpack"
+
+      let exec (ctx : Scaffold_v2.Context.t) =
+        let () =
+          List.iter
+            (fun file_path ->
+              let file_name = Node.Path.basename file_path in
+              let dest =
+                Node.Path.join [| ctx.configuration.name; "/"; file_name |]
+              in
+              Fs.copy_file ~dest file_path)
+            files
+        in
+        Ok ctx
+      ;;
+    end)
+  end
 end

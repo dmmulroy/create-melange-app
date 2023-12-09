@@ -1,6 +1,7 @@
 open Common
 open Syntax
 open! Let
+open Scaffold_v2
 module String_map = Map.Make (String)
 
 let copy_base_dir (ctx : Context.t) =
@@ -123,6 +124,6 @@ let bind_result = Fun.flip Result.bind
 let run (config : Configuration.t) =
   Context.make config |> copy_base_dir |> bind_result handle_bundler
   |> bind_result compile_template
-  |> bind_result handle_npm |> bind_result handle_git
+  |> bind_result handle_git |> bind_result handle_npm
   |> Result.map (fun _ -> ())
 ;;

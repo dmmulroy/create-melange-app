@@ -1,4 +1,4 @@
-let run (ctx : Context.t) =
+let run (ctx : Scaffold_v2.Context.t) =
   (* TODO: Handle if name is "." *)
   let dir = ctx.configuration.name in
   let options = Node.Child_process.option ~cwd:dir ~encoding:"utf8" () in
