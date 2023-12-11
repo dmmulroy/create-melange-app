@@ -43,4 +43,14 @@ module Let = struct
 
   (** [let* var = p] binds [var] to [v] when [p] resolves to [v] *)
   let ( let* ) p f = Js.Promise.then_ f p
+
+  (** [let| var = p] binds [var] to [v] when [p] resolves to [Ok v], and passes through [Error e] when [p] resolves to [Error e] *)
+  let ( let| ) p f =
+    Js.Promise.then_
+      (function Error e -> Js.Promise.resolve (Error e) | Ok x -> f x)
+      p
+  ;;
+
+  (** [let@| var = v] binds [var] to the result of applying function [f] to [v] if [v] is a [Result.t], all within a resolved promise *)
+  let ( let@| ) v f = Js.Promise.resolve (Result.bind v f)
 end

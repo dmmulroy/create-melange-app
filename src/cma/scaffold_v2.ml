@@ -1,4 +1,3 @@
-open Common.Syntax.Let
 module String_map = Map.Make (String)
 
 module rec Context : sig
@@ -18,6 +17,7 @@ module rec Context : sig
     Configuration.t ->
     t
 
+  val add_plugin : (module Plugin.S) -> t -> t
   val get_template : string -> t -> (module Template.S) option
   val get_template_value : 'a Hmap.key -> t -> 'a option
   val set_template_value : 'a Hmap.key -> 'a -> t -> t
@@ -35,6 +35,8 @@ end = struct
       ?(plugins = []) configuration =
     { configuration; templates; template_values; plugins }
   ;;
+
+  let add_plugin plugin ctx = { ctx with plugins = plugin :: ctx.plugins }
 
   let get_template template_name ctx =
     String_map.find_opt template_name ctx.templates
@@ -57,7 +59,7 @@ and Plugin : sig
 
   module type S = sig
     val key : plugin Hmap.key
-    val run : Context.t -> (Context.t, string) result
+    val run : Context.t -> (Context.t, string) result Js.Promise.t
   end
 
   module Config : sig
@@ -65,14 +67,14 @@ and Plugin : sig
       module type S = sig
         include Template.S
 
-        val extend_template : t -> (t, string) result
+        val extend_template : t -> (t, string) result Js.Promise.t
       end
     end
 
     module Command : sig
       module type S = sig
         val name : string
-        val exec : Context.t -> (Context.t, string) result
+        val exec : Context.t -> (Context.t, string) result Js.Promise.t
       end
     end
   end
@@ -84,7 +86,7 @@ end = struct
 
   module type S = sig
     val key : plugin Hmap.key
-    val run : Context.t -> (Context.t, string) result
+    val run : Context.t -> (Context.t, string) result Js.Promise.t
   end
 
   module Config = struct
@@ -92,14 +94,14 @@ end = struct
       module type S = sig
         include Template.S
 
-        val extend_template : t -> (t, string) result
+        val extend_template : t -> (t, string) result Js.Promise.t
       end
     end
 
     module Command = struct
       module type S = sig
         val name : string
-        val exec : Context.t -> (Context.t, string) result
+        val exec : Context.t -> (Context.t, string) result Js.Promise.t
       end
     end
   end
@@ -108,15 +110,22 @@ end = struct
     let key = Hmap.Key.create ()
 
     let run ctx =
-      let@ template_value =
-        Context.get_template_value E.key ctx
-        |> Option.to_result
-             ~none:
-               (Printf.sprintf "Template value not found for template: %s"
-                  E.name)
-      in
-      let@ updated_template_value = E.extend_template template_value in
-      Context.set_template_value E.key updated_template_value ctx |> Result.ok
+      Context.get_template_value E.key ctx
+      |> Option.to_result
+           ~none:
+             (Printf.sprintf "Template value not found for template: %s" E.name)
+      |> Js.Promise.resolve
+      (* TODO: Write Js.Promise.ok_then*)
+      |> Js.Promise.then_ (fun template_value_result ->
+             match template_value_result with
+             | Error (error : string) -> Js.Promise.resolve (Error error)
+             | Ok template_value -> E.extend_template template_value)
+      |> Js.Promise.then_ (fun updated_template_value_result ->
+             match updated_template_value_result with
+             | Error (error : string) -> Js.Promise.resolve (Error error)
+             | Ok updated_template_value ->
+                 Context.set_template_value E.key updated_template_value ctx
+                 |> Result.ok |> Js.Promise.resolve)
     ;;
   end
 

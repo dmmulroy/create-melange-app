@@ -45,27 +45,34 @@ module Plugin = struct
         (* Add scripts to package.json *)
         scripts
         |> List.fold_left (Fun.flip Package_json.add_script) pkg
-        |> Result.ok
+        |> Result.ok |> Js.Promise.resolve
       ;;
     end)
   end
 
   module Command = struct
     include Scaffold_v2.Plugin.Make_command (struct
-      let name = "webpack"
+      let name = "vite"
 
       let exec (ctx : Scaffold_v2.Context.t) =
-        let () =
-          List.iter
-            (fun file_path ->
-              let file_name = Node.Path.basename file_path in
-              let dest =
-                Node.Path.join [| ctx.configuration.name; "/"; file_name |]
-              in
-              Fs.copy_file ~dest file_path)
-            files
-        in
-        Ok ctx
+        List.fold_left
+          (fun promise file_path ->
+            Js.Promise.then_
+              (fun result ->
+                if Result.is_error result then Js.Promise.resolve result
+                else
+                  let file_name = Node.Path.basename file_path in
+                  let dest =
+                    Node.Path.join [| ctx.configuration.name; "/"; file_name |]
+                  in
+                  Fs.copy_file ~dest file_path)
+              promise)
+          (Js.Promise.resolve @@ Ok ())
+          files
+        |> Js.Promise.then_ (fun result ->
+               match result with
+               | Ok _ -> Js.Promise.resolve @@ Ok ctx
+               | Error err -> Js.Promise.resolve @@ Error err)
       ;;
     end)
   end

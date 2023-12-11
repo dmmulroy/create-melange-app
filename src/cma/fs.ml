@@ -1,6 +1,3 @@
-open Common.Syntax
-open Let
-
 (* DEPRECATED: TODO Delete/*)
 let project_dir_exists = Fs_extra.existsSync
 
@@ -16,19 +13,20 @@ let base_template_dir =
 ;;
 
 let copy_base_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
-  let open Infix.Promise in
   let promise =
     match overwrite with
-    | None -> Fs_extra.copy base_template_dir dir >|= Result.ok
+    | None -> Fs_extra.copy base_template_dir dir
     | Some overwrite ->
-        let* _ =
-          if overwrite = `Clear then Fs_extra.emptyDir dir >|= Result.ok
-          else Js.Promise.resolve @@ Ok ()
+        let promise =
+          if overwrite = `Clear then Fs_extra.emptyDir dir
+          else Js.Promise.resolve ()
         in
-        Fs_extra.copy base_template_dir dir >|= Result.ok
+        Js.Promise.then_ (fun () -> Fs_extra.copy base_template_dir dir) promise
   in
   promise
-  |> Js.Promise.catch (fun exn ->
+  |> Js.Promise.then_ (fun () -> Js.Promise.resolve (Ok ()))
+  (* TODO: Open issue on Melange repo for improving Js.Promise.error *)
+  |> Js.Promise.catch (fun _exn ->
          Js.Promise.resolve
            (Error (Printf.sprintf {js|Failed to create directory %s|js} dir)))
 ;;
@@ -36,13 +34,23 @@ let copy_base_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
 type exn += Fs_extra_error of string
 
 (* TODO: Rename shit and keep your fn defintions consistent *)
-let copy_file ~dest file_path =
+let copy_file_sync ~dest file_path =
   try Fs_extra.copySync file_path dest
   with exn ->
     raise
       (Fs_extra_error
          (Printf.sprintf {js|Failed to copy file %s to %s: %s|js} file_path dest
             (Printexc.to_string exn)))
+;;
+
+let copy_file ~dest file_path =
+  Fs_extra.copy file_path dest
+  |> Js.Promise.then_ (fun _ -> Js.Promise.resolve @@ Ok ())
+  |> Js.Promise.catch (fun _ ->
+         Js.Promise.resolve
+         @@ Error
+              (Printf.sprintf {js|Failed to copy file %s to %s|js} file_path
+                 dest))
 ;;
 
 (* DEPRECATED - TODO: Delete *)

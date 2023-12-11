@@ -1,4 +1,5 @@
 open Ink;
+open Common.Syntax.Let;
 
 module Overwrite = {
   open Ui;
@@ -42,14 +43,6 @@ module Overwrite = {
   };
 };
 
-// 1. Copy base directory
-// 2. Check if any configuration options require extensions (e.g. webpack, vite)
-//    For each extension:
-//    2.1. Copy any files from the extension directory if required
-//    2.2. Extend any existing templates (TODO: How do we relate an extension to a template?)
-// 3. Compile templates
-// 4. Run any actions(?) (e.g. npm install, opam init, opam install)
-
 module Compile_templates = {
   open Ui;
   [@react.component]
@@ -58,13 +51,21 @@ module Compile_templates = {
       React.useState(() => None);
 
     React.useEffect0(() => {
-      set_compilation_result(curr =>
-        if (Option.is_none(curr)) {
-          Some(Cma.Scaffold.run(configuration));
-        } else {
-          curr;
-        }
-      );
+      let promise = {
+        let* result = Cma.Scaffold.run(configuration);
+
+        set_compilation_result(curr =>
+          if (Option.is_none(curr)) {
+            Some(result);
+          } else {
+            curr;
+          }
+        );
+
+        Js.Promise.resolve();
+      };
+
+      promise |> ignore;
 
       None;
     });
