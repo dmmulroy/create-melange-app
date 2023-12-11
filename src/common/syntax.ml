@@ -25,6 +25,7 @@ module Infix = struct
 
   module Promise = struct
     let ( >>= ) p f = Js.Promise.then_ f p
+    let ( >|= ) p f = Js.Promise.then_ (fun v -> Js.Promise.resolve (f v)) p
   end
 end
 

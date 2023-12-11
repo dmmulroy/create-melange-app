@@ -1,4 +1,5 @@
-open Common.Syntax.Let
+open Common.Syntax
+open Let
 
 (* DEPRECATED: TODO Delete/*)
 let project_dir_exists = Fs_extra.existsSync
@@ -15,24 +16,19 @@ let base_template_dir =
 ;;
 
 let copy_base_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
+  let open Infix.Promise in
   let promise =
     match overwrite with
-    | None -> Fs_extra.copy base_template_dir dir
+    | None -> Fs_extra.copy base_template_dir dir >|= Result.ok
     | Some overwrite ->
         let* _ =
-          if overwrite = `Clear then Fs_extra.emptyDir dir
-          else Js.Promise.resolve ()
+          if overwrite = `Clear then Fs_extra.emptyDir dir >|= Result.ok
+          else Js.Promise.resolve @@ Ok ()
         in
-        let* _ = Fs_extra.copy base_template_dir dir in
-        Js.Promise.resolve ()
-    (* Js.Promise.resolve
-       (Error
-          (Printf.sprintf {js|Failed to create directory %s: %s|js} dir
-             (Printexc.to_string exn))) *)
+        Fs_extra.copy base_template_dir dir >|= Result.ok
   in
   promise
-  |> Js.Promise.then_ (fun _ -> Js.Promise.resolve (Ok ()))
-  |> Js.Promise.catch (fun _ ->
+  |> Js.Promise.catch (fun exn ->
          Js.Promise.resolve
            (Error (Printf.sprintf {js|Failed to create directory %s|js} dir)))
 ;;
