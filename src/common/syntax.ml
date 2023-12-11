@@ -24,7 +24,7 @@ module Infix = struct
   end
 
   module Promise = struct
-    let ( >>= ) = Js.Promise.then_
+    let ( >>= ) p f = Js.Promise.then_ f p
   end
 end
 
@@ -40,6 +40,6 @@ module Let = struct
   (** [let@ var = res] binds [var] to [v] when [res] is [Ok v] *)
   let ( let@ ) = Result.bind
 
-  (** [let* var = promise] binds [var] to [v] when [promise] resolves to [v] *)
-  let ( let* ) = Js.Promise.then_
+  (** [let* var = p] binds [var] to [v] when [p] resolves to [v] *)
+  let ( let* ) p f = Js.Promise.then_ f p
 end

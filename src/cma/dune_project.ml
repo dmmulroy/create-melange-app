@@ -1,4 +1,5 @@
 module String_map = Map.Make (String)
+module Make_template = Template.Make
 
 module Dependency = struct
   type t = {
@@ -28,7 +29,6 @@ let default_dependencies =
 
 type t = { name : string; depends : Dependency.t String_map.t }
 
-let name = "dune-project.tmpl"
 let empty = { name = ""; depends = default_dependencies }
 let make ~name ~depends = { name; depends }
 let set_name name dune_project = { dune_project with name }
@@ -57,3 +57,12 @@ let to_json dune_project =
   Js.Dict.set dict "depends" depends;
   Js.Json.object_ dict
 ;;
+
+module Template = struct
+  include Make_template (struct
+    type nonrec t = t
+
+    let name = "dune-project.tmpl"
+    let to_json = to_json
+  end)
+end

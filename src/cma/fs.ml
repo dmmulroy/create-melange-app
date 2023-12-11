@@ -1,3 +1,5 @@
+open Common.Syntax.Let
+
 (* DEPRECATED: TODO Delete/*)
 let project_dir_exists = Fs_extra.existsSync
 
@@ -13,16 +15,26 @@ let base_template_dir =
 ;;
 
 let copy_base_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
-  try
+  let promise =
     match overwrite with
-    | None -> Ok (Fs_extra.copySync base_template_dir dir)
+    | None -> Fs_extra.copy base_template_dir dir
     | Some overwrite ->
-        if overwrite = `Clear then Fs_extra.emptyDirSync dir;
-        Ok (Fs_extra.copySync base_template_dir dir)
-    with exn ->
-      Error
-      (Printf.sprintf {js|Failed to create directory %s: %s|js} dir
-         (Printexc.to_string exn))
+        let* _ =
+          if overwrite = `Clear then Fs_extra.emptyDir dir
+          else Js.Promise.resolve ()
+        in
+        let* _ = Fs_extra.copy base_template_dir dir in
+        Js.Promise.resolve ()
+    (* Js.Promise.resolve
+       (Error
+          (Printf.sprintf {js|Failed to create directory %s: %s|js} dir
+             (Printexc.to_string exn))) *)
+  in
+  promise
+  |> Js.Promise.then_ (fun _ -> Js.Promise.resolve (Ok ()))
+  |> Js.Promise.catch (fun _ ->
+         Js.Promise.resolve
+           (Error (Printf.sprintf {js|Failed to create directory %s|js} dir)))
 ;;
 
 type exn += Fs_extra_error of string
@@ -45,18 +57,18 @@ let create_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
     | Some overwrite ->
         if overwrite = `Clear then Fs_extra.emptyDirSync dir;
         Ok (Fs_extra.copySync base_template_dir dir)
-    with exn ->
-      Error
+  with exn ->
+    Error
       (Printf.sprintf {js|Failed to create directory %s: %s|js} dir
          (Printexc.to_string exn))
 ;;
 
 let get_template_file_names dir =
   Fs_extra.readdirSync dir |> Array.to_list
-    |> List.filter_map (fun file_name ->
-        if Js.String.endsWith ".tmpl" file_name then
-          Some (Node.Path.join [| dir; file_name |])
-        else None)
+  |> List.filter_map (fun file_name ->
+         if Js.String.endsWith ".tmpl" file_name then
+           Some (Node.Path.join [| dir; file_name |])
+         else None)
 ;;
 
 let read_template ~dir file_name =

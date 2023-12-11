@@ -39,10 +39,3 @@ module Make (M : Config.S) : S with type t = M.t = struct
     Fs.write_template ~dir name compiled_contents
   ;;
 end
-
-module Dune_project_template = Make (struct
-  type t = Dune_project.t
-
-  let name = "dune-project.tmpl"
-  let to_json = Dune_project.to_json
-end)

@@ -7,14 +7,14 @@ module rec Context : sig
     (* Template name -> Template module *)
     templates : (module Template.S) String_map.t;
     (* Template key -> Template value*)
-    template_values : Hmap.t; (* plugins : (module Plugin.S) list; *)
-    plugins : string list;
+    template_values : Hmap.t;
+    plugins : (module Plugin.S) list;
   }
 
   val make :
     ?templates:(module Template.S) String_map.t ->
     ?template_values:Hmap.t ->
-    ?plugins:string list ->
+    ?plugins:(module Plugin.S) list ->
     Configuration.t ->
     t
 
@@ -28,7 +28,7 @@ end = struct
     templates : (module Template.S) String_map.t;
     (* Template key -> Template value*)
     template_values : Hmap.t; (* plugins : (module Plugin.S) list; *)
-    plugins : string list;
+    plugins : (module Plugin.S) list;
   }
 
   let make ?(templates = String_map.empty) ?(template_values = Hmap.empty)

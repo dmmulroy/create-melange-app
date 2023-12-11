@@ -5,8 +5,11 @@ open Scaffold_v2
 module String_map = Map.Make (String)
 
 let copy_base_dir (ctx : Context.t) =
-  Fs.copy_base_dir ?overwrite:ctx.configuration.overwrite ctx.configuration.name
-  |> Result.map (fun _ -> ctx)
+  let@ _ =
+    Fs.copy_base_dir ?overwrite:ctx.configuration.overwrite
+      ctx.configuration.name
+  in
+  Ok ctx
 ;;
 
 (* TODO: Think about a potential helper for mapping template values in the context *)
@@ -114,16 +117,40 @@ let fold_compilation_results (ctx : Context.t) (acc : (unit, string) result)
 ;;
 
 let compile_template (ctx : Context.t) =
+  let open Infix.Result in
   String_map.to_list ctx.templates
   |> List.fold_left (fold_compilation_results ctx) (Ok ())
-  |> Result.map (fun _ -> ctx)
+  >|= fun _ -> ctx
 ;;
 
-let bind_result = Fun.flip Result.bind
+let make_context (configuration : Configuration.t) =
+  let templates =
+    String_map.empty
+    |> String_map.add Package_json.Template.name
+         (module Package_json.Template : Template.S)
+    |> String_map.add Dune_project.Template.name
+         (module Dune_project.Template : Template.S)
+  in
+  let template_values =
+    Hmap.empty
+    |> Hmap.add Package_json.Template.key
+         (Package_json.empty |> Package_json.set_name configuration.name)
+    |> Hmap.add Dune_project.Template.key
+         (Dune_project.empty |> Dune_project.set_name configuration.name)
+  in
+  let plugins : (module Plugin.S) list =
+    [
+      (module Vite.Plugin.Command);
+      (module Vite.Plugin.Extension);
+      (module Webpack.Plugin.Command);
+      (module Webpack.Plugin.Extension);
+    ]
+  in
+  Context.{ configuration; templates; template_values; plugins }
+;;
 
 let run (config : Configuration.t) =
-  Context.make config |> copy_base_dir |> bind_result handle_bundler
-  |> bind_result compile_template
-  |> bind_result handle_git |> bind_result handle_npm
-  |> Result.map (fun _ -> ())
+  let open Infix.Result in
+  make_context config |> copy_base_dir >>= handle_bundler >>= compile_template
+  >>= handle_git >>= handle_npm >|= ignore
 ;;
