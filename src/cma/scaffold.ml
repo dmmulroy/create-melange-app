@@ -14,11 +14,6 @@ let copy_base_dir (ctx : Context.t) =
 
 (* TODO: Think about a potential helper for mapping template values in the context *)
 
-let handle_npm (ctx : Context.t) =
-  if not ctx.configuration.initialize_npm then Ok ctx
-  else Npm.run ctx |> Result.ok |> Result.map (fun _ -> ctx)
-;;
-
 let fold_compilation_results (ctx : Context.t) (acc : (unit, string) result)
     (_, (module Template : Template.S)) =
   if Result.is_error acc then acc
@@ -32,12 +27,28 @@ let fold_compilation_results (ctx : Context.t) (acc : (unit, string) result)
     | Some value -> Template.compile ~dir value
 ;;
 
-let run_plugins (ctx : Context.t) =
+let run_pre_compile_plugins (ctx : Context.t) =
   List.fold_left
     (fun promise (module Plugin : Plugin.S) ->
       Js.Promise.then_
         (fun acc ->
-          if Result.is_error acc then Js.Promise.resolve acc else Plugin.run ctx)
+          if Result.is_error acc || Plugin.stage = `Post_compile then
+            Js.Promise.resolve acc
+          else Plugin.run ctx)
+        promise)
+    (Js.Promise.resolve @@ Ok ctx)
+    ctx.plugins
+;;
+
+let run_post_compile_plugins (ctx : Context.t) =
+  List.fold_left
+    (fun promise (module Plugin : Plugin.S) ->
+      Js.Promise.then_
+        (fun acc ->
+          match acc with
+          | Error _ -> Js.Promise.resolve acc
+          | Ok _ when Plugin.stage = `Pre_compile -> Js.Promise.resolve acc
+          | Ok ctx' -> Plugin.run ctx')
         promise)
     (Js.Promise.resolve @@ Ok ctx)
     ctx.plugins
@@ -47,7 +58,8 @@ let compile_template (ctx : Context.t) =
   let open Infix.Result in
   String_map.to_list ctx.templates
   |> List.fold_left (fold_compilation_results ctx) (Ok ())
-  >|= fun _ -> ctx
+  >|= (fun _ -> ctx)
+  |> Js.Promise.resolve
 ;;
 
 let make_context (configuration : Configuration.t) =
@@ -72,14 +84,40 @@ let make_context (configuration : Configuration.t) =
     | Vite -> [ (module Vite.Plugin.Command); (module Vite.Plugin.Extension) ]
     | None -> []
   in
+  let plugins =
+    if configuration.initialize_git then
+      (module Git.Plugin.Command : Plugin.S) :: plugins
+    else plugins
+  in
+  let plugins =
+    if configuration.initialize_npm then
+      (module Npm.Plugin.Command : Plugin.S) :: plugins
+    else plugins
+  in
   Context.{ configuration; templates; template_values; plugins }
 ;;
 
 let run (config : Configuration.t) =
-  let ctx = make_context config in
-  let| ctx = copy_base_dir ctx in
-  let| ctx = run_plugins ctx in
-  let@| ctx = compile_template ctx in
-  let@ ctx = handle_npm ctx in
-  Ok ctx
+  make_context config |> copy_base_dir
+  |> Js.Promise.then_ (fun ctx_result ->
+         match ctx_result with
+         | Error err -> Js.Promise.resolve @@ Error err
+         | Ok ctx -> run_pre_compile_plugins ctx)
+  |> Js.Promise.then_ (fun ctx_result ->
+         match ctx_result with
+         | Error _ -> Js.Promise.resolve @@ Error "pre compile failed"
+         | Ok ctx -> compile_template ctx)
+  |> Js.Promise.then_ (fun ctx_result ->
+         match ctx_result with
+         | Error err -> Js.Promise.resolve @@ Error err
+         | Ok ctx -> run_post_compile_plugins ctx)
+  |> Js.Promise.catch (fun err ->
+         Js.log "Error: ";
+         Js.log err;
+         Js.Promise.resolve @@ Error "In Catch :(")
 ;;
+
+(* |> Js.Promise.then_ (fun ctx_result ->
+       match ctx_result with
+       | Error err -> Js.Promise.resolve @@ Error err
+       | Ok _ -> Js.Promise.resolve @@ Ok ()) *)

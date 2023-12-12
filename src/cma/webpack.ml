@@ -42,6 +42,8 @@ module Plugin = struct
     include Scaffold_v2.Plugin.Make_extension (struct
       include Package_json.Template
 
+      let stage = `Pre_compile
+
       let extend_template pkg =
         (* Add dependencies to package.json *)
         let pkg =
@@ -59,6 +61,7 @@ module Plugin = struct
   module Command = struct
     include Scaffold_v2.Plugin.Make_command (struct
       let name = "webpack"
+      let stage = `Pre_compile
 
       let exec (ctx : Scaffold_v2.Context.t) =
         List.fold_left

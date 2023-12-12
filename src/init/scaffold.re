@@ -1,5 +1,4 @@
 open Ink;
-open Common.Syntax.Let;
 
 module Overwrite = {
   open Ui;
@@ -51,21 +50,23 @@ module Compile_templates = {
       React.useState(() => None);
 
     React.useEffect0(() => {
-      let promise = {
-        let* result = Cma.Scaffold.run(configuration);
-
-        set_compilation_result(curr =>
-          if (Option.is_none(curr)) {
-            Some(result);
-          } else {
-            curr;
-          }
-        );
-
-        Js.Promise.resolve();
-      };
-
-      promise |> ignore;
+      Cma.Scaffold.run(configuration)
+      |> Js.Promise.then_(result => {
+           set_compilation_result(curr =>
+             if (Option.is_none(curr)) {
+               Some(result);
+             } else {
+               curr;
+             }
+           )
+           |> Js.Promise.resolve
+         })
+      |> Js.Promise.catch(_ => {
+           Js.log("Something went wrong");
+           set_compilation_result(_ => Some(Error("Something went wrong")));
+           Js.Promise.resolve();
+         })
+      |> ignore;
 
       None;
     });
@@ -106,7 +107,6 @@ module Copy_template = {
         ();
       };
 
-      let _ = Js.Global.setTimeout(() => {exit(1)}, 500);
       None;
     });
 

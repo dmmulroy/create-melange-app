@@ -56,8 +56,10 @@ end
 
 and Plugin : sig
   type plugin
+  type stage = [ `Pre_compile | `Post_compile ]
 
   module type S = sig
+    val stage : stage
     val key : plugin Hmap.key
     val run : Context.t -> (Context.t, string) result Js.Promise.t
   end
@@ -67,6 +69,7 @@ and Plugin : sig
       module type S = sig
         include Template.S
 
+        val stage : stage
         val extend_template : t -> (t, string) result Js.Promise.t
       end
     end
@@ -74,6 +77,7 @@ and Plugin : sig
     module Command : sig
       module type S = sig
         val name : string
+        val stage : stage
         val exec : Context.t -> (Context.t, string) result Js.Promise.t
       end
     end
@@ -83,8 +87,10 @@ and Plugin : sig
   module Make_command : functor (_ : Config.Command.S) -> S
 end = struct
   type plugin
+  type stage = [ `Pre_compile | `Post_compile ]
 
   module type S = sig
+    val stage : stage
     val key : plugin Hmap.key
     val run : Context.t -> (Context.t, string) result Js.Promise.t
   end
@@ -94,6 +100,7 @@ end = struct
       module type S = sig
         include Template.S
 
+        val stage : stage
         val extend_template : t -> (t, string) result Js.Promise.t
       end
     end
@@ -101,6 +108,7 @@ end = struct
     module Command = struct
       module type S = sig
         val name : string
+        val stage : stage
         val exec : Context.t -> (Context.t, string) result Js.Promise.t
       end
     end
@@ -108,6 +116,7 @@ end = struct
 
   module Make_extension (E : Config.Extension.S) : S = struct
     let key = Hmap.Key.create ()
+    let stage = E.stage
 
     let run ctx =
       Context.get_template_value E.key ctx
@@ -131,6 +140,7 @@ end = struct
 
   module Make_command (C : Config.Command.S) : S = struct
     let key = Hmap.Key.create ()
+    let stage = C.stage
     let run = C.exec
   end
 end

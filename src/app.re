@@ -24,5 +24,4 @@ let main = () => {
   // print_endline(Cma.Scaffold.Package_json_template.name);
   ();
 };
-
 let () = main();

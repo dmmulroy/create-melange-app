@@ -1,5 +1,0 @@
-(library
- (name liquid)
- (modes melange)
- (preprocess
-  (pps melange.ppx)))

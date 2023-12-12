@@ -1,7 +1,7 @@
 external emptyDirSync : string -> unit = "emptyDirSync"
 [@@mel.module "fs-extra"]
 
-external emptyDir : string -> unit Js.Promise.t = "emptyDirSync"
+external emptyDir : string -> unit Js.Promise.t = "emptyDir"
 [@@mel.module "fs-extra"]
 
 external copySync : string -> string -> unit = "copySync"
