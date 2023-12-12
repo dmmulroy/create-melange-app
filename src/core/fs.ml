@@ -1,12 +1,5 @@
-(* DEPRECATED: TODO Delete/*)
-let project_dir_exists = Fs_extra.existsSync
-
-(* DEPRECATED: TODO Delete/*)
-let project_dir_is_empty dir = Fs_extra.readdirSync dir |> Array.length = 0
 let exists = Fs_extra.existsSync
 let dir_is_empty dir = Fs_extra.readdirSync dir |> Array.length = 0
-
-(* DEPRECATED: TODO Delete/*)
 
 let base_template_dir =
   Node.Path.join [| [%mel.raw "__dirname"]; ".."; "templates"; "base" |]
@@ -53,7 +46,6 @@ let copy_file ~dest file_path =
                  dest))
 ;;
 
-(* DEPRECATED - TODO: Delete *)
 let create_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
   try
     match overwrite with

@@ -1,15 +1,3 @@
-module Bundler = struct
-  type t = Vite | Webpack | None
-
-  let to_string = function
-    | Vite -> "vite"
-    | Webpack -> "webpack"
-    | None -> "none"
-  ;;
-
-  let of_string = function "vite" -> Vite | "webpack" -> Webpack | _ -> None
-end
-
 type t = {
   name : string;
   bundler : Bundler.t;

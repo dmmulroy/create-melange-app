@@ -31,10 +31,8 @@ module Name = {
 module Bundler = {
   let to_select_option = bundler =>
     Ui.Select.{
-      value: Cma.Configuration.Bundler.to_string(bundler),
-      label:
-        Cma.Configuration.Bundler.to_string(bundler)
-        |> String.capitalize_ascii,
+      value: Core.Bundler.to_string(bundler),
+      label: Core.Bundler.to_string(bundler) |> String.capitalize_ascii,
     };
 
   let bundler_select_options: array(Ui.Select.select_option) = [|
@@ -46,7 +44,7 @@ module Bundler = {
   [@react.component]
   let make = (~onSubmit, ~isDisabled) => {
     let onChange = (bundler_str: string) => {
-      onSubmit(Cma.Configuration.Bundler.of_string(bundler_str));
+      onSubmit(Core.Bundler.of_string(bundler_str));
     };
 
     <Box flexDirection=`column>
@@ -141,7 +139,7 @@ let make = (~name as initial_name, ~onComplete) => {
     );
   let (name, set_name) = React.useState(() => initial_name);
   let (bundler, set_bundler) =
-    React.useState(() => (None: option(Cma.Configuration.Bundler.t)));
+    React.useState(() => (None: option(Core.Bundler.t)));
   let (initialize_git, set_initialize_git) =
     React.useState(() => (None: option(bool)));
   let (_initialize_npm, set_initialize_npm) =
@@ -155,7 +153,7 @@ let make = (~name as initial_name, ~onComplete) => {
 
   let onSubmitBundler =
     React.useCallback1(
-      (new_bundler: Cma.Configuration.Bundler.t) =>
+      (new_bundler: Core.Bundler.t) =>
         if (active_step == Bundler) {
           set_bundler(_ => Some(new_bundler));
 
@@ -182,7 +180,7 @@ let make = (~name as initial_name, ~onComplete) => {
         | (Some(name), Some(bundler), Some(initialize_git)) =>
           set_active_step(_ => Complete);
           onComplete(
-            Cma.Configuration.make(
+            Core.Configuration.make(
               ~name,
               ~bundler,
               ~initialize_git,

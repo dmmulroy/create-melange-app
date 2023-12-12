@@ -1,4 +1,5 @@
 open Package_json
+open Context_plugin
 module String_map = Map.Make (String)
 
 let dev_dependencies =
@@ -33,7 +34,7 @@ let files =
 
 module Plugin = struct
   module Extension = struct
-    include Scaffold_v2.Plugin.Make_extension (struct
+    include Plugin.Make_extension (struct
       include Package_json.Template
 
       let stage = `Pre_compile
@@ -53,11 +54,11 @@ module Plugin = struct
   end
 
   module Command = struct
-    include Scaffold_v2.Plugin.Make_command (struct
+    include Plugin.Make_command (struct
       let name = "vite"
       let stage = `Pre_compile
 
-      let exec (ctx : Scaffold_v2.Context.t) =
+      let exec (ctx : Context.t) =
         List.fold_left
           (fun promise file_path ->
             Js.Promise.then_

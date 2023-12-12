@@ -7,7 +7,7 @@
   reason-react
   melange.js
   melange.node
-  cma
+  core
   ink
   commander
   env_check

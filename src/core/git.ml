@@ -1,4 +1,6 @@
-let run (ctx : Scaffold_v2.Context.t) =
+open Context_plugin
+
+let run (ctx : Context.t) =
   let dir = ctx.configuration.name in
   let options = Node.Child_process.option ~cwd:dir ~encoding:"utf8" () in
   Nodejs.Child_process.async_exec "git init && git add -A" options
@@ -31,11 +33,11 @@ let files =
 
 module Plugin = struct
   module Command = struct
-    include Scaffold_v2.Plugin.Make_command (struct
+    include Plugin.Make_command (struct
       let name = "git"
       let stage = `Post_compile
 
-      let exec (ctx : Scaffold_v2.Context.t) =
+      let exec (ctx : Context.t) =
         List.fold_left
           (fun promise file_path ->
             Js.Promise.then_

@@ -23,7 +23,7 @@ module Overwrite = {
   [@react.component]
   let make =
       (
-        ~configuration: Cma.Configuration.t,
+        ~configuration: Core.Configuration.t,
         ~onSubmit as onChange,
         ~isDisabled,
       ) => {
@@ -45,12 +45,12 @@ module Overwrite = {
 module Compile_templates = {
   open Ui;
   [@react.component]
-  let make = (~configuration: Cma.Configuration.t) => {
+  let make = (~configuration: Core.Configuration.t) => {
     let (compilation_result, set_compilation_result) =
       React.useState(() => None);
 
     React.useEffect0(() => {
-      Cma.Scaffold.run(configuration)
+      Core.Engine.run(configuration)
       |> Js.Promise.then_(result => {
            set_compilation_result(curr =>
              if (Option.is_none(curr)) {
@@ -91,14 +91,13 @@ module Copy_template = {
   let make =
       (
         ~overwrite: option([> | `Clear | `Overwrite])=?,
-        ~configuration: Cma.Configuration.t,
+        ~configuration: Core.Configuration.t,
       ) => {
     let (copy_complete, set_copy_complete) = React.useState(() => false);
     let (error, set_error) = React.useState(() => None);
 
     React.useEffect0(() => {
-      // todo use Cma.Fs
-      let result = Fs.create_dir(~overwrite?, configuration.name);
+      let result = Core.Fs.create_dir(~overwrite?, configuration.name);
 
       switch (result) {
       | Ok(_) => set_copy_complete(_ => true)
@@ -123,11 +122,11 @@ module Copy_template = {
 };
 
 [@react.component]
-let make = (~configuration as initial_configuration: Cma.Configuration.t) => {
+let make = (~configuration as initial_configuration: Core.Configuration.t) => {
   let (configuration, set_configuration) =
     React.useState(() => initial_configuration);
   let (project_dir_exists, _set_project_dir_exists) =
-    React.useState(() => Fs.project_dir_exists(configuration.name));
+    React.useState(() => Core.Fs.exists(configuration.name));
 
   let onSubmit =
     React.useCallback0((value: string) => {

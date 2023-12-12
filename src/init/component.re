@@ -13,7 +13,7 @@ let make = (~name as initial_name) => {
     React.useState(() => None);
 
   let (configuration, set_configuration) =
-    React.useState(() => (None: option(Cma.Configuration.t)));
+    React.useState(() => (None: option(Core.Configuration.t)));
 
   let on_env_check = (result: env_check_result) => {
     switch (result) {

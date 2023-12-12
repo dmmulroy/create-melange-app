@@ -1,7 +1,7 @@
 open Common
 open Syntax
 open! Let
-open Scaffold_v2
+open Context_plugin
 module String_map = Map.Make (String)
 
 let copy_base_dir (ctx : Context.t) =

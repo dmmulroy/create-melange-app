@@ -1,5 +1,5 @@
 (library
- (name cma)
+ (name core)
  (modes melange)
  (libraries melange.js melange.node fs_extra handlebars)
  (preprocess
