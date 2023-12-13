@@ -121,3 +121,57 @@ let run (config : Configuration.t) =
          | Error err -> Js.Promise.resolve @@ Error err
          | Ok ctx -> run_post_compile_plugins ctx)
 ;;
+
+type dependency_check_result = {
+  name : string;
+  required : bool;
+  status : [ `Pass | `Failed of string ];
+}
+
+let dependencies =
+  [
+    (module Opam.Dependency : Dependency.S);
+    (module Node_js.Dependency : Dependency.S);
+    (module Git.Dependency : Dependency.S);
+  ]
+;;
+
+let fold_dependency_to_result (acc : dependency_check_result list Js.Promise.t)
+    (module Dependency : Dependency.S) =
+  Dependency.check ()
+  |> Js.Promise.then_ (fun check_result ->
+         match check_result with
+         | Error err ->
+             Js.Promise.resolve
+               {
+                 name = Dependency.name;
+                 status = `Failed err;
+                 required = Dependency.required;
+               }
+         | Ok is_installed ->
+             if is_installed then
+               Js.Promise.resolve
+                 {
+                   name = Dependency.name;
+                   status = `Pass;
+                   required = Dependency.required;
+                 }
+             else
+               Js.Promise.resolve
+                 {
+                   name = Dependency.name;
+                   required = Dependency.required;
+                   status =
+                     `Failed
+                       (Printf.sprintf "Dependency %s is not installed"
+                          Dependency.name);
+                 })
+  |> Js.Promise.then_ (fun result ->
+         Js.Promise.then_
+           (fun results -> Js.Promise.resolve (result :: results))
+           acc)
+;;
+
+let check_dependencies () =
+  List.fold_left fold_dependency_to_result (Js.Promise.resolve []) dependencies
+;;
