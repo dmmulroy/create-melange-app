@@ -1,20 +1,30 @@
 open Context_plugin
 
-let run (ctx : Context.t) =
-  let dir = ctx.configuration.name in
-  let options = Node.Child_process.option ~cwd:dir ~encoding:"utf8" () in
-  Nodejs.Child_process.async_exec "npm i" options
-  |> Js.Promise.then_ (fun _value -> Js.Promise.resolve @@ Ok ctx)
-  |> Js.Promise.catch (fun _err ->
-         Js.Promise.resolve @@ Error "Failed to initialize npm")
-;;
+module Install : Process.S with type input = string and type output = string =
+struct
+  type input = string
+  type output = string
+
+  let name = "npm install"
+
+  let exec (project_dir_name : input) =
+    let options =
+      Node.Child_process.option ~cwd:project_dir_name ~encoding:"utf8" ()
+    in
+    Nodejs.Child_process.async_exec "npm i" options
+    |> Js.Promise.then_ (fun value -> Js.Promise.resolve @@ Ok value)
+    |> Js.Promise.catch (fun _err ->
+           Js.Promise.resolve @@ Error "Failed to initialize npm")
+  ;;
+end
 
 module Plugin = struct
-  module Command = struct
-    include Plugin.Make_command (struct
-      let name = "npm"
+  module Install = struct
+    include Plugin.Make_process (struct
+      include Install
+
       let stage = `Post_compile
-      let exec = run
+      let input_of_context (ctx : Context.t) = Ok ctx.configuration.name
     end)
   end
 end

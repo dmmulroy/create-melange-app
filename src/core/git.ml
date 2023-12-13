@@ -1,24 +1,31 @@
 open Context_plugin
 
-let run (ctx : Context.t) =
-  let dir = ctx.configuration.name in
-  let options = Node.Child_process.option ~cwd:dir ~encoding:"utf8" () in
-  Nodejs.Child_process.async_exec "git init && git add -A" options
-  |> Js.Promise.then_ (fun _value -> Js.Promise.resolve @@ Ok ctx)
-  |> Js.Promise.catch (fun _err ->
-         Js.Promise.resolve @@ Error "Failed to initialize git")
-;;
+module Init_and_stage :
+  Process.S with type input = string and type output = string = struct
+  type input = string
+  type output = string
 
-(* try
-     let _ = Node.Child_process.execSync "git init && git add -A" options in
-     Js.Promise.resolve @@ Ok ctx
-   with exn ->
-     Js.Promise.resolve
-     @@ Error
-          (Printf.sprintf "Failed to initialize git: %s" (Printexc.to_string exn)) *)
+  let name = "git init && git add -A"
 
-let files =
-  [
+  let exec (project_dir_name : input) =
+    let options =
+      Node.Child_process.option ~cwd:project_dir_name ~encoding:"utf8" ()
+    in
+    Nodejs.Child_process.async_exec name options
+    |> Js.Promise.then_ (fun value -> Js.Promise.resolve @@ Ok value)
+    |> Js.Promise.catch (fun _err ->
+           Js.Promise.resolve @@ Error "Failed to initialize npm")
+  ;;
+end
+
+module Copy_gitignore :
+  Process.S with type input = string and type output = unit = struct
+  type input = string
+  type output = unit
+
+  let name = "copy git extension files"
+
+  let gitignore_path =
     Node.Path.join
       [|
         [%mel.raw "__dirname"];
@@ -27,40 +34,31 @@ let files =
         "extensions";
         "git";
         ".gitignore";
-      |];
-  ]
-;;
+      |]
+  ;;
+
+  let exec (project_dir_name : input) =
+    let dest = Node.Path.join [| project_dir_name; "/"; ".gitignore" |] in
+    Fs.copy_file ~dest gitignore_path
+  ;;
+end
 
 module Plugin = struct
-  module Command = struct
-    include Plugin.Make_command (struct
-      let name = "git"
-      let stage = `Post_compile
+  module Init_and_stage = struct
+    include Plugin.Make_process (struct
+      include Init_and_stage
 
-      let exec (ctx : Context.t) =
-        List.fold_left
-          (fun promise file_path ->
-            Js.Promise.then_
-              (fun result ->
-                if Result.is_error result then Js.Promise.resolve result
-                else
-                  let file_name = Node.Path.basename file_path in
-                  let dest =
-                    Node.Path.join [| ctx.configuration.name; "/"; file_name |]
-                  in
-                  Fs.copy_file ~dest file_path)
-              promise)
-          (Js.Promise.resolve @@ Ok ())
-          files
-        |> Js.Promise.then_ (fun result ->
-               match result with
-               | Ok _ -> Js.Promise.resolve @@ Ok ctx
-               | Error err -> Js.Promise.resolve @@ Error err)
-        |> Js.Promise.then_ (fun result ->
-               match result with
-               | Ok _ -> run ctx
-               | Error err -> Js.Promise.resolve @@ Error err)
-      ;;
+      let stage = `Post_compile
+      let input_of_context (ctx : Context.t) = Ok ctx.configuration.name
+    end)
+  end
+
+  module Copy_gitignore = struct
+    include Plugin.Make_process (struct
+      include Copy_gitignore
+
+      let stage = `Post_compile
+      let input_of_context (ctx : Context.t) = Ok ctx.configuration.name
     end)
   end
 end

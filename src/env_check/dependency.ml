@@ -12,10 +12,10 @@ end
 module type S = sig
   type t = { name : string; version : string }
 
+  val check : unit -> (t, string * string) result
   val make : string -> t
   val name : string
   val version : t -> string
-  val check : unit -> (t, string * string) result
 end
 
 module Make (M : Config.S) : S = struct
@@ -86,6 +86,10 @@ module Node : S = Make (struct
   let command = "node --version"
   let parse_version version = Ok (String.trim version)
 end)
+
+module Git = struct
+  let name = "git"
+end
 
 type t = Node of Node.t | Opam of Opam.t
 

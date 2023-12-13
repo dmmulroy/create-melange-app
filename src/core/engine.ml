@@ -1,6 +1,6 @@
 open Common
 open Syntax
-open! Let
+open Let
 open Context_plugin
 module String_map = Map.Make (String)
 
@@ -11,8 +11,6 @@ let copy_base_dir (ctx : Context.t) =
   in
   Js.Promise.resolve @@ Ok ctx
 ;;
-
-(* TODO: Think about a potential helper for mapping template values in the context *)
 
 let fold_compilation_results (ctx : Context.t) (acc : (unit, string) result)
     (_, (module Template : Template.S)) =
@@ -80,18 +78,29 @@ let make_context (configuration : Configuration.t) =
   let plugins : (module Plugin.S) list =
     match configuration.bundler with
     | Webpack ->
-        [ (module Webpack.Plugin.Command); (module Webpack.Plugin.Extension) ]
-    | Vite -> [ (module Vite.Plugin.Command); (module Vite.Plugin.Extension) ]
+        [
+          (module Webpack.Plugin.Copy_webpack_config_js);
+          (module Webpack.Plugin.Extend_package_json);
+        ]
+    | Vite ->
+        [
+          (module Vite.Plugin.Copy_vite_config_js);
+          (module Vite.Plugin.Extend_package_json);
+        ]
     | None -> []
   in
   let plugins =
     if configuration.initialize_git then
-      (module Git.Plugin.Command : Plugin.S) :: plugins
+      [
+        (module Git.Plugin.Copy_gitignore : Plugin.S);
+        (module Git.Plugin.Init_and_stage : Plugin.S);
+      ]
+      @ plugins
     else plugins
   in
   let plugins =
     if configuration.initialize_npm then
-      (module Npm.Plugin.Command : Plugin.S) :: plugins
+      (module Npm.Plugin.Install : Plugin.S) :: plugins
     else plugins
   in
   Context.{ configuration; templates; template_values; plugins }
@@ -111,13 +120,4 @@ let run (config : Configuration.t) =
          match ctx_result with
          | Error err -> Js.Promise.resolve @@ Error err
          | Ok ctx -> run_post_compile_plugins ctx)
-  |> Js.Promise.catch (fun err ->
-         Js.log "Error: ";
-         Js.log err;
-         Js.Promise.resolve @@ Error "In Catch :(")
 ;;
-
-(* |> Js.Promise.then_ (fun ctx_result ->
-       match ctx_result with
-       | Error err -> Js.Promise.resolve @@ Error err
-       | Ok _ -> Js.Promise.resolve @@ Ok ()) *)

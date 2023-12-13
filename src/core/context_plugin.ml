@@ -81,10 +81,20 @@ and Plugin : sig
         val exec : Context.t -> (Context.t, string) result Js.Promise.t
       end
     end
+
+    module Process : sig
+      module type S = sig
+        include Process.S
+
+        val stage : stage
+        val input_of_context : Context.t -> (input, string) result
+      end
+    end
   end
 
   module Make_extension : functor (_ : Config.Extension.S) -> S
   module Make_command : functor (_ : Config.Command.S) -> S
+  module Make_process : functor (_ : Config.Process.S) -> S
 end = struct
   type plugin
   type stage = [ `Pre_compile | `Post_compile ]
@@ -110,6 +120,15 @@ end = struct
         val name : string
         val stage : stage
         val exec : Context.t -> (Context.t, string) result Js.Promise.t
+      end
+    end
+
+    module Process = struct
+      module type S = sig
+        include Process.S
+
+        val stage : stage
+        val input_of_context : Context.t -> (input, string) result
       end
     end
   end
@@ -142,5 +161,22 @@ end = struct
     let key = Hmap.Key.create ()
     let stage = C.stage
     let run = C.exec
+  end
+
+  module Make_process (C : Config.Process.S) : S = struct
+    let key = Hmap.Key.create ()
+    let stage = C.stage
+
+    let run (ctx : Context.t) : (Context.t, string) result Js.Promise.t =
+      let input_result = C.input_of_context ctx in
+      match input_result with
+      | Error (error : string) -> Js.Promise.resolve (Error error)
+      | Ok input ->
+          C.exec input
+          |> Js.Promise.then_ (fun output_result ->
+                 match output_result with
+                 | Error (error : string) -> Js.Promise.resolve (Error error)
+                 | Ok _ -> Js.Promise.resolve @@ Ok ctx)
+    ;;
   end
 end

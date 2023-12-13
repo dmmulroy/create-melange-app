@@ -24,8 +24,14 @@ let scripts =
   ]
 ;;
 
-let files =
-  [
+module Copy_webpack_config_js :
+  Process.S with type input = string and type output = unit = struct
+  type input = string
+  type output = unit
+
+  let name = "copy webpack.config.js"
+
+  let webpack_config_js_path =
     Node.Path.join
       [|
         [%mel.raw "__dirname"];
@@ -34,12 +40,19 @@ let files =
         "extensions";
         "webpack";
         "webpack.config.js";
-      |];
-  ]
-;;
+      |]
+  ;;
+
+  let exec (project_dir_name : input) =
+    let dest =
+      Node.Path.join [| project_dir_name; "/"; "webpack.config.js" |]
+    in
+    Fs.copy_file ~dest webpack_config_js_path
+  ;;
+end
 
 module Plugin = struct
-  module Extension = struct
+  module Extend_package_json = struct
     include Plugin.Make_extension (struct
       include Package_json.Template
 
@@ -59,31 +72,12 @@ module Plugin = struct
     end)
   end
 
-  module Command = struct
-    include Plugin.Make_command (struct
-      let name = "webpack"
-      let stage = `Pre_compile
+  module Copy_webpack_config_js = struct
+    include Plugin.Make_process (struct
+      include Copy_webpack_config_js
 
-      let exec (ctx : Context.t) =
-        List.fold_left
-          (fun promise file_path ->
-            Js.Promise.then_
-              (fun result ->
-                if Result.is_error result then Js.Promise.resolve result
-                else
-                  let file_name = Node.Path.basename file_path in
-                  let dest =
-                    Node.Path.join [| ctx.configuration.name; "/"; file_name |]
-                  in
-                  Fs.copy_file ~dest file_path)
-              promise)
-          (Js.Promise.resolve @@ Ok ())
-          files
-        |> Js.Promise.then_ (fun result ->
-               match result with
-               | Ok _ -> Js.Promise.resolve @@ Ok ctx
-               | Error err -> Js.Promise.resolve @@ Error err)
-      ;;
+      let stage = `Pre_compile
+      let input_of_context (ctx : Context.t) = Ok ctx.configuration.name
     end)
   end
 end
