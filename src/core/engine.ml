@@ -122,12 +122,6 @@ let run (config : Configuration.t) =
          | Ok ctx -> run_post_compile_plugins ctx)
 ;;
 
-type dependency_check_result = {
-  name : string;
-  required : bool;
-  status : [ `Pass | `Failed of string ];
-}
-
 let dependencies =
   [
     (module Opam.Dependency : Dependency.S);
@@ -136,36 +130,28 @@ let dependencies =
   ]
 ;;
 
-let fold_dependency_to_result (acc : dependency_check_result list Js.Promise.t)
-    (module Dependency : Dependency.S) =
-  Dependency.check ()
+let fold_dependency_to_result (acc : Dependency.check_result list Js.Promise.t)
+    (module Dep : Dependency.S) =
+  Dep.check ()
   |> Js.Promise.then_ (fun check_result ->
          match check_result with
          | Error err ->
              Js.Promise.resolve
-               {
-                 name = Dependency.name;
-                 status = `Failed err;
-                 required = Dependency.required;
-               }
+               Dependency.{ dependency = (module Dep); status = `Failed err }
          | Ok is_installed ->
              if is_installed then
                Js.Promise.resolve
-                 {
-                   name = Dependency.name;
-                   status = `Pass;
-                   required = Dependency.required;
-                 }
+                 Dependency.{ dependency = (module Dep); status = `Pass }
              else
                Js.Promise.resolve
-                 {
-                   name = Dependency.name;
-                   required = Dependency.required;
-                   status =
-                     `Failed
-                       (Printf.sprintf "Dependency %s is not installed"
-                          Dependency.name);
-                 })
+                 Dependency.
+                   {
+                     dependency = (module Dep);
+                     status =
+                       `Failed
+                         (Printf.sprintf "Dependency %s is not installed"
+                            Dep.name);
+                   })
   |> Js.Promise.then_ (fun result ->
          Js.Promise.then_
            (fun results -> Js.Promise.resolve (result :: results))

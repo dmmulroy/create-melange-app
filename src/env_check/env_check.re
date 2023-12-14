@@ -1,6 +1,4 @@
-module Aciton = Action;
 module Component = Component;
-module Dependency = Dependency;
 
 let command = {
   Commander.(

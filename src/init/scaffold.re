@@ -45,7 +45,7 @@ module Overwrite = {
 module Compile_templates = {
   open Ui;
   [@react.component]
-  let make = (~configuration: Core.Configuration.t) => {
+  let make = (~configuration: Core.Configuration.t, ~onComplete) => {
     let (compilation_result, set_compilation_result) =
       React.useState(() => None);
 
@@ -71,6 +71,17 @@ module Compile_templates = {
       None;
     });
 
+    React.useEffect1(
+      () => {
+        switch (compilation_result) {
+        | Some(_) => onComplete()
+        | _ => ()
+        };
+        None;
+      },
+      [|compilation_result|],
+    );
+
     <Box>
       {switch (compilation_result) {
        | None => <Spinner label="Compiling templates" />
@@ -92,6 +103,7 @@ module Copy_template = {
       (
         ~overwrite: option([> | `Clear | `Overwrite])=?,
         ~configuration: Core.Configuration.t,
+        ~onComplete,
       ) => {
     let (copy_complete, set_copy_complete) = React.useState(() => false);
     let (error, set_error) = React.useState(() => None);
@@ -114,7 +126,7 @@ module Copy_template = {
        | Some(err) => <Text> {React.string(err)} </Text>
        | None =>
          copy_complete
-           ? <Compile_templates configuration />
+           ? <Compile_templates configuration onComplete />
            : <Spinner label="Copying template files" />
        }}
     </Box>;
@@ -122,7 +134,11 @@ module Copy_template = {
 };
 
 [@react.component]
-let make = (~configuration as initial_configuration: Core.Configuration.t) => {
+let make =
+    (
+      ~configuration as initial_configuration: Core.Configuration.t,
+      ~onComplete,
+    ) => {
   let (configuration, set_configuration) =
     React.useState(() => initial_configuration);
   let (project_dir_exists, _set_project_dir_exists) =
@@ -146,6 +162,7 @@ let make = (~configuration as initial_configuration: Core.Configuration.t) => {
       set_configuration(prev_config => {...prev_config, overwrite});
     });
 
+  // TODO: Clean this up, move Compile out of Copy_template
   <Box flexDirection=`column gap=1>
     {switch (project_dir_exists, configuration.overwrite) {
      | (true, None) => <Overwrite configuration onSubmit isDisabled=false />
@@ -153,9 +170,13 @@ let make = (~configuration as initial_configuration: Core.Configuration.t) => {
      | (true, Some(`Clear)) =>
        <>
          <Overwrite configuration onSubmit isDisabled=true />
-         <Copy_template configuration overwrite={configuration.overwrite} />
+         <Copy_template
+           configuration
+           overwrite={configuration.overwrite}
+           onComplete
+         />
        </>
-     | _ => <Copy_template configuration />
+     | _ => <Copy_template configuration onComplete />
      }}
   </Box>;
 };

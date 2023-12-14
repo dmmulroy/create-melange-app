@@ -5,6 +5,11 @@ module type S = sig
   val required : bool
 end
 
+type check_result = {
+  dependency : (module S);
+  status : [ `Pass | `Failed of string ];
+}
+
 module Config = struct
   module type S = sig
     include Process.S

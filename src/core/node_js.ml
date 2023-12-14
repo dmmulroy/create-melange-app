@@ -17,11 +17,11 @@ end
 module Dependency = Dependency.Make (struct
   include Version
 
-  let name = "node"
+  let name = "Node.js"
 
   let help =
     {|
-  Node is required to run create-melange-app.
+  Node.js is required to run create-melange-app.
 
   Here's how to install it:
 
@@ -29,9 +29,13 @@ module Dependency = Dependency.Make (struct
 
     On Linux: Use your distribution's package manager. For example, on Ubuntu, run `sudo apt-get install nodejs`.
 
-    On Windows: Download the official Windows Installer from the Node.js website. Alternatively, you can use a package manager like Chocolatey and run `choco install nodejs`.
+    On Windows: Download the official Windows Installer from the Node.js website. 
 
-    For detailed installation instructions and downloads, visit the official Node.js website: https://nodejs.org/en/download/|}
+    Alternatively, you can use a package manager like Chocolatey and run `choco install nodejs`.
+
+    For detailed installation instructions and downloads, visit the official Node.js website: 
+
+    https://nodejs.org/en/download/|}
   ;;
 
   let required = true

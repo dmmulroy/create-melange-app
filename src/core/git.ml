@@ -82,11 +82,12 @@ end
 module Dependency = Dependency.Make (struct
   include Version
 
-  let name = "git"
+  let name = "Git"
 
   let help =
     {|
   Git is a version control system commonly used in software development and is not required to run create-melange-app. 
+
   However, without Git, we won't be able to initialize a Git repository for you.
 
   If you wish to use Git, here's how to install it:
@@ -95,14 +96,14 @@ module Dependency = Dependency.Make (struct
 
     On Linux: Use your distribution's package manager. For example, on Ubuntu, run `sudo apt-get install git`.
 
-    On Windows: Download and install Git for Windows from https://git-scm.com/download/win. Alternatively, if using WSL (Windows Subsystem for Linux), follow the Linux installation instructions.
+    On Windows: Download and install Git for Windows from https://git-scm.com/download/win. 
 
-    After installing, you can check if Git is properly installed by running `git --version` in your terminal.
+    Alternatively, if using WSL (Windows Subsystem for Linux), follow the Linux installation instructions.
 
     For more information on using Git, visit https://git-scm.com/doc
   |}
   ;;
 
-  let required = true
+  let required = false
   let input = ()
 end)

@@ -1,6 +1,6 @@
 (library
  (name env_check)
  (modes melange)
- (libraries reason-react melange.js melange.node ink commander common)
+ (libraries reason-react melange.js melange.node ink commander common core)
  (preprocess
   (pps melange.ppx reason-react-ppx)))

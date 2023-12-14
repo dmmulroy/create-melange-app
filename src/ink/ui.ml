@@ -1,3 +1,11 @@
+module Badge = struct
+  external make :
+    color:[ `green | `red | `blue | `yellow ] ->
+    children:React.element ->
+    React.element = "Badge"
+  [@@mel.module "@inkjs/ui"] [@@react.component]
+end
+
 module Text_input = struct
   external make :
     ?isDisabled:bool ->

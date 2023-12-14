@@ -9,14 +9,14 @@ module Step = {
       } else {
         `none;
       };
-    <Box display> children </Box>;
+    <> <Box display> children </Box> <Spacer /> </>;
   };
 };
 
 module Name = {
   [@react.component]
   let make = (~onSubmit, ~isDisabled) => {
-    <Box flexDirection=`column gap=1>
+    <Box flexDirection=`column>
       <Spacer />
       <Box flexDirection=`row>
         <Common.Prefix>
@@ -128,7 +128,7 @@ let step_to_string =
   | Complete => "Complete";
 
 [@react.component]
-let make = (~name as initial_name, ~onComplete) => {
+let make = (~name as initial_name, ~onComplete, ~should_prompt_git) => {
   let (active_step, set_active_step) =
     React.useState(() =>
       if (Option.is_none(initial_name)) {
@@ -157,7 +157,9 @@ let make = (~name as initial_name, ~onComplete) => {
         if (active_step == Bundler) {
           set_bundler(_ => Some(new_bundler));
 
-          set_active_step(_ => Git);
+          let next_step = if (should_prompt_git) {Git} else {Npm};
+
+          set_active_step(_ => next_step);
         },
       [|active_step|],
     );
@@ -176,14 +178,16 @@ let make = (~name as initial_name, ~onComplete) => {
     React.useCallback3(
       value => {
         set_initialize_npm(_ => Some(value));
-        switch (name, bundler, initialize_git) {
-        | (Some(name), Some(bundler), Some(initialize_git)) =>
+        switch (name, bundler) {
+        | (Some(name), Some(bundler)) =>
           set_active_step(_ => Complete);
           onComplete(
             Core.Configuration.make(
               ~name,
               ~bundler,
-              ~initialize_git,
+              ~initialize_git={
+                Option.value(~default=false, initialize_git);
+              },
               ~initialize_npm=value,
               ~overwrite=None,
             ),
@@ -196,8 +200,11 @@ let make = (~name as initial_name, ~onComplete) => {
 
   let show_name_step = Option.is_none(initial_name);
   let show_bundler_step = Option.is_some(name);
-  let show_git_step = Option.is_some(bundler);
-  let show_npm_step = Option.is_some(initialize_git);
+  let show_git_step = Option.is_some(bundler) && should_prompt_git;
+  let show_npm_step =
+    Option.is_some(initialize_git)
+    || Option.is_some(bundler)
+    && !should_prompt_git;
 
   <Box flexDirection=`column gap=1>
     <Step visible=show_name_step>

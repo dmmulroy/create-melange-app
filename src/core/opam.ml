@@ -17,7 +17,7 @@ end
 module Dependency = Dependency.Make (struct
   include Version
 
-  let name = "opam"
+  let name = "Opam"
 
   let help =
     {|
