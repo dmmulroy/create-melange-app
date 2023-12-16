@@ -1,3 +1,2 @@
-external promisify : (('a -> 'b) -> 'b) -> ('a -> 'b Js.Promise.t[@u])
-  = "promisify"
-[@@mel.module "util"]
+let __filename () = Url.file_url_to_path [%mel.raw "import.meta.url"]
+let __dirname () = Node.Path.dirname @@ __filename ()

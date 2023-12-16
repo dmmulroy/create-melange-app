@@ -112,15 +112,15 @@ end = struct
   type 'a t = String of string | Delegate of 'a delegate
 end
 
-external compile :
+external compile' :
   string ->
   ?options:Options.t ->
   unit ->
   ('a -> runtime_options:'a Options.Runtime.t option -> unit -> string[@u])
   = "compile"
-[@@mel.module "handlebars"]
+[@@mel.module "handlebars/dist/handlebars.js"]
 
 let compile s ?options () =
-  let template = compile s ?options () in
+  let template = compile' s ?options () in
   fun a ?runtime_options () -> (template a ~runtime_options () [@u])
 ;;

@@ -1,8 +1,8 @@
-let exists = Fs_extra.existsSync
+let existsSync path = try Fs_extra.existsSync path with _ -> false
 let dir_is_empty dir = Fs_extra.readdirSync dir |> Array.length = 0
 
 let base_template_dir =
-  Node.Path.join [| [%mel.raw "__dirname"]; ".."; "templates"; "base" |]
+  Node.Path.join [| Nodejs.Util.__dirname (); ".."; "templates"; "base" |]
 ;;
 
 let copy_base_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
@@ -69,7 +69,9 @@ let get_template_file_names dir =
 
 let read_template ~dir file_name =
   let file_path = Node.Path.join [| dir; file_name |] in
-  try Ok (Fs_extra.readFileSync file_path `utf8)
+  try
+    let contents = Fs_extra.readFileSync file_path `utf8 in
+    Ok contents
   with exn ->
     Error
       (Printf.sprintf {js|Failed to read template %s from %s: %s|js} file_name
@@ -78,7 +80,7 @@ let read_template ~dir file_name =
 
 let validate_template_exists ~dir file_name =
   let file_path = Node.Path.join [| dir; file_name |] in
-  let template_exists = exists file_path in
+  let template_exists = existsSync file_path in
   if not template_exists then
     Result.error
     @@ Printf.sprintf "Template %s does not exist at %s" file_name file_path

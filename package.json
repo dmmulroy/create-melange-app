@@ -1,23 +1,21 @@
 {
   "name": "create-melange-app",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha.9",
   "description": "create-melange-app",
-  "type": "module",
-  "main": "index.js",
-  "scripts": {
-    "dev": "npm run build && concurrently 'npm:vite-dev' 'npm:dune-watch'",
-    "build": "dune build",
-    "vite-dev": "vite _build/default",
-    "vite-build": "vite build",
-    "vite-preview": "vite preview",
-    "dune-watch": "dune build @create_melange_app -w"
-  },
   "repository": {
     "type": "git",
     "url": "github.com/dmmulroy/create-melange-app"
   },
   "author": "Dillon Mulroy <dillon.mulroy@gmail.com>",
   "license": "MIT",
+  "type": "module",
+  "exports": "./build/src/app.mjs",
+  "bin": {
+    "create-melange-app": "./build/src/app.mjs"
+  },
+  "scripts": {
+    "prepend-node-shebang": "echo \"#!/usr/bin/env node\\n$(cat ./build/src/app.mjs)\" > ./build/src/app.mjs"
+  },
   "dependencies": {
     "@inkjs/ui": "^1.0.0",
     "commander": "^11.1.0",
@@ -26,11 +24,7 @@
     "ink": "v4.3.1",
     "ink-big-text": "^2.0.0",
     "ink-gradient": "^3.0.0",
-    "liquidjs": "^10.9.4",
     "react": "^18.0.0"
   },
-  "devDependencies": {
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "concurrently": "^8.2.2"
-  }
+  "devDependencies": {}
 }

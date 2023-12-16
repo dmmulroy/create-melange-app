@@ -5,9 +5,10 @@
 (melange.emit
  (target build)
  (alias create-melange-app)
- (emit_stdlib true)
+ ; (emit_stdlib true)
  (libraries app)
  (runtime_deps
   (source_tree src/templates))
  (promote (until-clean))
- (module_systems es6))
+ (module_systems
+  (es6 mjs)))

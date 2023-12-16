@@ -34,7 +34,7 @@ module Copy_webpack_config_js :
   let webpack_config_js_path =
     Node.Path.join
       [|
-        [%mel.raw "__dirname"];
+        Nodejs.Util.__dirname ();
         "..";
         "templates";
         "extensions";

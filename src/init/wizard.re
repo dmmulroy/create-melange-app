@@ -103,9 +103,16 @@ module Npm = {
         },
         [|onSubmit|],
       );
+
+    let pkg_manager = Nodejs.Process.npm_config_user_agent;
+
     <Box flexDirection=`column>
       <Common.Prefix>
-        {React.string("Should we run 'npm install' for you?")}
+        {React.string(
+           "Should we run '"
+           ++ Nodejs.Process.npm_user_agent_to_string(pkg_manager)
+           ++ " install' for you?",
+         )}
       </Common.Prefix>
       <Ui.Select options=git_select_options onChange isDisabled />
     </Box>;

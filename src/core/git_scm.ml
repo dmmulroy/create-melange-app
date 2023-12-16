@@ -28,12 +28,12 @@ module Copy_gitignore :
   let gitignore_path =
     Node.Path.join
       [|
-        [%mel.raw "__dirname"];
+        Nodejs.Util.__dirname ();
         "..";
         "templates";
         "extensions";
-        "git";
-        ".gitignore";
+        "git_scm";
+        "_gitignore";
       |]
   ;;
 

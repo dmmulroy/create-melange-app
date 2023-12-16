@@ -142,7 +142,7 @@ let make =
   let (configuration, set_configuration) =
     React.useState(() => initial_configuration);
   let (project_dir_exists, _set_project_dir_exists) =
-    React.useState(() => Core.Fs.exists(configuration.name));
+    React.useState(() => Core.Fs.existsSync(configuration.name));
 
   let onSubmit =
     React.useCallback0((value: string) => {

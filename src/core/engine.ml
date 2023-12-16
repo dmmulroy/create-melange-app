@@ -1,15 +1,13 @@
 open Common
 open Syntax
-open Let
 open Context_plugin
 module String_map = Map.Make (String)
 
 let copy_base_dir (ctx : Context.t) =
-  let| _ =
-    Fs.copy_base_dir ?overwrite:ctx.configuration.overwrite
-      ctx.configuration.name
-  in
-  Js.Promise.resolve @@ Ok ctx
+  Fs.copy_base_dir ?overwrite:ctx.configuration.overwrite ctx.configuration.name
+  |> Js.Promise.then_ (fun _ -> Js.Promise.resolve @@ Ok ctx)
+  |> Js.Promise.catch (fun _ ->
+         Js.Promise.resolve @@ Error "copy_base_dir failed")
 ;;
 
 let fold_compilation_results (ctx : Context.t) (acc : (unit, string) result)
@@ -92,8 +90,8 @@ let make_context (configuration : Configuration.t) =
   let plugins =
     if configuration.initialize_git then
       [
-        (module Git.Plugin.Copy_gitignore : Plugin.S);
-        (module Git.Plugin.Init_and_stage : Plugin.S);
+        (module Git_scm.Plugin.Copy_gitignore : Plugin.S);
+        (module Git_scm.Plugin.Init_and_stage : Plugin.S);
       ]
       @ plugins
     else plugins
@@ -112,10 +110,20 @@ let run (config : Configuration.t) =
          match ctx_result with
          | Error err -> Js.Promise.resolve @@ Error err
          | Ok ctx -> run_pre_compile_plugins ctx)
+  |> Js.Promise.catch (fun _ ->
+         Js.Promise.resolve @@ Error "pre compile failed")
   |> Js.Promise.then_ (fun ctx_result ->
          match ctx_result with
          | Error _ -> Js.Promise.resolve @@ Error "pre compile failed"
-         | Ok ctx -> compile_template ctx)
+         | Ok ctx -> (
+             try compile_template ctx
+             with exn ->
+               Js.Promise.resolve
+               @@ Error
+                    (Format.sprintf "compile failed dawg: %s"
+                       (Printexc.to_string exn))))
+  |> Js.Promise.catch (fun _ ->
+         Js.Promise.resolve @@ Error "template compilation failed")
   |> Js.Promise.then_ (fun ctx_result ->
          match ctx_result with
          | Error err -> Js.Promise.resolve @@ Error err
@@ -126,7 +134,7 @@ let dependencies =
   [
     (module Opam.Dependency : Dependency.S);
     (module Node_js.Dependency : Dependency.S);
-    (module Git.Dependency : Dependency.S);
+    (module Git_scm.Dependency : Dependency.S);
   ]
 ;;
 

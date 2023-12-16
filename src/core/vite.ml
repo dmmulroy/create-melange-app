@@ -28,7 +28,7 @@ module Copy_vite_config_js :
   let vite_config_js_path =
     Node.Path.join
       [|
-        [%mel.raw "__dirname"];
+        Nodejs.Util.__dirname ();
         "..";
         "templates";
         "extensions";
