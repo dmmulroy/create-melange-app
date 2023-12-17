@@ -1,3 +1,5 @@
+[%%mel.raw "#!/usr/bin/env node"];
+
 let main = () => {
   open Commander;
 
