@@ -14,15 +14,52 @@ module Step = {
 };
 
 module Name = {
+  let is_empty = name => String.length(name) == 0;
+  let validate = name => {
+    let re = [%re "/[a-z0-9_]/"];
+    let _ = Js.Re.test_(re, name) == false;
+    if (is_empty(name)) {
+      Error("Name cannot be empty");
+    } else if (Js.Re.test_(re, name) == false) {
+      Error("Name must be lowercase and only contain letters, numbers, or _");
+    } else {
+      Ok(name);
+    };
+  };
+
   [@react.component]
   let make = (~onSubmit, ~isDisabled) => {
+    let (value, set_value) = React.useState(() => "");
+    let (error, set_error) = React.useState(() => None);
+
+    let handleOnChange = name => {
+      set_value(_ => name);
+      set_error(_ => None);
+    };
+
+    let handleOnSubmit = name =>
+      switch (validate(name)) {
+      | Ok(name) => onSubmit(name)
+      | Error(error) => set_error(_ => Some(error))
+      };
+
     <Box flexDirection=`column>
       <Spacer />
       <Box flexDirection=`row>
         <Common.Prefix>
           {React.string("What will your project be called? ")}
         </Common.Prefix>
-        <Ui.Text_input onSubmit isDisabled />
+        <Ui.Text_input
+          value
+          isDisabled
+          onChange=handleOnChange
+          onSubmit=handleOnSubmit
+        />
+        {switch (error) {
+         | Some(error) =>
+           <Ui.Badge color=`red> {React.string(error)} </Ui.Badge>
+         | None => React.null
+         }}
       </Box>
     </Box>;
   };

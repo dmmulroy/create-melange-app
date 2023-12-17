@@ -1,13 +1,14 @@
 type t = {
   name : string;
+  directory : string;
   bundler : Bundler.t;
   initialize_git : bool;
   initialize_npm : bool;
   overwrite : [ `Clear | `Overwrite ] option;
 }
 
-let make ~name ~bundler ~initialize_git ~initialize_npm ~overwrite =
-  { name; bundler; initialize_git; initialize_npm; overwrite }
+let make ~name ~directory ~bundler ~initialize_git ~initialize_npm ~overwrite =
+  { name; directory; bundler; initialize_git; initialize_npm; overwrite }
 ;;
 
 let set_overwrite overwrite config = { config with overwrite = Some overwrite }
@@ -21,6 +22,7 @@ let to_string config =
 
 type partial = {
   name : string option;
+  directory : string option;
   bundler : Bundler.t option;
   initialize_git : bool option;
   initialize_npm : bool option;
