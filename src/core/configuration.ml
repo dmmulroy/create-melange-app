@@ -27,3 +27,7 @@ type partial = {
   initialize_git : bool option;
   initialize_npm : bool option;
 }
+
+let make_partial ?name ?directory ?bundler ?initialize_git ?initialize_npm () =
+  { name; directory; bundler; initialize_git; initialize_npm }
+;;

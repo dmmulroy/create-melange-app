@@ -77,7 +77,7 @@ module Plugin = struct
       include Copy_webpack_config_js
 
       let stage = `Pre_compile
-      let input_of_context (ctx : Context.t) = Ok ctx.configuration.name
+      let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
     end)
   end
 end

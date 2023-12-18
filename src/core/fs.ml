@@ -100,3 +100,23 @@ let write_template ~dir file_name content =
       (Printf.sprintf {js|Failed to write file %s: %s|js} file_name
          (Printexc.to_string exn))
 ;;
+
+let trim_trailing_slash str =
+  if String.ends_with ~suffix:"/" str then
+    String.sub str 0 (String.length str - 1)
+  else str
+;;
+
+let parse_project_name_and_dir (str : string) =
+  let trimmed = trim_trailing_slash str in
+  if trimmed = "." then
+    let name = [| trimmed |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
+    let directory = [| Nodejs.Process.cwd () |] |> Nodejs.Path.resolve in
+    (name, directory)
+  else
+    let name = [| trimmed |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
+    let directory =
+      [| trimmed; name |] |> Nodejs.Path.resolve |> Nodejs.Path.dirname
+    in
+    (name, directory)
+;;

@@ -39,7 +39,7 @@ module Plugin = struct
       include Install
 
       let stage = `Post_compile
-      let input_of_context (ctx : Context.t) = Ok ctx.configuration.name
+      let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
     end)
   end
 end

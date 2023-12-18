@@ -99,17 +99,16 @@ module Compile_templates = {
 module Copy_template = {
   open Ui;
   [@react.component]
-  let make =
-      (
-        ~overwrite: option([> | `Clear | `Overwrite])=?,
-        ~configuration: Core.Configuration.t,
-        ~onComplete,
-      ) => {
+  let make = (~configuration: Core.Configuration.t, ~onComplete) => {
     let (copy_complete, set_copy_complete) = React.useState(() => false);
     let (error, set_error) = React.useState(() => None);
 
     React.useEffect0(() => {
-      let result = Core.Fs.create_dir(~overwrite?, configuration.name);
+      let result =
+        Core.Fs.create_dir(
+          ~overwrite=?configuration.overwrite,
+          configuration.directory,
+        );
 
       switch (result) {
       | Ok(_) => set_copy_complete(_ => true)
@@ -141,8 +140,12 @@ let make =
     ) => {
   let (configuration, set_configuration) =
     React.useState(() => initial_configuration);
+  // TODO: Make this check async + have loading indicator
   let (project_dir_exists, _set_project_dir_exists) =
-    React.useState(() => Core.Fs.existsSync(configuration.name));
+    React.useState(() =>
+      Core.Fs.existsSync(configuration.directory)
+      && !Core.Fs.dir_is_empty(configuration.directory)
+    );
 
   let onSubmit =
     React.useCallback0((value: string) => {
@@ -170,11 +173,7 @@ let make =
      | (true, Some(`Clear)) =>
        <>
          <Overwrite configuration onSubmit isDisabled=true />
-         <Copy_template
-           configuration
-           overwrite={configuration.overwrite}
-           onComplete
-         />
+         <Copy_template configuration onComplete />
        </>
      | _ => <Copy_template configuration onComplete />
      }}

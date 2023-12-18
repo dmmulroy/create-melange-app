@@ -49,7 +49,7 @@ module Plugin = struct
       include Init_and_stage
 
       let stage = `Post_compile
-      let input_of_context (ctx : Context.t) = Ok ctx.configuration.name
+      let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
     end)
   end
 
@@ -58,7 +58,7 @@ module Plugin = struct
       include Copy_gitignore
 
       let stage = `Post_compile
-      let input_of_context (ctx : Context.t) = Ok ctx.configuration.name
+      let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
     end)
   end
 end

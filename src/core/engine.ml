@@ -4,7 +4,8 @@ open Context_plugin
 module String_map = Map.Make (String)
 
 let copy_base_dir (ctx : Context.t) =
-  Fs.copy_base_dir ?overwrite:ctx.configuration.overwrite ctx.configuration.name
+  Fs.copy_base_dir ?overwrite:ctx.configuration.overwrite
+    ctx.configuration.directory
   |> Js.Promise.then_ (fun _ -> Js.Promise.resolve @@ Ok ctx)
   |> Js.Promise.catch (fun _ ->
          Js.Promise.resolve @@ Error "copy_base_dir failed")
@@ -15,12 +16,11 @@ let fold_compilation_results (ctx : Context.t) (acc : (unit, string) result)
   if Result.is_error acc then acc
   else
     let template_value = Hmap.find Template.key ctx.template_values in
-    let dir = Node.Path.join [| "./"; ctx.configuration.name |] in
     match template_value with
     | None ->
         Error
           (Printf.sprintf "A value for Template %s was not found" Template.name)
-    | Some value -> Template.compile ~dir value
+    | Some value -> Template.compile ~dir:ctx.configuration.directory value
 ;;
 
 let run_pre_compile_plugins (ctx : Context.t) =

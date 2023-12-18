@@ -14,36 +14,28 @@ module Step = {
 };
 
 module Name = {
-  let is_empty = name => String.length(name) == 0;
-  let validate = name => {
-    let re = [%re "/[a-z0-9_]/"];
-    let _ = Js.Re.test_(re, name) == false;
-    if (is_empty(name)) {
-      Error("Name cannot be empty");
-    } else if (Js.Re.test_(re, name) == false) {
-      Error("Name must be lowercase and only contain letters, numbers, or _");
-    } else {
-      Ok(name);
-    };
-  };
-
   [@react.component]
   let make = (~onSubmit, ~isDisabled) => {
     let (value, set_value) = React.useState(() => "");
     let (error, set_error) = React.useState(() => None);
 
-    let handleOnChange = name => {
-      set_value(_ => name);
-      set_error(_ => None);
-    };
-
-    let handleOnSubmit = name =>
-      switch (validate(name)) {
-      | Ok(name) => onSubmit(name)
-      | Error(error) => set_error(_ => Some(error))
+    let handleOnChange = new_value =>
+      if (String.equal(value, new_value)) {
+        ();
+      } else {
+        set_value(_ => new_value);
+        set_error(_ => None);
       };
 
-    <Box flexDirection=`column>
+    let handleOnSubmit = name => {
+      let (name, directory) = Core.Fs.parse_project_name_and_dir(name);
+      switch (Core.Validation.Project_name.validate(name)) {
+      | Ok(name) => onSubmit((name, directory))
+      | Error(`Msg(error)) => set_error(_ => Some(error))
+      };
+    };
+
+    <Box flexDirection=`column gap=1>
       <Spacer />
       <Box flexDirection=`row>
         <Common.Prefix>
@@ -55,12 +47,15 @@ module Name = {
           onChange=handleOnChange
           onSubmit=handleOnSubmit
         />
-        {switch (error) {
-         | Some(error) =>
-           <Ui.Badge color=`red> {React.string(error)} </Ui.Badge>
-         | None => React.null
-         }}
       </Box>
+      {switch (error) {
+       | Some(error) =>
+         <Box>
+           <Ui.Badge color=`red> {React.string("Invalid:")} </Ui.Badge>
+           <Text> {React.string(" " ++ error)} </Text>
+         </Box>
+       | None => React.null
+       }}
     </Box>;
   };
 };
@@ -172,16 +167,23 @@ let step_to_string =
   | Complete => "Complete";
 
 [@react.component]
-let make = (~name as initial_name, ~onComplete, ~should_prompt_git) => {
+let make =
+    (
+      ~initial_configuration: Core.Configuration.partial,
+      ~onComplete,
+      ~should_prompt_git,
+    ) => {
   let (active_step, set_active_step) =
     React.useState(() =>
-      if (Option.is_none(initial_name)) {
+      if (Option.is_none(initial_configuration.name)) {
         Name;
       } else {
         Bundler;
       }
     );
-  let (name, set_name) = React.useState(() => initial_name);
+  let (name, set_name) = React.useState(() => initial_configuration.name);
+  let (directory, set_directory) =
+    React.useState(() => initial_configuration.directory);
   let (bundler, set_bundler) =
     React.useState(() => (None: option(Core.Bundler.t)));
   let (initialize_git, set_initialize_git) =
@@ -189,9 +191,10 @@ let make = (~name as initial_name, ~onComplete, ~should_prompt_git) => {
   let (_initialize_npm, set_initialize_npm) =
     React.useState(() => (None: option(bool)));
 
-  let onSubmitName = (new_name: string) =>
+  let onSubmitName = ((name, directory)) =>
     if (active_step == Name) {
-      set_name(_ => Some(new_name));
+      set_name(_ => Some(name));
+      set_directory(_ => Some(directory));
       set_active_step(_ => Bundler);
     };
 
@@ -222,12 +225,13 @@ let make = (~name as initial_name, ~onComplete, ~should_prompt_git) => {
     React.useCallback3(
       value => {
         set_initialize_npm(_ => Some(value));
-        switch (name, bundler) {
-        | (Some(name), Some(bundler)) =>
+        switch (name, directory, bundler) {
+        | (Some(name), Some(directory), Some(bundler)) =>
           set_active_step(_ => Complete);
           onComplete(
             Core.Configuration.make(
               ~name,
+              ~directory,
               ~bundler,
               ~initialize_git={
                 Option.value(~default=false, initialize_git);
@@ -242,7 +246,7 @@ let make = (~name as initial_name, ~onComplete, ~should_prompt_git) => {
       (name, bundler, initialize_git),
     );
 
-  let show_name_step = Option.is_none(initial_name);
+  let show_name_step = Option.is_none(initial_configuration.name);
   let show_bundler_step = Option.is_some(name);
   let show_git_step = Option.is_some(bundler) && should_prompt_git;
   let show_npm_step =

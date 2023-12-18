@@ -1,4 +1,4 @@
-[%%mel.raw "#!/usr/bin/env node"];
+// [%%mel.raw "#!/usr/bin/env node"];
 
 let main = () => {
   open Commander;
