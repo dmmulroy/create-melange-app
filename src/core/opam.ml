@@ -1,9 +1,27 @@
+open Context_plugin
+
 module Version : Process.S with type input = unit and type output = string =
 struct
   type input = unit
   type output = string
 
   let name = "opam --version"
+
+  let exec (_ : input) =
+    let options = Node.Child_process.option ~encoding:"utf8" () in
+    Nodejs.Child_process.async_exec name options
+    |> Js.Promise.then_ (fun value -> Js.Promise.resolve @@ Ok value)
+    |> Js.Promise.catch (fun _err ->
+           Js.Promise.resolve @@ Error "Failed to get opam version")
+  ;;
+end
+
+module Create_switch :
+  Process.S with type input = unit and type output = string = struct
+  type input = unit
+  type output = string
+
+  let name = "opam switch create . 5.1.1 --deps-only --yes"
 
   let exec (_ : input) =
     let options = Node.Child_process.option ~encoding:"utf8" () in
@@ -40,3 +58,14 @@ module Dependency = Dependency.Make (struct
   let required = true
   let input = ()
 end)
+
+module Plugin = struct
+  module Create_switch = struct
+    include Plugin.Make_process (struct
+      include Create_switch
+
+      let stage = `Post_compile
+      let input_of_context _ = Ok ()
+    end)
+  end
+end

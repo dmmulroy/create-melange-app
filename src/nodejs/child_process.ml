@@ -1,5 +1,3 @@
-type child_process
-
 external exec :
   string ->
   Node.Child_process.option ->
@@ -16,4 +14,34 @@ let async_exec string child_process_option =
           match Js.Null_undefined.toOption error with
           | Some e -> reject e [@u]
           | None -> resolve stdout [@u]))
+;;
+
+module Child_process = struct
+  type t
+  type stream
+
+  external stderr : t -> stream = "stderr" [@@mel.get]
+  external stdin : t -> stream = "stdin" [@@mel.get]
+
+  external on_data : (_[@mel.as "data"]) -> (string -> unit) -> unit = "on"
+  [@@mel.send.pipe: stream]
+
+  external on_close : (_[@mel.as "close"]) -> (int -> unit) -> unit = "on"
+  [@@mel.send.pipe: t]
+
+  external on_error : (_[@mel.as "error"]) -> (Js.Exn.t -> unit) -> unit = "on"
+  [@@mel.send.pipe: t]
+
+  external spawn : string -> string array -> t = "spawn"
+  [@@mel.module "node:child_process"]
+end
+
+let main () =
+  let open Child_process in
+  let opam =
+    spawn "opam" [| "switch"; "create"; "."; "--deps-only"; "--yes" |]
+  in
+  opam |> stdin |> on_data Js.log;
+  opam |> stderr |> on_data Js.log;
+  opam |> on_close (fun code -> Js.log ("Exited with : " ^ Int.to_string code))
 ;;
