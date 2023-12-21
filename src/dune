@@ -8,13 +8,9 @@
   melange.js
   melange.node
   core
-  ink
-  commander
+  bindings
   env_check
   init
-  common
-  handlebars
-  nodejs
-  fs_extra)
+  common)
  (preprocess
   (pps melange.ppx reason-react-ppx)))

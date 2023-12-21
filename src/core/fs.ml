@@ -1,8 +1,16 @@
+open Bindings
+
 let existsSync path = try Fs_extra.existsSync path with _ -> false
 let dir_is_empty dir = Fs_extra.readdirSync dir |> Array.length = 0
 
 let base_template_dir =
-  Node.Path.join [| Nodejs.Util.__dirname (); ".."; "templates"; "base" |]
+  Node.Path.join
+    [|
+      Nodejs.Util.__dirname [%mel.raw "import.meta.url"];
+      "..";
+      "templates";
+      "base";
+    |]
 ;;
 
 let create_project_directory ?(overwrite : [< `Clear | `Overwrite ] option) dir

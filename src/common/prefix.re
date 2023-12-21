@@ -1,4 +1,4 @@
-open Ink;
+open Bindings.Ink;
 
 [@react.component]
 let make = (~children) => {

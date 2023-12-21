@@ -5,12 +5,9 @@
   reason-react
   melange.js
   melange.node
-  ink
-  commander
-  handlebars
+  bindings
   common
   env_check
-  fs_extra
   core)
  (preprocess
   (pps melange.ppx reason-react-ppx)))

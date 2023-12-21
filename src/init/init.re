@@ -1,3 +1,4 @@
+open Bindings;
 module Component = Component;
 
 let command = {

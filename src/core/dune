@@ -1,6 +1,6 @@
 (library
  (name core)
  (modes melange)
- (libraries melange.js melange.node fs_extra handlebars)
+ (libraries melange.js melange.node bindings common)
  (preprocess
   (pps melange.ppx)))

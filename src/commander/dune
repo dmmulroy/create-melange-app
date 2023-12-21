@@ -1,5 +1,0 @@
-(library
- (name commander)
- (modes melange)
- (preprocess
-  (pps melange.ppx reason-react-ppx)))

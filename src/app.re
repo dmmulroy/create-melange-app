@@ -1,4 +1,5 @@
 // [%%mel.raw "#!/usr/bin/env node"];
+open Bindings;
 
 let main = () => {
   open Commander;

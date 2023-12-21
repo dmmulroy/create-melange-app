@@ -13,13 +13,13 @@ external copy : string -> string -> unit Js.Promise.t = "copy"
 external existsSync : string -> bool = "existsSync" [@@mel.module "node:fs"]
 
 external exists : string -> bool Js.Promise.t = "exists"
-[@@mel.module "node:fs/promise"]
+[@@mel.module "node:fs/promises"]
 
 external renameSync : string -> string -> unit = "renameSync"
 [@@mel.module "node:fs"]
 
 external rename : string -> string -> unit Js.Promise.t = "rename"
-[@@mel.module "node:fs/promise"]
+[@@mel.module "node:fs/promises"]
 
 let renameSync ~src ~dest =
   let src_path = Node.Path.join [| src |] in
@@ -43,14 +43,14 @@ external readdirSync : string -> string array = "readdirSync"
 [@@mel.module "node:fs"]
 
 external readdir : string -> string array Js.Promise.t = "readdir"
-[@@mel.module "node:fs/promise"]
+[@@mel.module "node:fs/promises"]
 
 external readFileSync : string -> Node.Fs.encoding -> string = "readFileSync"
 [@@mel.module "node:fs"]
 
 external readFile : string -> Node.Fs.encoding -> string Js.Promise.t
   = "readFile"
-[@@mel.module "node:fs/promise"]
+[@@mel.module "node:fs/promises"]
 
 external writeFileSync : string -> string -> Node.Fs.encoding -> unit
   = "writeFileSync"
@@ -58,9 +58,9 @@ external writeFileSync : string -> string -> Node.Fs.encoding -> unit
 
 external writeFile : string -> string -> Node.Fs.encoding -> unit Js.Promise.t
   = "writeFile"
-[@@mel.module "node:fs/promise"]
+[@@mel.module "node:fs/promises"]
 
 external mkdirSync : string -> unit = "mkdirSync" [@@mel.module "node:fs"]
 
 external mkdir : string -> unit Js.Promise.t = "mkdir"
-[@@mel.module "node:fs/promise"]
+[@@mel.module "node:fs/promises"]

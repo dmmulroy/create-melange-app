@@ -1,5 +1,0 @@
-(library
- (name handlebars)
- (modes melange)
- (preprocess
-  (pps melange.ppx)))

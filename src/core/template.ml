@@ -1,6 +1,5 @@
-open Common
-open Syntax
-open Let
+open Common.Syntax.Let
+open Bindings
 
 let root_dir = "templates"
 let base_dir = Node.Path.join [| root_dir; "base" |]

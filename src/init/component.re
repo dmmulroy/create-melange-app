@@ -1,3 +1,4 @@
+open Bindings;
 open Ink;
 open Common;
 

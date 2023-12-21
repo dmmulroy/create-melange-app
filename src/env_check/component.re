@@ -1,4 +1,4 @@
-open Ink;
+open Bindings.Ink;
 open Ui;
 
 let dependency_check_result_is_successful =

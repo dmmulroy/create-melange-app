@@ -1,3 +1,4 @@
+open Bindings;
 module Component = Component;
 
 let command = {
@@ -8,7 +9,7 @@ let command = {
        )
     |> Command.add_action(((), _this) => {
          Ink.render(<Component />)
-         |> Ink.Instance.wait_until_exit
+         |> Bindings.Ink.Instance.wait_until_exit
          |> (exit_promise => `Promise_void(exit_promise))
        })
   );

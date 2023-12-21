@@ -87,7 +87,7 @@ let make_context (configuration : Configuration.t) =
         ]
     | None -> []
   in
-  let plugins = (module Opam.Plugin.Create_switch : Plugin.S) :: plugins in
+  (* let plugins = (module Opam.Plugin.Create_switch : Plugin.S) :: plugins in *)
   let plugins =
     if configuration.initialize_git then
       [

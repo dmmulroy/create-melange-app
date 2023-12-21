@@ -1,4 +1,4 @@
-open Ink;
+open Bindings.Ink;
 
 let banner = {|
                         __                            __
@@ -15,6 +15,3 @@ let make = () => {
     <Big_text font=`Tiny text="create-melange-app" />
   </Gradient>;
 };
-
-//['#d8e0de', '#d1dbd9', '#c9d5d2', '#c2d0cd', '#bacac7', '#b3c5c1', '#abbfbb', '#a4bab6', '#9cb4b0', '#95aeaa', '#8da9a4', '#86a39f', '#7e9e98', '#779893', '#70928d', '#688d87', '#618781', '#59817b', '#527c76', '#4a7670', '#43716a', '#3b6b64', '#34665f', '#2c6058', '#255b53', '#1e4b44', '#193d37', '#122d29', '#0c1e1c', '#060e0d']
-//<Text> <Big_text text="create-melange-app" lineHeight=10. /> </Text>;

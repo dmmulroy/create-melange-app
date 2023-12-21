@@ -1,3 +1,5 @@
+open Bindings
+
 module Version : Process.S with type input = unit and type output = string =
 struct
   type input = unit

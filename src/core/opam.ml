@@ -1,3 +1,4 @@
+open Bindings
 open Context_plugin
 
 module Version : Process.S with type input = unit and type output = string =

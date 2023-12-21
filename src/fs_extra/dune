@@ -1,6 +1,0 @@
-(library
- (name fs_extra)
- (modes melange)
- (libraries melange.node common)
- (preprocess
-  (pps melange.ppx reason-react-ppx)))

@@ -1,4 +1,4 @@
-open Ink;
+open Bindings.Ink;
 
 module Overwrite = {
   open Ui;
@@ -140,7 +140,6 @@ let make =
     ) => {
   let (configuration, set_configuration) =
     React.useState(() => initial_configuration);
-  // TODO: Make this check async + have loading indicator
   let (project_dir_exists, _set_project_dir_exists) =
     React.useState(() =>
       Core.Fs.existsSync(configuration.directory)

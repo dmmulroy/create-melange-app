@@ -1,3 +1,4 @@
+open Bindings
 open Context_plugin
 
 module Install : Process.S with type input = string and type output = string =

@@ -1,3 +1,4 @@
+open Bindings
 open Package_json
 open Context_plugin
 module String_map = Map.Make (String)
@@ -34,7 +35,7 @@ module Copy_webpack_config_js :
   let webpack_config_js_path =
     Node.Path.join
       [|
-        Nodejs.Util.__dirname ();
+        Nodejs.Util.__dirname [%mel.raw "import.meta.url"];
         "..";
         "templates";
         "extensions";
