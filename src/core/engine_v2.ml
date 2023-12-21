@@ -19,4 +19,4 @@ let copy_base_template_directory (config : Configuration.t) =
   Fs.copy_base_template_directory config.directory
 ;;
 
-let copy_extension_templates (config : Configuration.t) = ()
+let copy_extension_templates (_config : Configuration.t) = ()
