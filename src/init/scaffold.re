@@ -179,3 +179,15 @@ let make =
      }}
   </Box>;
 };
+
+module V2 = {
+  module Engine = {
+    // val create_project: Core.Configuration.t => (unit, string) result
+    // val copy_base_template: Core.Configuration.t => (unit, string) result
+    // val copy_extension_templates: Core.Configuration.t => (unit, string) result
+  };
+
+  module Scaffold = {
+    //
+  };
+};

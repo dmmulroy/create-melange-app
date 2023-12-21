@@ -5,6 +5,32 @@ let base_template_dir =
   Node.Path.join [| Nodejs.Util.__dirname (); ".."; "templates"; "base" |]
 ;;
 
+let create_project_directory ?(overwrite : [< `Clear | `Overwrite ] option) dir
+    =
+  Fs_extra.exists dir
+  |> Js.Promise.then_ (fun exists ->
+         match (exists, overwrite) with
+         | false, _ -> Fs_extra.mkdir dir
+         | true, Some `Clear -> Fs_extra.emptyDir dir
+         | true, Some `Overwrite -> Js.Promise.resolve ()
+         | true, None ->
+             Js.Promise.reject
+               (Invalid_argument
+                  (Printf.sprintf {js|Directory %s already exists|js} dir)))
+  |> Js.Promise.then_ (fun () -> Js.Promise.resolve (Ok ()))
+  |> Js.Promise.catch (fun _exn ->
+         Js.Promise.resolve
+           (Error (Printf.sprintf {js|Failed to create directory %s|js} dir)))
+;;
+
+let copy_base_template_directory dir =
+  Fs_extra.copy base_template_dir dir
+  |> Js.Promise.then_ (fun () -> Js.Promise.resolve (Ok ()))
+  |> Js.Promise.catch (fun _exn ->
+         Js.Promise.resolve
+           (Error (Printf.sprintf {js|Failed to create directory %s|js} dir)))
+;;
+
 let copy_base_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
   let promise =
     match overwrite with

@@ -6,19 +6,16 @@ module type S = sig
   val exec : input -> (output, string) result Js.Promise.t
 end
 
-module Node = struct
-  module Version : S = struct
-    type input = unit
-    type output = string
+module type Exec = S
 
-    let name = "node --version"
+module type Spawn = sig
+  type input
+  type output
 
-    let exec (_input : input) : (output, string) result Js.Promise.t =
-      let options = Node.Child_process.option ~encoding:"utf8" () in
-      Nodejs.Child_process.async_exec "node --version" options
-      |> Js.Promise.then_ (fun value -> Js.Promise.resolve @@ Ok value)
-      |> Js.Promise.catch (fun _err ->
-             Js.Promise.resolve @@ Error "Failed to run node --version")
-    ;;
-  end
+  val name : string
+  val spawn : input -> (output, string) result Js.Promise.t
+  val on_stdout : (string -> unit) -> unit
+  val on_stderr : (string -> unit) -> unit
+  val on_exit : (int -> unit) -> unit
+  val on_error : (Js.Exn.t -> unit) -> unit
 end

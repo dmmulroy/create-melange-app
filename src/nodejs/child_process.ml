@@ -35,13 +35,3 @@ module Child_process = struct
   external spawn : string -> string array -> t = "spawn"
   [@@mel.module "node:child_process"]
 end
-
-let main () =
-  let open Child_process in
-  let opam =
-    spawn "opam" [| "switch"; "create"; "."; "--deps-only"; "--yes" |]
-  in
-  opam |> stdin |> on_data Js.log;
-  opam |> stderr |> on_data Js.log;
-  opam |> on_close (fun code -> Js.log ("Exited with : " ^ Int.to_string code))
-;;

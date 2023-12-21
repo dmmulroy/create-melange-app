@@ -74,14 +74,6 @@ and Plugin : sig
       end
     end
 
-    module Command : sig
-      module type S = sig
-        val name : string
-        val stage : stage
-        val exec : Context.t -> (Context.t, string) result Js.Promise.t
-      end
-    end
-
     module Process : sig
       module type S = sig
         include Process.S
@@ -93,7 +85,6 @@ and Plugin : sig
   end
 
   module Make_extension : functor (_ : Config.Extension.S) -> S
-  module Make_command : functor (_ : Config.Command.S) -> S
   module Make_process : functor (_ : Config.Process.S) -> S
 end = struct
   type plugin
@@ -112,14 +103,6 @@ end = struct
 
         val stage : stage
         val extend_template : t -> (t, string) result Js.Promise.t
-      end
-    end
-
-    module Command = struct
-      module type S = sig
-        val name : string
-        val stage : stage
-        val exec : Context.t -> (Context.t, string) result Js.Promise.t
       end
     end
 
@@ -155,12 +138,6 @@ end = struct
                  Context.set_template_value E.key updated_template_value ctx
                  |> Result.ok |> Js.Promise.resolve)
     ;;
-  end
-
-  module Make_command (C : Config.Command.S) : S = struct
-    let key = Hmap.Key.create ()
-    let stage = C.stage
-    let run = C.exec
   end
 
   module Make_process (C : Config.Process.S) : S = struct
