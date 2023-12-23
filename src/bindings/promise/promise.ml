@@ -3,6 +3,7 @@ type 'value t = 'value Js.Promise.t
 
 let and_then = Js.Promise.then_
 let resolve value = Js.Promise.resolve value
+let of_js_promise (promise : 'value Js.Promise.t) : 'value t = promise
 
 let reject (error_message : string) =
   Js.Promise.reject (Promise_error error_message)
@@ -17,6 +18,13 @@ let map (fn : 'value -> 'next_value) (promise : 'value t) : 'next_value t =
 
 let bind (promise : 'value t) (fn : 'value -> 'next_value t) : 'next_value t =
   and_then fn promise
+;;
+
+let tap (fn : 'value -> unit) (promise : 'value t) : 'value t =
+  promise
+  |> map (fun value ->
+         fn value;
+         value)
 ;;
 
 module Syntax = struct

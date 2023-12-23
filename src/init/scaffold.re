@@ -1,8 +1,10 @@
-open Bindings.Ink;
+open Bindings;
+open Ink;
+open Ui;
 
-module Overwrite = {
-  open Ui;
+open Core;
 
+module Overwrite_input = {
   let options: array(Select.select_option) = [|
     {value: "abort", label: "Abort installation"},
     {value: "clear", label: "Clear the directory and continue installation"},
@@ -22,11 +24,7 @@ module Overwrite = {
 
   [@react.component]
   let make =
-      (
-        ~configuration: Core.Configuration.t,
-        ~onSubmit as onChange,
-        ~isDisabled,
-      ) => {
+      (~configuration: Configuration.t, ~onSubmit as onChange, ~isDisabled) => {
     <Box flexDirection=`column gap=1>
       // TODO: colorize this warning
 
@@ -45,12 +43,12 @@ module Overwrite = {
 module Compile_templates = {
   open Ui;
   [@react.component]
-  let make = (~configuration: Core.Configuration.t, ~onComplete) => {
+  let make = (~configuration: Configuration.t, ~onComplete) => {
     let (compilation_result, set_compilation_result) =
       React.useState(() => None);
 
     React.useEffect0(() => {
-      Core.Engine.run(configuration)
+      Engine.run(configuration)
       |> Js.Promise.then_(result => {
            set_compilation_result(curr =>
              if (Option.is_none(curr)) {
@@ -99,13 +97,13 @@ module Compile_templates = {
 module Copy_template = {
   open Ui;
   [@react.component]
-  let make = (~configuration: Core.Configuration.t, ~onComplete) => {
+  let make = (~configuration: Configuration.t, ~onComplete) => {
     let (copy_complete, set_copy_complete) = React.useState(() => false);
     let (error, set_error) = React.useState(() => None);
 
     React.useEffect0(() => {
       let result =
-        Core.Fs.create_dir(
+        Fs.create_dir(
           ~overwrite=?configuration.overwrite,
           configuration.directory,
         );
@@ -134,21 +132,18 @@ module Copy_template = {
 
 [@react.component]
 let make =
-    (
-      ~configuration as initial_configuration: Core.Configuration.t,
-      ~onComplete,
-    ) => {
+    (~configuration as initial_configuration: Configuration.t, ~onComplete) => {
   let (configuration, set_configuration) =
     React.useState(() => initial_configuration);
   let (project_dir_exists, _set_project_dir_exists) =
     React.useState(() =>
-      Core.Fs.existsSync(configuration.directory)
-      && !Core.Fs.dir_is_empty(configuration.directory)
+      Fs.existsSync(configuration.directory)
+      && !Fs.dir_is_empty(configuration.directory)
     );
 
   let onSubmit =
     React.useCallback0((value: string) => {
-      let overwrite = Overwrite.overwrite_of_string(value);
+      let overwrite = Overwrite_input.overwrite_of_string(value);
 
       if (overwrite == `Abort) {
         exit(1);
@@ -167,11 +162,12 @@ let make =
   // TODO: Clean this up, move Compile out of Copy_template
   <Box flexDirection=`column gap=1>
     {switch (project_dir_exists, configuration.overwrite) {
-     | (true, None) => <Overwrite configuration onSubmit isDisabled=false />
+     | (true, None) =>
+       <Overwrite_input configuration onSubmit isDisabled=false />
      | (true, Some(`Overwrite))
      | (true, Some(`Clear)) =>
        <>
-         <Overwrite configuration onSubmit isDisabled=true />
+         <Overwrite_input configuration onSubmit isDisabled=true />
          <Copy_template configuration onComplete />
        </>
      | _ => <Copy_template configuration onComplete />
@@ -180,13 +176,280 @@ let make =
 };
 
 module V2 = {
-  module Engine = {
-    // val create_project: Core.Configuration.t => (unit, string) result
-    // val copy_base_template: Core.Configuration.t => (unit, string) result
-    // val copy_extension_templates: Core.Configuration.t => (unit, string) result
+  type step =
+    | Create_dir
+    | Bundler
+    | Node_pkg_manager
+    | Git
+    | Opam_create_switch
+    | Opam_install_deps
+    | Opam_install_dev_deps
+    | Dune_build
+    | Finished;
+
+  let step_to_string = step =>
+    switch (step) {
+    | Create_dir => "Create_dir"
+    | Bundler => "Bundler"
+    | Node_pkg_manager => "Node_pkg_manager"
+    | Git => "Git"
+    | Opam_create_switch => "Opam_create_switch"
+    | Opam_install_deps => "Opam_install_deps"
+    | Opam_install_dev_deps => "Opam_install_dev_deps"
+    | Dune_build => "Dune_build"
+    | Finished => "Finished"
+    };
+
+  let step_to_int = step =>
+    switch (step) {
+    | Create_dir => 0
+    | Bundler => 1
+    | Node_pkg_manager => 2
+    | Git => 3
+    | Opam_create_switch => 4
+    | Opam_install_deps => 5
+    | Opam_install_dev_deps => 6
+    | Dune_build => 7
+    | Finished => 8
+    };
+
+  type model = {
+    configuration: Configuration.t,
+    step,
+    error: option(string),
   };
 
+  type event =
+    | Complete_create_dir
+    | Complete_bundler
+    | Complete_node_pkg_manager
+    | Complete_git
+    | Complete_opam_create_switch
+    | Complete_opam_install_deps
+    | Complete_opam_install_dev_deps
+    | Complete_dune_build
+    | Set_overwrite_configuration(Configuration.overwrite_preference);
+
+  let event_to_string = event =>
+    switch (event) {
+    | Complete_create_dir => "Complete_create_dir"
+    | Complete_bundler => "Complete_bundler"
+    | Complete_node_pkg_manager => "Complete_node_pkg_manager"
+    | Complete_git => "Complete_git"
+    | Complete_opam_create_switch => "Complete_opam_create_switch"
+    | Complete_opam_install_deps => "Complete_opam_install_deps"
+    | Complete_opam_install_dev_deps => "Complete_opam_install_dev_deps"
+    | Complete_dune_build => "Complete_dune_build"
+    | Set_overwrite_configuration(overwrite) =>
+      Printf.sprintf(
+        "Set_overwrite_configuration(%s)",
+        Configuration.overwrite_preference_to_string(overwrite),
+      )
+    };
+
+  let update = (model, event) =>
+    switch (model.step, event) {
+    | (Create_dir, Complete_create_dir) => {...model, step: Bundler}
+    | (Bundler, Complete_bundler) => {...model, step: Node_pkg_manager}
+    | (Node_pkg_manager, Complete_node_pkg_manager) => {...model, step: Git}
+    | (Git, Complete_git) => {...model, step: Opam_create_switch}
+    | (Opam_create_switch, Complete_opam_create_switch) => {
+        ...model,
+        step: Opam_install_deps,
+      }
+    | (Opam_install_deps, Complete_opam_install_deps) => {
+        ...model,
+        step: Opam_install_dev_deps,
+      }
+    | (Opam_install_dev_deps, Complete_opam_install_dev_deps) => {
+        ...model,
+        step: Dune_build,
+      }
+    | (Dune_build, Complete_dune_build) => {...model, step: Finished}
+    | (_, Set_overwrite_configuration(overwrite)) => {
+        ...model,
+        configuration: {
+          ...model.configuration,
+          overwrite: Some(overwrite),
+        },
+      }
+    | _ => {
+        ...model,
+        error:
+          Some(
+            Printf.sprintf(
+              "Invalid event: %s at step: %s\n",
+              event_to_string(event),
+              step_to_string(model.step),
+            ),
+          ),
+      }
+    };
+
+  module Create_dir = {
+    module Overwrite_input = {
+      open Ui;
+
+      let options: array(Select.select_option) = [|
+        {value: "abort", label: "Abort installation"},
+        {
+          value: "clear",
+          label: "Clear the directory and continue installation",
+        },
+        {
+          value: "overwrite",
+          label: "Continue installation and overwrite conflicting files",
+        },
+      |];
+
+      let overwrite_of_string = str =>
+        switch (str) {
+        | "abort" => `Abort
+        | "clear" => `Clear
+        | "overwrite" => `Overwrite
+        | _ => `Abort
+        };
+
+      [@react.component]
+      let make =
+          (
+            ~configuration: Configuration.t,
+            ~onSubmit as onChange,
+            ~isDisabled,
+          ) => {
+        <Box flexDirection=`column gap=1>
+          <Box flexDirection=`row>
+            <Badge color=`yellow> {React.string("Warning: ")} </Badge>
+            <Text>
+              {React.string(
+                 configuration.name
+                 ++ " already exists and isn't empty. How would you like to proceed?",
+               )}
+            </Text>
+          </Box>
+          <Select options onChange isDisabled />
+        </Box>;
+      };
+    };
+
+    module Create = {
+      open Ui;
+      [@react.component]
+      let make = (~configuration: Configuration.t, ~onComplete as _) => {
+        let (copy_complete, set_copy_complete) = React.useState(() => false);
+        let (error, set_error) = React.useState(() => None);
+
+        React.useEffect0(() => {
+          Engine.V2.create_project_directory(
+            ~overwrite=?configuration.overwrite,
+            configuration.directory,
+          )
+          |> ignore;
+
+          None;
+        });
+
+        React.useEffect0(() => {
+          let result =
+            Fs.create_dir(
+              ~overwrite=?configuration.overwrite,
+              configuration.directory,
+            );
+
+          switch (result) {
+          | Ok(_) => set_copy_complete(_ => true)
+          | Error(err) =>
+            set_error(_ => Some(err));
+            ();
+          };
+
+          None;
+        });
+
+        <Box flexDirection=`column gap=1>
+          {switch (error) {
+           | Some(err) => <Text> {React.string(err)} </Text>
+           | None =>
+             copy_complete
+               ? <Text>
+                   {React.string("Copying template files complete")}
+                 </Text>
+               : <Spinner label="Copying template files" />
+           }}
+        </Box>;
+      };
+    };
+
+    [@react.component]
+    let make = (~configuration: Configuration.t) => {
+      let (project_dir_exists, set_project_dir_exists) =
+        React.useState(() => None);
+      let (error, set_error) = React.useState(() => None);
+
+      React.useEffect0(() => {
+        configuration.directory
+        |> Engine.V2.directory_exists
+        |> Promise_result.tap(result =>
+             switch (result) {
+             | Ok(value) => set_project_dir_exists(_ => Some(value))
+             | Error(err) => set_error(_ => Some(err))
+             }
+           )
+        |> ignore;
+        None;
+      });
+
+      React.useEffect1(
+        () => {
+          switch (error) {
+          | Some(_err) => () // TODO: onError(err)
+          | None => ()
+          };
+          None;
+        },
+        [|error|],
+      );
+
+      switch (project_dir_exists, configuration.overwrite) {
+      | (None, _) => <Spinner label="Checking if project directory exists" />
+      | (Some(true), None) =>
+        <Overwrite_input configuration onSubmit={_ => ()} isDisabled=false />
+      | (Some(true), Some(_overwrite)) =>
+        <>
+          <Overwrite_input configuration onSubmit={_ => ()} isDisabled=true />
+          <Copy_template configuration onComplete={_ => ()} />
+        </>
+      | (Some(false), _) => <Spinner label="Creating project directory" />
+      };
+    };
+  };
+
+  module Bundler = {};
+  module Node_pkg_manager = {};
+  module Git = {};
+  module Opam = {
+    module Create_switch = {};
+    module Install_deps = {};
+    module Install_dev_deps = {};
+  };
+  module Dune_build = {};
   module Scaffold = {
-    //
+    [@react.component]
+    let make =
+        (
+          ~configuration as initial_configuration: Configuration.t,
+          ~onComplete as _onComplete,
+        ) => {
+      let (_model, _dispatch) =
+        React.useReducer(
+          update,
+          {
+            configuration: initial_configuration,
+            step: Create_dir,
+            error: None,
+          },
+        );
+      <> </>;
+    };
   };
 };

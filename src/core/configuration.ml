@@ -1,10 +1,17 @@
+type overwrite_preference = [ `Clear | `Overwrite ]
+
+let overwrite_preference_to_string = function
+  | `Clear -> "clear"
+  | `Overwrite -> "overwrite"
+;;
+
 type t = {
   name : string;
   directory : string;
   bundler : Bundler.t;
   initialize_git : bool;
   initialize_npm : bool;
-  overwrite : [ `Clear | `Overwrite ] option;
+  overwrite : overwrite_preference option;
 }
 
 let make ~name ~directory ~bundler ~initialize_git ~initialize_npm ~overwrite =

@@ -1,6 +1,15 @@
+[@@@ocaml.warning "-32"]
+
 open Bindings
 
 let existsSync path = try Fs_extra.existsSync path with _ -> false
+
+let exists path =
+  path |> Fs_extra.exists |> Promise_result.of_js_promise
+  |> Promise_result.catch Promise_result.resolve_error
+  |> Promise_result.map_error (Fun.const "Failed to check if path exists")
+;;
+
 let dir_is_empty dir = Fs_extra.readdirSync dir |> Array.length = 0
 
 let base_template_dir =
@@ -12,6 +21,48 @@ let base_template_dir =
       "base";
     |]
 ;;
+
+let create_project_directory ?(overwrite : [< `Clear | `Overwrite ] option) dir
+    =
+  Fs_extra.exists dir |> Promise_result.of_js_promise
+  |. Promise_result.bind (fun exists ->
+         if exists then
+           match overwrite with
+           | Some `Clear ->
+               Fs_extra.emptyDir dir |> Promise_result.of_js_promise
+           | Some `Overwrite -> Promise_result.resolve_ok ()
+           | _ -> assert false
+         else Fs_extra.mkdir dir |> Promise_result.of_js_promise)
+  |> Promise_result.catch Promise_result.resolve_error
+  |> Promise_result.map_error (Fun.const "Failed to create project directory")
+;;
+
+(* (fun exists ->
+       match (exists, overwrite) with
+       | false, _ -> Fs_extra.mkdir dir |> Promise_result.of_js_promise
+       | true, Some `Clear ->
+           Fs_extra.emptyDir dir |> Promise_result.of_js_promise
+       | true, Some `Overwrite -> Promise_result.resolve ()
+       | true, None ->
+           failwith
+             (Printf.sprintf {js|Directory %s already exists|js} dir)) *)
+(* Promise_result.reject
+   (Invalid_argument
+      (Printf.sprintf {js|Directory %s already exists|js} dir))) *)
+
+(* |> Js.Promise.then_ (fun exists ->
+          match (exists, overwrite) with
+          | false, _ -> Fs_extra.mkdir dir
+          | true, Some `Clear -> Fs_extra.emptyDir dir
+          | true, Some `Overwrite -> Js.Promise.resolve ()
+          | true, None ->
+              Js.Promise.reject
+                (Invalid_argument
+                   (Printf.sprintf {js|Directory %s already exists|js} dir)))
+   |> Js.Promise.then_ (fun () -> Js.Promise.resolve (Ok ()))
+   |> Js.Promise.catch (fun _exn ->
+          Js.Promise.resolve
+            (Error (Printf.sprintf {js|Failed to create directory %s|js} dir))) *)
 
 let create_project_directory ?(overwrite : [< `Clear | `Overwrite ] option) dir
     =

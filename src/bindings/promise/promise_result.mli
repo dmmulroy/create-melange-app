@@ -12,6 +12,12 @@ val resolve_ok : 'value -> ('value, 'error) t
 val resolve_error : 'error -> ('value, 'error) t
 (** [resolve_error error] creates a promise resolved with [Error error]. *)
 
+val of_promise : 'value Promise.t -> ('value, 'a) result Promise.t
+(** [of_promise promise] wraps  [promise] with an Ok variant. *)
+
+val of_js_promise : 'value Js.Promise.t -> ('value, 'a) result Promise.t
+(** [of_js_promise promise] wraps  [promise] with an Ok variant. *)
+
 val catch :
   ('error -> ('value, 'error) t) -> ('value, 'error) t -> ('value, 'error) t
 (** [catch fn promise_result] catches an error and returns a new promise. *)
@@ -29,6 +35,16 @@ val bind :
 val map_error :
   ('error -> 'next_error) -> ('value, 'error) t -> ('value, 'next_error) t
 (** [map_error fn promise_result] applies [fn] to the Error part of [promise_result]. *)
+
+val tap :
+  (('value, 'error) result -> unit) -> ('value, 'error) t -> ('value, 'error) t
+(** [tap fn promise_result] applies [fn] to the result of [promise_result] and returns the original promise. *)
+
+val is_ok : ('value, 'error) t -> bool Promise.t
+(** [is_ok promise_result] returns true if [promise_result] is Ok. *)
+
+val is_error : ('value, 'error) t -> bool Promise.t
+(** [is_error promise_result] returns true if [promise_result] is Error. *)
 
 (** Module containing syntax extensions for promises. *)
 module Syntax : sig

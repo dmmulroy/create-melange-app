@@ -6,6 +6,9 @@ type exn += Promise_error of string
 type 'value t
 (** A type representing a promise. *)
 
+val of_js_promise : 'value Js.Promise.t -> 'value t
+(** [of_js_promise promise] converts a JavaScript promise to this enhanced promise type. *)
+
 val resolve : 'value -> 'value t
 (** [resolve value] creates a promise that is immediately resolved with [value]. *)
 
@@ -20,6 +23,9 @@ val map : ('value -> 'next_value) -> 'value t -> 'next_value t
 
 val bind : 'value t -> ('value -> 'next_value t) -> 'next_value t
 (** [bind promise fn] applies [fn] to the result of [promise], chaining promises. *)
+
+val tap : ('value -> unit) -> 'value t -> 'value t
+(** [tap fn promise] applies [fn] to the result of [promise], returning the original promise. *)
 
 (** Module containing syntax extensions for promises. *)
 module Syntax : sig

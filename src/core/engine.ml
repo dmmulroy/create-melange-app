@@ -170,3 +170,8 @@ let fold_dependency_to_result (acc : Dependency.check_result list Js.Promise.t)
 let check_dependencies () =
   List.fold_left fold_dependency_to_result (Js.Promise.resolve []) dependencies
 ;;
+
+module V2 = struct
+  let directory_exists = Fs.exists
+  let create_project_directory = Fs.create_project_directory
+end
