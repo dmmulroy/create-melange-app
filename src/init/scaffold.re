@@ -214,7 +214,6 @@ module V2 = {
     };
 
   type model = {
-    configuration: Configuration.t,
     context: Context.t,
     step,
     error: option(string),
@@ -269,9 +268,12 @@ module V2 = {
     | (Dune_build, Complete_dune_build) => {...model, step: Finished}
     | (_, Set_overwrite_configuration(overwrite)) => {
         ...model,
-        configuration: {
-          ...model.configuration,
-          overwrite: Some(overwrite),
+        context: {
+          ...model.context,
+          configuration: {
+            ...model.context.configuration,
+            overwrite: Some(overwrite),
+          },
         },
       }
     | _ => {
@@ -414,17 +416,12 @@ module V2 = {
   module Dune_build = {};
   module Scaffold = {
     [@react.component]
-    let make =
-        (
-          ~configuration as initial_configuration: Configuration.t,
-          ~onComplete as _onComplete,
-        ) => {
+    let make = (~configuration: Configuration.t, ~onComplete as _onComplete) => {
       let (_model, _dispatch) =
         React.useReducer(
           update,
           {
-            configuration: initial_configuration,
-            context: Context.make(~configuration=initial_configuration, ()),
+            context: Context.make(~configuration, ()),
             step: Create_dir,
             error: None,
           },
