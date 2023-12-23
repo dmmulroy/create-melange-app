@@ -81,9 +81,3 @@ module Syntax = struct
     let ( let*| ) var fn = bind (Promise.map Result.ok var) fn
   end
 end
-
-let _ =
-  let p = resolve_ok @@ resolve_ok 1 in
-  let pp = Js.Promise.resolve @@ Js.Promise.resolve 1 in
-  (p, pp)
-;;
