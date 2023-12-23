@@ -173,5 +173,5 @@ let check_dependencies () =
 
 module V2 = struct
   let directory_exists = Fs.exists
-  let create_project_directory = Fs.create_project_directory
+  let create_project_directory = Fs.create_project_directory_v2
 end

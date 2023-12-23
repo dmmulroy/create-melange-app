@@ -215,6 +215,7 @@ module V2 = {
 
   type model = {
     configuration: Configuration.t,
+    context: Context.t,
     step,
     error: option(string),
   };
@@ -311,18 +312,13 @@ module V2 = {
         };
 
       [@react.component]
-      let make =
-          (
-            ~configuration: Configuration.t,
-            ~onSubmit as onChange,
-            ~isDisabled,
-          ) => {
+      let make = (~context: Context.t, ~onSubmit as onChange, ~isDisabled) => {
         <Box flexDirection=`column gap=1>
           <Box flexDirection=`row>
             <Badge color=`yellow> {React.string("Warning: ")} </Badge>
             <Text>
               {React.string(
-                 configuration.name
+                 context.configuration.name
                  ++ " already exists and isn't empty. How would you like to proceed?",
                )}
             </Text>
@@ -335,33 +331,16 @@ module V2 = {
     module Create = {
       open Ui;
       [@react.component]
-      let make = (~configuration: Configuration.t, ~onComplete as _) => {
-        let (copy_complete, set_copy_complete) = React.useState(() => false);
-        let (error, set_error) = React.useState(() => None);
+      let make = (~context: Context.t, ~onComplete as _) => {
+        let (copy_complete, _set_copy_complete) = React.useState(() => false);
+        let (error, _set_error) = React.useState(() => None);
 
         React.useEffect0(() => {
-          Engine.V2.create_project_directory(
-            ~overwrite=?configuration.overwrite,
-            configuration.directory,
-          )
+          context.configuration.directory
+          |> Engine.V2.create_project_directory(
+               ~overwrite=?context.configuration.overwrite,
+             )
           |> ignore;
-
-          None;
-        });
-
-        React.useEffect0(() => {
-          let result =
-            Fs.create_dir(
-              ~overwrite=?configuration.overwrite,
-              configuration.directory,
-            );
-
-          switch (result) {
-          | Ok(_) => set_copy_complete(_ => true)
-          | Error(err) =>
-            set_error(_ => Some(err));
-            ();
-          };
 
           None;
         });
@@ -381,13 +360,13 @@ module V2 = {
     };
 
     [@react.component]
-    let make = (~configuration: Configuration.t) => {
+    let make = (~context: Context.t) => {
       let (project_dir_exists, set_project_dir_exists) =
         React.useState(() => None);
       let (error, set_error) = React.useState(() => None);
 
       React.useEffect0(() => {
-        configuration.directory
+        context.configuration.directory
         |> Engine.V2.directory_exists
         |> Promise_result.tap(result =>
              switch (result) {
@@ -410,14 +389,14 @@ module V2 = {
         [|error|],
       );
 
-      switch (project_dir_exists, configuration.overwrite) {
+      switch (project_dir_exists, context.configuration.overwrite) {
       | (None, _) => <Spinner label="Checking if project directory exists" />
       | (Some(true), None) =>
-        <Overwrite_input configuration onSubmit={_ => ()} isDisabled=false />
+        <Overwrite_input context onSubmit={_ => ()} isDisabled=false />
       | (Some(true), Some(_overwrite)) =>
         <>
-          <Overwrite_input configuration onSubmit={_ => ()} isDisabled=true />
-          <Copy_template configuration onComplete={_ => ()} />
+          <Overwrite_input context onSubmit={_ => ()} isDisabled=true />
+          <Create context onComplete={_ => ()} />
         </>
       | (Some(false), _) => <Spinner label="Creating project directory" />
       };
@@ -445,6 +424,7 @@ module V2 = {
           update,
           {
             configuration: initial_configuration,
+            context: Context.make(~configuration=initial_configuration, ()),
             step: Create_dir,
             error: None,
           },

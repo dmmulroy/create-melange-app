@@ -22,8 +22,8 @@ let base_template_dir =
     |]
 ;;
 
-let create_project_directory ?(overwrite : [< `Clear | `Overwrite ] option) dir
-    =
+let create_project_directory_v2 ?(overwrite : [< `Clear | `Overwrite ] option)
+    dir =
   Fs_extra.exists dir |> Promise_result.of_js_promise
   |. Promise_result.bind (fun exists ->
          if exists then

@@ -157,3 +157,34 @@ end = struct
     ;;
   end
 end
+
+module V2 = struct
+  type t = {
+    configuration : Configuration.t;
+    (* Template name -> Template module *)
+    templates : (module Template.S) String_map.t;
+    (* Template key -> Template value*)
+    template_values : Hmap.t;
+  }
+
+  let make ?(templates = String_map.empty) ?(template_values = Hmap.empty)
+      ~configuration () =
+    { configuration; templates; template_values }
+  ;;
+
+  let get_template_by_name ~name ctx = String_map.find_opt name ctx.templates
+
+  let get_template_value (type a)
+      ~template:(module Template : Template.S with type t = a) ctx =
+    Hmap.find Template.key ctx.template_values
+  ;;
+
+  let set_template_value (type a)
+      ~template:(module Template : Template.S with type t = a) ~(value : a) ctx
+      =
+    {
+      ctx with
+      template_values = Hmap.add Template.key value ctx.template_values;
+    }
+  ;;
+end
