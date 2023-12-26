@@ -1,5 +1,4 @@
 open Bindings
-open Context_plugin
 
 module Init_and_stage :
   Process.S with type input = string and type output = string = struct
@@ -13,9 +12,10 @@ module Init_and_stage :
       Node.Child_process.option ~cwd:project_dir_name ~encoding:"utf8" ()
     in
     Nodejs.Child_process.async_exec name options
-    |> Js.Promise.then_ (fun value -> Js.Promise.resolve @@ Ok value)
-    |> Js.Promise.catch (fun _err ->
-           Js.Promise.resolve @@ Error "Failed to initialize npm")
+    |> Promise_result.of_js_promise
+    |> Promise_result.catch Promise_result.resolve_error
+    |> Promise_result.map_error
+         (Fun.const "Failed to initialize git repository")
   ;;
 end
 
@@ -40,29 +40,29 @@ module Copy_gitignore :
 
   let exec (project_dir_name : input) =
     let dest = Node.Path.join [| project_dir_name; "/"; ".gitignore" |] in
-    Fs.copy_file ~dest gitignore_path
+    Fs.copy_file_v2 ~dest gitignore_path
   ;;
 end
 
-module Plugin = struct
-  module Init_and_stage = struct
-    include Plugin.Make_process (struct
-      include Init_and_stage
+(* module Plugin = struct
+     module Init_and_stage = struct
+       include Plugin.Make_process (struct
+         include Init_and_stage
 
-      let stage = `Post_compile
-      let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
-    end)
-  end
+         let stage = `Post_compile
+         let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
+       end)
+     end
 
-  module Copy_gitignore = struct
-    include Plugin.Make_process (struct
-      include Copy_gitignore
+     module Copy_gitignore = struct
+       include Plugin.Make_process (struct
+         include Copy_gitignore
 
-      let stage = `Post_compile
-      let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
-    end)
-  end
-end
+         let stage = `Post_compile
+         let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
+       end)
+     end
+   end *)
 
 module Version : Process.S with type input = unit and type output = string =
 struct
@@ -74,9 +74,9 @@ struct
   let exec (_ : input) =
     let options = Node.Child_process.option ~encoding:"utf8" () in
     Nodejs.Child_process.async_exec name options
-    |> Js.Promise.then_ (fun value -> Js.Promise.resolve @@ Ok value)
-    |> Js.Promise.catch (fun _err ->
-           Js.Promise.resolve @@ Error "Failed to get git version")
+    |> Promise_result.of_js_promise
+    |> Promise_result.catch Promise_result.resolve_error
+    |> Promise_result.map_error (Fun.const "Failed to get git version")
   ;;
 end
 

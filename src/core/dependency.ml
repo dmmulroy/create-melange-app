@@ -1,14 +1,11 @@
+open Bindings
+
 module type S = sig
-  val check : unit -> (bool, string) result Js.Promise.t
+  val check : unit -> ([ `Pass | `Fail ], string) Promise_result.t
   val help : string
   val name : string
   val required : bool
 end
-
-type check_result = {
-  dependency : (module S);
-  status : [ `Pass | `Failed of string ];
-}
 
 module Config = struct
   module type S = sig
@@ -27,9 +24,9 @@ module Make (C : Config.S) : S = struct
 
   let check () =
     C.exec C.input
-    |> Js.Promise.then_ (fun output_result ->
-           match output_result with
-           | Error (error : string) -> Js.Promise.resolve (Error error)
-           | Ok _ -> Js.Promise.resolve @@ Ok true)
+    |. Promise.bind (fun result ->
+           match result with
+           | Ok _ -> Promise_result.resolve_ok `Pass
+           | Error _ -> Promise_result.resolve_ok `Fail)
   ;;
 end

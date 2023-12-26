@@ -2,12 +2,21 @@
 
 open Bindings
 
-let existsSync path = try Fs_extra.existsSync path with _ -> false
+let ensureDir path =
+  path |> Fs_extra.ensureDir |> Promise.of_js_promise
+  |> Promise.map (Fun.const true)
+  |> Promise.catch (fun _ -> Promise.resolve false)
+;;
+
+let ensureFile path =
+  path |> Fs_extra.ensureFile |> Promise.of_js_promise
+  |> Promise.map (Fun.const true)
+  |> Promise.catch (fun _ -> Promise.resolve false)
+;;
 
 let exists path =
   path |> Fs_extra.exists |> Promise_result.of_js_promise
   |> Promise_result.catch Promise_result.resolve_error
-  |> Promise_result.map_error (Fun.const "Failed to check if path exists")
 ;;
 
 let dir_is_empty dir = Fs_extra.readdirSync dir |> Array.length = 0
@@ -22,9 +31,9 @@ let base_template_dir =
     |]
 ;;
 
-let create_project_directory_v2 ?(overwrite : [< `Clear | `Overwrite ] option)
-    dir =
-  Fs_extra.exists dir |> Promise_result.of_js_promise
+let create_project_directory ?(overwrite : [< `Clear | `Overwrite ] option) dir
+    =
+  exists dir
   |. Promise_result.bind (fun exists ->
          if exists then
            match overwrite with
@@ -37,52 +46,15 @@ let create_project_directory_v2 ?(overwrite : [< `Clear | `Overwrite ] option)
   |> Promise_result.map_error (Fun.const "Failed to create project directory")
 ;;
 
-(* (fun exists ->
-       match (exists, overwrite) with
-       | false, _ -> Fs_extra.mkdir dir |> Promise_result.of_js_promise
-       | true, Some `Clear ->
-           Fs_extra.emptyDir dir |> Promise_result.of_js_promise
-       | true, Some `Overwrite -> Promise_result.resolve ()
-       | true, None ->
-           failwith
-             (Printf.sprintf {js|Directory %s already exists|js} dir)) *)
-(* Promise_result.reject
-   (Invalid_argument
-      (Printf.sprintf {js|Directory %s already exists|js} dir))) *)
-
-(* |> Js.Promise.then_ (fun exists ->
-          match (exists, overwrite) with
-          | false, _ -> Fs_extra.mkdir dir
-          | true, Some `Clear -> Fs_extra.emptyDir dir
-          | true, Some `Overwrite -> Js.Promise.resolve ()
-          | true, None ->
-              Js.Promise.reject
-                (Invalid_argument
-                   (Printf.sprintf {js|Directory %s already exists|js} dir)))
-   |> Js.Promise.then_ (fun () -> Js.Promise.resolve (Ok ()))
-   |> Js.Promise.catch (fun _exn ->
-          Js.Promise.resolve
-            (Error (Printf.sprintf {js|Failed to create directory %s|js} dir))) *)
-
-let create_project_directory ?(overwrite : [< `Clear | `Overwrite ] option) dir
-    =
-  Fs_extra.exists dir
-  |> Js.Promise.then_ (fun exists ->
-         match (exists, overwrite) with
-         | false, _ -> Fs_extra.mkdir dir
-         | true, Some `Clear -> Fs_extra.emptyDir dir
-         | true, Some `Overwrite -> Js.Promise.resolve ()
-         | true, None ->
-             Js.Promise.reject
-               (Invalid_argument
-                  (Printf.sprintf {js|Directory %s already exists|js} dir)))
-  |> Js.Promise.then_ (fun () -> Js.Promise.resolve (Ok ()))
-  |> Js.Promise.catch (fun _exn ->
-         Js.Promise.resolve
-           (Error (Printf.sprintf {js|Failed to create directory %s|js} dir)))
+let copy_base_project dir =
+  Fs_extra.copy base_template_dir dir
+  |> Promise_result.of_js_promise
+  |> Promise_result.catch Promise_result.resolve_error
+  |> Promise_result.map_error
+       (Fun.const "Failed to copy base template directory")
 ;;
 
-let copy_base_template_directory dir =
+let copy_base_project_directory dir =
   Fs_extra.copy base_template_dir dir
   |> Js.Promise.then_ (fun () -> Js.Promise.resolve (Ok ()))
   |> Js.Promise.catch (fun _exn ->
@@ -111,7 +83,6 @@ let copy_base_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
 
 type exn += Fs_extra_error of string
 
-(* TODO: Rename shit and keep your fn defintions consistent *)
 let copy_file_sync ~dest file_path =
   try Fs_extra.copySync file_path dest
   with exn ->
@@ -129,6 +100,15 @@ let copy_file ~dest file_path =
          @@ Error
               (Printf.sprintf {js|Failed to copy file %s to %s|js} file_path
                  dest))
+;;
+
+let copy_file_v2 ~dest file_path =
+  Fs_extra.copy file_path dest
+  |> Promise_result.of_js_promise
+  |> Promise_result.catch Promise_result.resolve_error
+  |> Promise_result.map_error
+       (Fun.const
+          (Printf.sprintf {js|Failed to copy file %s to %s|js} file_path dest))
 ;;
 
 let create_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
@@ -164,14 +144,16 @@ let read_template ~dir file_name =
 ;;
 
 let validate_template_exists ~dir file_name =
+  let open Promise.Syntax.Let in
   let file_path = Node.Path.join [| dir; file_name |] in
-  let template_exists = existsSync file_path in
+  let* template_exists = ensureFile file_path in
   if not template_exists then
-    Result.error
+    Promise_result.resolve_error
     @@ Printf.sprintf "Template %s does not exist at %s" file_name file_path
-  else Ok ()
+  else Promise_result.resolve_ok ()
 ;;
 
+(* TODO: Make async *)
 let write_template ~dir file_name content =
   try
     let new_file_name = String.sub file_name 0 (String.length file_name - 5) in

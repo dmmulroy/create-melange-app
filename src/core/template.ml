@@ -1,9 +1,7 @@
-open Common.Syntax.Let
 open Bindings
 
 let root_dir = "templates"
 let base_dir = Node.Path.join [| root_dir; "base" |]
-let extensions_dir = Node.Path.join [| root_dir; "extensions" |]
 let dir_to_string = function `Base -> "./" | `Extension dir -> dir
 
 module type S = sig
@@ -11,7 +9,7 @@ module type S = sig
 
   val key : t Hmap.key
   val name : string
-  val compile : dir:string -> t -> (unit, string) result
+  val compile : dir:string -> t -> (unit, string) Promise_result.t
 end
 
 module Config = struct
@@ -30,11 +28,12 @@ module Make (M : Config.S) : S with type t = M.t = struct
   let name = M.name
 
   let compile ~dir value =
-    let@ _ = Fs.validate_template_exists ~dir M.name in
+    let open Promise_result.Syntax.Let in
+    let+ _ = Fs.validate_template_exists ~dir M.name in
     let json = M.to_json value in
-    let@ contents = Fs.read_template ~dir M.name in
+    let| contents = Fs.read_template ~dir M.name in
     let template = Handlebars.compile contents () in
     let compiled_contents = template json () in
-    Fs.write_template ~dir name compiled_contents
+    Fs.write_template ~dir name compiled_contents |> Promise.resolve
   ;;
 end

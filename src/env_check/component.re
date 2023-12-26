@@ -1,67 +1,61 @@
-open Bindings.Ink;
+open Bindings;
+open Ink;
 open Ui;
 
-let dependency_check_result_is_successful =
-    (results: list(Core.Dependency.check_result)) => {
-  List.filter(
-    (result: Core.Dependency.check_result) => {
-      module Dependency = (val result.dependency);
-
-      switch (result.status) {
-      | `Failed(_) when Dependency.required == true => true
-      | _ => false
-      };
-    },
-    results,
-  )
-  |> List.length == 0;
+let dependency_check_result_is_successful = dependency_results => {
+  dependency_results
+  |> List.for_all(
+       fun
+       | `Pass(_) => true
+       | _ => false,
+     );
 };
 
 module Dependency_results = {
   [@react.component]
-  let make = (~results: list(Core.Dependency.check_result)) => {
+  let make =
+      (
+        ~results:
+           list(
+             [<
+               | `Fail((module Core.Dependency.S))
+               | `Pass((module Core.Dependency.S))
+             ],
+           ),
+      ) => {
     <Box flexDirection=`column gap=1>
-      {List.sort(
-         (a: Core.Dependency.check_result, b: Core.Dependency.check_result) => {
-           module A = (val a.dependency: Core.Dependency.S);
-           module B = (val b.dependency: Core.Dependency.S);
-
-           switch (a.status, b.status) {
-           | (`Failed(_), `Failed(_)) => if (A.required) {1} else {(-1)}
-           | (`Failed(_), _) => 1
-           | (_, `Failed(_)) => (-1)
-           | _ => 0
-           };
-         },
-         results,
-       )
-       |> List.map((result: Core.Dependency.check_result) => {
-            module Dependency = (val result.dependency);
-            <Box key=Dependency.name gap=1>
-              {switch (result.status) {
-               | `Failed(_) =>
+      {results
+       |> List.sort((a, b) =>
+            switch (a, b) {
+            | (`Fail(module A: Core.Dependency.S), `Fail(_)) =>
+              if (A.required) {1} else {(-1)}
+            | (`Fail(_), _) => 1
+            | (_, `Fail(_)) => (-1)
+            | _ => 0
+            }
+          )
+       |> List.mapi((idx, dependency_check_result) => {
+            <Box key={Int.to_string(idx)} gap=1>
+              {switch (dependency_check_result) {
+               | `Pass(module Dep: Core.Dependency.S) =>
+                 <Box flexDirection=`row gap=1>
+                   <Badge color=`green> {React.string("PASS")} </Badge>
+                   <Text> {React.string("Dependency: " ++ Dep.name)} </Text>
+                 </Box>
+               | `Fail(module Dep: Core.Dependency.S) =>
                  <Box flexDirection=`column>
                    <Box flexDirection=`row gap=1>
-                     {Dependency.required
+                     {Dep.required
                         ? <Badge color=`red> {React.string("FAIL")} </Badge>
                         : <Badge color=`yellow>
                             {React.string("WARNING")}
                           </Badge>}
-                     <Text>
-                       {React.string("Dependency: " ++ Dependency.name)}
-                     </Text>
+                     <Text> {React.string("Dependency: " ++ Dep.name)} </Text>
                    </Box>
-                   <Text> {React.string(Dependency.help)} </Text>
-                 </Box>
-               | `Pass =>
-                 <Box flexDirection=`row gap=1>
-                   <Badge color=`green> {React.string("PASS")} </Badge>
-                   <Text>
-                     {React.string("Dependency: " ++ Dependency.name)}
-                   </Text>
+                   <Text> {React.string(Dep.help)} </Text>
                  </Box>
                }}
-            </Box>;
+            </Box>
           })
        |> Array.of_list
        |> React.array}
@@ -74,18 +68,19 @@ let make = (~onEnvCheck=?) => {
   let (dependency_results, set_dependency_results) =
     React.useState(() => None);
   let (loading, set_loading) = React.useState(() => true);
+  let (_error, set_error) = React.useState(() => None);
 
   React.useEffect0(() => {
     set_loading(_ => true);
-
-    let _ =
-      Core.Engine.check_dependencies()
-      |> Js.Promise.then_(results => {
+    Core.Engine.check_dependencies()
+    |> Promise_result.perform(checks_result => {
+         switch (checks_result) {
+         | Error(error) => set_error(_ => Some(error))
+         | Ok(results) =>
            set_dependency_results(_ => Some(results));
            set_loading(_ => false);
-           Js.Promise.resolve();
-         });
-
+         }
+       });
     None;
   });
 
@@ -141,3 +136,13 @@ let make = (~onEnvCheck=?) => {
      }}
   </Box>;
 };
+//|> List.map((result: Core.Dependency.check) => {
+//     <Box key={result.name} gap=1>
+//       {switch (result.status) {
+//        | `Failed =>
+//        | `Pass =>
+//        }}
+//     </Box>
+//   })
+//|> Array.of_list
+//|> React.array}

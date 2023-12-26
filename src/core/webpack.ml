@@ -1,6 +1,5 @@
 open Bindings
 open Package_json
-open Context_plugin
 module String_map = Map.Make (String)
 
 let dev_dependencies =
@@ -25,60 +24,51 @@ let scripts =
   ]
 ;;
 
-module Copy_webpack_config_js :
-  Process.S with type input = string and type output = unit = struct
-  type input = string
-  type output = unit
+module V2 = struct
+  module Copy_webpack_config_js :
+    Process.S with type input = string and type output = unit = struct
+    type input = string
+    (** The project directory name *)
 
-  let name = "copy webpack.config.js"
+    type output = unit
 
-  let webpack_config_js_path =
-    Node.Path.join
-      [|
-        Nodejs.Util.__dirname [%mel.raw "import.meta.url"];
-        "..";
-        "templates";
-        "extensions";
-        "webpack";
-        "webpack.config.js";
-      |]
-  ;;
+    let name = "copy webpack.config.js"
 
-  let exec (project_dir_name : input) =
-    let dest =
-      Node.Path.join [| project_dir_name; "/"; "webpack.config.js" |]
-    in
-    Fs.copy_file ~dest webpack_config_js_path
-  ;;
-end
+    let webpack_config_js_path =
+      Node.Path.join
+        [|
+          Nodejs.Util.__dirname [%mel.raw "import.meta.url"];
+          "..";
+          "templates";
+          "extensions";
+          "webpack";
+          "webpack.config.js";
+        |]
+    ;;
 
-module Plugin = struct
-  module Extend_package_json = struct
-    include Plugin.Make_extension (struct
-      include Package_json.Template
-
-      let stage = `Pre_compile
-
-      let extend_template pkg =
-        (* Add dependencies to package.json *)
-        let pkg =
-          dev_dependencies
-          |> List.fold_left (Fun.flip Package_json.add_dependency) pkg
-        in
-        (* Add scripts to package.json *)
-        scripts
-        |> List.fold_left (Fun.flip Package_json.add_script) pkg
-        |> Result.ok |> Js.Promise.resolve
-      ;;
-    end)
+    let exec (project_dir_name : input) =
+      let dest =
+        Node.Path.join [| project_dir_name; "/"; "webpack.config.js" |]
+      in
+      Fs.copy_file_v2 ~dest webpack_config_js_path
+    ;;
   end
 
-  module Copy_webpack_config_js = struct
-    include Plugin.Make_process (struct
-      include Copy_webpack_config_js
+  module Extend_package_json = struct
+    (* include Template.Extenion.Make (struct
+         include Package_json.Template
 
-      let stage = `Pre_compile
-      let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
-    end)
+         let extend (pkg : Package_json.t) =
+           (* Add dependencies to package.json *)
+           let pkg =
+             dev_dependencies
+             |> List.fold_left (Fun.flip Package_json.add_dependency) pkg
+           in
+           (* Add scripts to package.json *)
+           scripts
+           |> List.fold_left (Fun.flip Package_json.add_script) pkg
+           |> Promise_result.resolve_ok
+         ;;
+       end) *)
   end
 end

@@ -10,10 +10,23 @@ external copySync : string -> string -> unit = "copySync"
 external copy : string -> string -> unit Js.Promise.t = "copy"
 [@@mel.module "fs-extra/esm"]
 
-external existsSync : string -> bool = "existsSync" [@@mel.module "node:fs"]
+external ensureDir : string -> unit Js.Promise.t = "ensureDir"
+[@@mel.module "fs-extra/esm"]
 
-external exists : string -> bool Js.Promise.t = "exists"
-[@@mel.module "node:fs/promises"]
+external ensureDirSync : string -> unit = "ensureDirSync"
+[@@mel.module "fs-extra/esm"]
+
+external ensureFile : string -> unit Js.Promise.t = "ensureFile"
+[@@mel.module "fs-extra/esm"]
+
+external ensureFileSync : string -> unit = "ensureFileSync"
+[@@mel.module "fs-extra/esm"]
+
+external exists : string -> bool Js.Promise.t = "pathExists"
+[@@mel.module "fs-extra/esm"]
+
+external existsSync : string -> bool = "pathExistsSync"
+[@@mel.module "fs-extra/esm"]
 
 external renameSync : string -> string -> unit = "renameSync"
 [@@mel.module "node:fs"]

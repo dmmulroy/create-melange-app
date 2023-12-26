@@ -1,5 +1,4 @@
 open Bindings
-open Context_plugin
 
 module Version : Process.S with type input = unit and type output = string =
 struct
@@ -11,9 +10,9 @@ struct
   let exec (_ : input) =
     let options = Node.Child_process.option ~encoding:"utf8" () in
     Nodejs.Child_process.async_exec name options
-    |> Js.Promise.then_ (fun value -> Js.Promise.resolve @@ Ok value)
-    |> Js.Promise.catch (fun _err ->
-           Js.Promise.resolve @@ Error "Failed to get opam version")
+    |> Promise_result.of_js_promise
+    |> Promise_result.catch Promise_result.resolve_error
+    |> Promise_result.map_error (Fun.const "Failed to get opam version")
   ;;
 end
 
@@ -27,9 +26,9 @@ module Create_switch :
   let exec (_ : input) =
     let options = Node.Child_process.option ~encoding:"utf8" () in
     Nodejs.Child_process.async_exec name options
-    |> Js.Promise.then_ (fun value -> Js.Promise.resolve @@ Ok value)
-    |> Js.Promise.catch (fun _err ->
-           Js.Promise.resolve @@ Error "Failed to get opam version")
+    |> Promise_result.of_js_promise
+    |> Promise_result.catch Promise_result.resolve_error
+    |> Promise_result.map_error (Fun.const "Failed to create opam switch")
   ;;
 end
 
@@ -60,13 +59,13 @@ module Dependency = Dependency.Make (struct
   let input = ()
 end)
 
-module Plugin = struct
-  module Create_switch = struct
-    include Plugin.Make_process (struct
-      include Create_switch
+(* module Plugin = struct
+     module Create_switch = struct
+       include Plugin.Make_process (struct
+         include Create_switch
 
-      let stage = `Post_compile
-      let input_of_context _ = Ok ()
-    end)
-  end
-end
+         let stage = `Post_compile
+         let input_of_context _ = Ok ()
+       end)
+     end
+   end *)

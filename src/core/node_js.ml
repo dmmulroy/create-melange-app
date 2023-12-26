@@ -10,9 +10,9 @@ struct
   let exec (_ : input) =
     let options = Node.Child_process.option ~encoding:"utf8" () in
     Nodejs.Child_process.async_exec name options
-    |> Js.Promise.then_ (fun value -> Js.Promise.resolve @@ Ok value)
-    |> Js.Promise.catch (fun _err ->
-           Js.Promise.resolve @@ Error "Failed to get node version")
+    |> Promise_result.of_js_promise
+    |> Promise_result.catch Promise_result.resolve_error
+    |> Promise_result.map_error (Fun.const "Failed to get node version")
   ;;
 end
 

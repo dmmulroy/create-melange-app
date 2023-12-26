@@ -1,6 +1,7 @@
 open Bindings;
 open Ink;
 open Common;
+module Scaffold = Scaffold.V2.Scaffold;
 
 [@react.component]
 let make = (~name as initial_name) => {
@@ -26,16 +27,12 @@ let make = (~name as initial_name) => {
       set_env_check_result(_ => Some(`Pass));
       let should_prompt_git =
         List.exists(
-          (result: Core.Dependency.check_result) => {
-            module Dep = (val result.dependency);
-            if (Dep.name == "Git") {
-              switch (result.status) {
-              | `Pass => true
-              | `Failed(_) => false
-              };
-            } else {
-              false;
-            };
+          result => {
+            switch (result) {
+            | `Fail(_) => true
+            | `Pass(module Dep: Core.Dependency.S) =>
+              Dep.name == "Git" ? true : false
+            }
           },
           results,
         );

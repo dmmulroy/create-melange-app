@@ -1,5 +1,4 @@
 open Bindings
-open Context_plugin
 
 module Install : Process.S with type input = string and type output = string =
 struct
@@ -25,22 +24,22 @@ struct
       npm_config_user_agent |> npm_user_agent_to_install_cmd
     in
     Nodejs.Child_process.async_exec ua_install_cmd options
-    |> Js.Promise.then_ (fun value -> Js.Promise.resolve @@ Ok value)
-    |> Js.Promise.catch (fun _err ->
-           Js.Promise.resolve
-           @@ Error
-                ("Failed to initialize "
-                ^ (npm_config_user_agent |> npm_user_agent_to_string)))
+    |> Promise_result.of_js_promise
+    |> Promise_result.catch Promise_result.resolve_error
+    |> Promise_result.map_error
+         (Fun.const
+            ("Failed to initialize "
+            ^ (npm_config_user_agent |> npm_user_agent_to_string)))
   ;;
 end
 
-module Plugin = struct
-  module Install = struct
-    include Plugin.Make_process (struct
-      include Install
+(* module Plugin = struct
+     module Install = struct
+       include Plugin.Make_process (struct
+         include Install
 
-      let stage = `Post_compile
-      let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
-    end)
-  end
-end
+         let stage = `Post_compile
+         let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
+       end)
+     end
+   end *)

@@ -4,181 +4,12 @@ open Ui;
 
 open Core;
 
-module Overwrite_input = {
-  let options: array(Select.select_option) = [|
-    {value: "abort", label: "Abort installation"},
-    {value: "clear", label: "Clear the directory and continue installation"},
-    {
-      value: "overwrite",
-      label: "Continue installation and overwrite conflicting files",
-    },
-  |];
-
-  let overwrite_of_string = str =>
-    switch (str) {
-    | "abort" => `Abort
-    | "clear" => `Clear
-    | "overwrite" => `Overwrite
-    | _ => `Abort
-    };
-
-  [@react.component]
-  let make =
-      (~configuration: Configuration.t, ~onSubmit as onChange, ~isDisabled) => {
-    <Box flexDirection=`column gap=1>
-      // TODO: colorize this warning
-
-        <Common.Prefix>
-          {React.string(
-             "Warning: "
-             ++ configuration.name
-             ++ " already exists and isn't empty. How would you like to proceed?",
-           )}
-        </Common.Prefix>
-        <Select options onChange isDisabled />
-      </Box>;
-  };
-};
-
-module Compile_templates = {
-  open Ui;
-  [@react.component]
-  let make = (~configuration: Configuration.t, ~onComplete) => {
-    let (compilation_result, set_compilation_result) =
-      React.useState(() => None);
-
-    React.useEffect0(() => {
-      Engine.run(configuration)
-      |> Js.Promise.then_(result => {
-           set_compilation_result(curr =>
-             if (Option.is_none(curr)) {
-               Some(result);
-             } else {
-               curr;
-             }
-           )
-           |> Js.Promise.resolve
-         })
-      |> Js.Promise.catch(_ => {
-           Js.log("Something went wrong");
-           set_compilation_result(_ => Some(Error("Something went wrong")));
-           Js.Promise.resolve();
-         })
-      |> ignore;
-
-      None;
-    });
-
-    React.useEffect1(
-      () => {
-        switch (compilation_result) {
-        | Some(_) => onComplete()
-        | _ => ()
-        };
-        None;
-      },
-      [|compilation_result|],
-    );
-
-    <Box>
-      {switch (compilation_result) {
-       | None => <Spinner label="Compiling templates" />
-       | Some(result) =>
-         switch (result) {
-         | Ok(_) =>
-           <Text> {React.string("Compiling templates complete")} </Text>
-         | Error(err) => <Text> {React.string(err)} </Text>
-         }
-       }}
-    </Box>;
-  };
-};
-
-module Copy_template = {
-  open Ui;
-  [@react.component]
-  let make = (~configuration: Configuration.t, ~onComplete) => {
-    let (copy_complete, set_copy_complete) = React.useState(() => false);
-    let (error, set_error) = React.useState(() => None);
-
-    React.useEffect0(() => {
-      let result =
-        Fs.create_dir(
-          ~overwrite=?configuration.overwrite,
-          configuration.directory,
-        );
-
-      switch (result) {
-      | Ok(_) => set_copy_complete(_ => true)
-      | Error(err) =>
-        set_error(_ => Some(err));
-        ();
-      };
-
-      None;
-    });
-
-    <Box flexDirection=`column gap=1>
-      {switch (error) {
-       | Some(err) => <Text> {React.string(err)} </Text>
-       | None =>
-         copy_complete
-           ? <Compile_templates configuration onComplete />
-           : <Spinner label="Copying template files" />
-       }}
-    </Box>;
-  };
-};
-
-[@react.component]
-let make =
-    (~configuration as initial_configuration: Configuration.t, ~onComplete) => {
-  let (configuration, set_configuration) =
-    React.useState(() => initial_configuration);
-  let (project_dir_exists, _set_project_dir_exists) =
-    React.useState(() =>
-      Fs.existsSync(configuration.directory)
-      && !Fs.dir_is_empty(configuration.directory)
-    );
-
-  let onSubmit =
-    React.useCallback0((value: string) => {
-      let overwrite = Overwrite_input.overwrite_of_string(value);
-
-      if (overwrite == `Abort) {
-        exit(1);
-      };
-
-      let overwrite =
-        switch (overwrite) {
-        | `Clear => Some(`Clear)
-        | `Overwrite => Some(`Overwrite)
-        | _ => assert(false)
-        };
-
-      set_configuration(prev_config => {...prev_config, overwrite});
-    });
-
-  // TODO: Clean this up, move Compile out of Copy_template
-  <Box flexDirection=`column gap=1>
-    {switch (project_dir_exists, configuration.overwrite) {
-     | (true, None) =>
-       <Overwrite_input configuration onSubmit isDisabled=false />
-     | (true, Some(`Overwrite))
-     | (true, Some(`Clear)) =>
-       <>
-         <Overwrite_input configuration onSubmit isDisabled=true />
-         <Copy_template configuration onComplete />
-       </>
-     | _ => <Copy_template configuration onComplete />
-     }}
-  </Box>;
-};
-
 module V2 = {
   type step =
     | Create_dir
-    | Bundler
+    | Copy_base_templates
+    | Bundler_copy_files
+    | Bundler_extend_package_json
     | Node_pkg_manager
     | Git
     | Opam_create_switch
@@ -190,7 +21,9 @@ module V2 = {
   let step_to_string = step =>
     switch (step) {
     | Create_dir => "Create_dir"
-    | Bundler => "Bundler"
+    | Copy_base_templates => "Copy_base_templates"
+    | Bundler_copy_files => "Bundler_copy_files"
+    | Bundler_extend_package_json => "Bundler_extend_package_json"
     | Node_pkg_manager => "Node_pkg_manager"
     | Git => "Git"
     | Opam_create_switch => "Opam_create_switch"
@@ -203,14 +36,16 @@ module V2 = {
   let step_to_int = step =>
     switch (step) {
     | Create_dir => 0
-    | Bundler => 1
-    | Node_pkg_manager => 2
-    | Git => 3
-    | Opam_create_switch => 4
-    | Opam_install_deps => 5
-    | Opam_install_dev_deps => 6
-    | Dune_build => 7
-    | Finished => 8
+    | Copy_base_templates => 1
+    | Bundler_copy_files => 2
+    | Bundler_extend_package_json => 3
+    | Node_pkg_manager => 5
+    | Git => 6
+    | Opam_create_switch => 7
+    | Opam_install_deps => 8
+    | Opam_install_dev_deps => 9
+    | Dune_build => 10
+    | Finished => 11
     };
 
   type model = {
@@ -221,7 +56,9 @@ module V2 = {
 
   type event =
     | Complete_create_dir
-    | Complete_bundler
+    | Complete_copy_base_project
+    | Complete_bundler_copy_files
+    | Complete_bundler_extend_package_json
     | Complete_node_pkg_manager
     | Complete_git
     | Complete_opam_create_switch
@@ -233,7 +70,9 @@ module V2 = {
   let event_to_string = event =>
     switch (event) {
     | Complete_create_dir => "Complete_create_dir"
-    | Complete_bundler => "Complete_bundler"
+    | Complete_copy_base_project => "Complete_copy_base_project"
+    | Complete_bundler_copy_files => "Complete_bundler_copy_files"
+    | Complete_bundler_extend_package_json => "Complete_bundler_extend_package_json"
     | Complete_node_pkg_manager => "Complete_node_pkg_manager"
     | Complete_git => "Complete_git"
     | Complete_opam_create_switch => "Complete_opam_create_switch"
@@ -249,8 +88,22 @@ module V2 = {
 
   let update = (model, event) =>
     switch (model.step, event) {
-    | (Create_dir, Complete_create_dir) => {...model, step: Bundler}
-    | (Bundler, Complete_bundler) => {...model, step: Node_pkg_manager}
+    | (Create_dir, Complete_create_dir) => {
+        ...model,
+        step: Copy_base_templates,
+      }
+    | (Copy_base_templates, Complete_copy_base_project) => {
+        ...model,
+        step: Bundler_copy_files,
+      }
+    | (Bundler_copy_files, Complete_bundler_copy_files) => {
+        ...model,
+        step: Bundler_extend_package_json,
+      }
+    | (Bundler_extend_package_json, Complete_bundler_extend_package_json) => {
+        ...model,
+        step: Node_pkg_manager,
+      }
     | (Node_pkg_manager, Complete_node_pkg_manager) => {...model, step: Git}
     | (Git, Complete_git) => {...model, step: Opam_create_switch}
     | (Opam_create_switch, Complete_opam_create_switch) => {
@@ -333,62 +186,60 @@ module V2 = {
     module Create = {
       open Ui;
       [@react.component]
-      let make = (~context: Context.t, ~onComplete as _) => {
-        let (copy_complete, _set_copy_complete) = React.useState(() => false);
-        let (error, _set_error) = React.useState(() => None);
+      let make = (~context: Context.t, ~onComplete, ~onError) => {
+        let (create_complete, set_create_complete) =
+          React.useState(() => false);
+
+        let handleOnComplete = () => {
+          set_create_complete(_ => true);
+          onComplete();
+        };
 
         React.useEffect0(() => {
           context.configuration.directory
           |> Engine.V2.create_project_directory(
                ~overwrite=?context.configuration.overwrite,
              )
-          |> ignore;
+          |> Promise_result.perform(result =>
+               switch (result) {
+               | Ok(res) => handleOnComplete(res)
+               | Error(err) => onError(err)
+               }
+             );
 
           None;
         });
 
         <Box flexDirection=`column gap=1>
-          {switch (error) {
-           | Some(err) => <Text> {React.string(err)} </Text>
-           | None =>
-             copy_complete
-               ? <Text>
-                   {React.string("Copying template files complete")}
-                 </Text>
-               : <Spinner label="Copying template files" />
-           }}
+          {create_complete
+             ? <Text>
+                 {React.string("Creating project directory complete")}
+               </Text>
+             : <Spinner label="Creating project directory" />}
         </Box>;
       };
     };
 
     [@react.component]
-    let make = (~context: Context.t) => {
+    let make = (~isActive, ~context: Context.t, ~onComplete, ~onError) => {
       let (project_dir_exists, set_project_dir_exists) =
         React.useState(() => None);
-      let (error, set_error) = React.useState(() => None);
-
-      React.useEffect0(() => {
-        context.configuration.directory
-        |> Engine.V2.directory_exists
-        |> Promise_result.tap(result =>
-             switch (result) {
-             | Ok(value) => set_project_dir_exists(_ => Some(value))
-             | Error(err) => set_error(_ => Some(err))
-             }
-           )
-        |> ignore;
-        None;
-      });
 
       React.useEffect1(
         () => {
-          switch (error) {
-          | Some(_err) => () // TODO: onError(err)
-          | None => ()
+          if (isActive) {
+            context.configuration.directory
+            |> Engine.V2.directory_exists
+            |> Promise_result.perform(result =>
+                 switch (result) {
+                 | Ok(exists) => set_project_dir_exists(_ => Some(exists))
+                 | Error(err) => onError(err)
+                 }
+               );
           };
           None;
         },
-        [|error|],
+        [|isActive|],
       );
 
       switch (project_dir_exists, context.configuration.overwrite) {
@@ -398,14 +249,113 @@ module V2 = {
       | (Some(true), Some(_overwrite)) =>
         <>
           <Overwrite_input context onSubmit={_ => ()} isDisabled=true />
-          <Create context onComplete={_ => ()} />
+          <Create context onComplete onError />
         </>
-      | (Some(false), _) => <Spinner label="Creating project directory" />
+      | (Some(false), _) => <Create context onComplete onError />
       };
     };
   };
 
-  module Bundler = {};
+  module Copy_base_templates = {
+    open Ui;
+    [@react.component]
+    let make = (~isActive, ~context: Context.t, ~onComplete, ~onError) => {
+      let (copy_complete, set_copy_complete) = React.useState(() => false);
+
+      let handleOnComplete = () => {
+        set_copy_complete(_ => true);
+        onComplete();
+      };
+
+      React.useEffect1(
+        () => {
+          if (isActive) {
+            context.configuration.directory
+            |> Engine.V2.copy_base_project
+            |> Promise_result.perform(result =>
+                 switch (result) {
+                 | Ok(res) => handleOnComplete(res)
+                 | Error(err) => onError(err)
+                 }
+               );
+          };
+
+          None;
+        },
+        [|isActive|],
+      );
+
+      <Box flexDirection=`column gap=1>
+        {copy_complete
+           ? <Text> {React.string("Copying base templates complete")} </Text>
+           : <Spinner label="Copying base templates" />}
+      </Box>;
+    };
+  };
+
+  module Bundler = {
+    module Copy_files = {
+      open Ui;
+      [@react.component]
+      let make = (~isActive, ~context: Context.t, ~onComplete, ~onError) => {
+        let (copy_complete, set_copy_complete) = React.useState(() => false);
+
+        let handleOnComplete = () => {
+          set_copy_complete(_ => true);
+          onComplete();
+        };
+
+        React.useEffect1(
+          () => {
+            if (isActive) {
+              context.configuration.directory
+              |> Engine.V2.copy_bundler_files(
+                   ~bundler=context.configuration.bundler,
+                 )
+              |> Promise_result.perform(result =>
+                   switch (result) {
+                   | Ok(res) => handleOnComplete(res)
+                   | Error(err) => onError(err)
+                   }
+                 );
+            };
+
+            None;
+          },
+          [|isActive|],
+        );
+
+        let bundler_name =
+          context.configuration.bundler
+          |> Core.Bundler.to_string
+          |> String.capitalize_ascii;
+
+        <Box flexDirection=`column gap=1>
+          {copy_complete
+             ? <Text>
+                 {React.string(
+                    "Copying " ++ bundler_name ++ " files complete",
+                  )}
+               </Text>
+             : <Spinner label={"Copying " ++ bundler_name ++ " files"} />}
+        </Box>;
+      };
+    };
+
+    module Extend_package_json = {
+      [@react.component]
+      let make =
+          (~isActive as _, ~context as _, ~onComplete as _, ~onError as _) => {
+        <Text> {React.string("Bundler")} </Text>;
+      };
+    };
+
+    [@react.component]
+    let make =
+        (~isActive as _, ~context as _, ~onComplete as _, ~onError as _) => {
+      <Text> {React.string("Bundler")} </Text>;
+    };
+  };
   module Node_pkg_manager = {};
   module Git = {};
   module Opam = {
@@ -414,19 +364,65 @@ module V2 = {
     module Install_dev_deps = {};
   };
   module Dune_build = {};
+
   module Scaffold = {
     [@react.component]
-    let make = (~configuration: Configuration.t, ~onComplete as _onComplete) => {
-      let (_model, _dispatch) =
+    let make = (~configuration: Configuration.t, ~onComplete) => {
+      let (model, dispatch) =
         React.useReducer(
           update,
           {
-            context: Context.make(~configuration, ()),
+            context: Context.of_configuration(configuration),
             step: Create_dir,
             error: None,
           },
         );
-      <> </>;
+      let (error, set_error) = React.useState(() => None);
+
+      let onError = err => {
+        set_error(_ => Some(err));
+      };
+
+      React.useEffect1(
+        () => {
+          if (model.step == Node_pkg_manager) {
+            onComplete();
+          };
+          None;
+        },
+        [|model.step|],
+      );
+
+      switch (error) {
+      | Some(err) => <Text> {React.string(err)} </Text>
+      | None =>
+        <Box flexDirection=`column gap=1>
+          <Create_dir
+            isActive={model.step == Create_dir}
+            context={model.context}
+            onComplete={() => dispatch(Complete_create_dir)}
+            onError
+          />
+          <Copy_base_templates
+            isActive={model.step == Copy_base_templates}
+            context={model.context}
+            onComplete={() => dispatch(Complete_copy_base_project)}
+            onError
+          />
+          <Bundler.Copy_files
+            isActive={model.step == Bundler_copy_files}
+            context={model.context}
+            onComplete={() => dispatch(Complete_bundler_copy_files)}
+            onError
+          />
+          <Bundler.Extend_package_json
+            isActive={model.step == Bundler_extend_package_json}
+            context={model.context}
+            onComplete={() => dispatch(Complete_bundler_extend_package_json)}
+            onError
+          />
+        </Box>
+      };
     };
   };
 };

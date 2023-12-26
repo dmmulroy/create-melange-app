@@ -43,6 +43,11 @@ let tap (fn : ('value, 'error) result -> unit)
   promise_result |> Promise.tap fn
 ;;
 
+let perform (fn : ('value, 'error) result -> unit)
+    (promise_result : ('value, 'error) t) : unit =
+  tap fn promise_result |> ignore
+;;
+
 let is_ok (promise_result : ('value, 'error) t) : bool Promise.t =
   let open Promise.Syntax.Let in
   let* result = promise_result in

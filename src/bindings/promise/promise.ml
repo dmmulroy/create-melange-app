@@ -27,6 +27,10 @@ let tap (fn : 'value -> unit) (promise : 'value t) : 'value t =
          value)
 ;;
 
+let perform (fn : 'value -> unit) (promise : 'value t) : unit =
+  promise |> tap fn |> ignore
+;;
+
 module Syntax = struct
   module Infix = struct
     let ( >|= ) promise fn = map fn promise
