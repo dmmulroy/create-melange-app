@@ -49,7 +49,7 @@ module V2 = {
     };
 
   type model = {
-    context: Context.t,
+    configuration: Configuration.t,
     step,
     error: option(string),
   };
@@ -121,12 +121,9 @@ module V2 = {
     | (Dune_build, Complete_dune_build) => {...model, step: Finished}
     | (_, Set_overwrite_configuration(overwrite)) => {
         ...model,
-        context: {
-          ...model.context,
-          configuration: {
-            ...model.context.configuration,
-            overwrite: Some(overwrite),
-          },
+        configuration: {
+          ...model.configuration,
+          overwrite: Some(overwrite),
         },
       }
     | _ => {
@@ -167,13 +164,18 @@ module V2 = {
         };
 
       [@react.component]
-      let make = (~context: Context.t, ~onSubmit as onChange, ~isDisabled) => {
+      let make =
+          (
+            ~configuration: Configuration.t,
+            ~onSubmit as onChange,
+            ~isDisabled,
+          ) => {
         <Box flexDirection=`column gap=1>
           <Box flexDirection=`row>
             <Badge color=`yellow> {React.string("Warning: ")} </Badge>
             <Text>
               {React.string(
-                 context.configuration.name
+                 configuration.name
                  ++ " already exists and isn't empty. How would you like to proceed?",
                )}
             </Text>
@@ -186,7 +188,7 @@ module V2 = {
     module Create = {
       open Ui;
       [@react.component]
-      let make = (~context: Context.t, ~onComplete, ~onError) => {
+      let make = (~configuration: Configuration.t, ~onComplete, ~onError) => {
         let (create_complete, set_create_complete) =
           React.useState(() => false);
 
@@ -196,9 +198,9 @@ module V2 = {
         };
 
         React.useEffect0(() => {
-          context.configuration.directory
+          configuration.directory
           |> Engine.V2.create_project_directory(
-               ~overwrite=?context.configuration.overwrite,
+               ~overwrite=?configuration.overwrite,
              )
           |> Promise_result.perform(result =>
                switch (result) {
@@ -221,14 +223,15 @@ module V2 = {
     };
 
     [@react.component]
-    let make = (~isActive, ~context: Context.t, ~onComplete, ~onError) => {
+    let make =
+        (~isActive, ~configuration: Configuration.t, ~onComplete, ~onError) => {
       let (project_dir_exists, set_project_dir_exists) =
         React.useState(() => None);
 
       React.useEffect1(
         () => {
           if (isActive) {
-            context.configuration.directory
+            configuration.directory
             |> Engine.V2.directory_exists
             |> Promise_result.perform(result =>
                  switch (result) {
@@ -242,16 +245,16 @@ module V2 = {
         [|isActive|],
       );
 
-      switch (project_dir_exists, context.configuration.overwrite) {
+      switch (project_dir_exists, configuration.overwrite) {
       | (None, _) => <Spinner label="Checking if project directory exists" />
       | (Some(true), None) =>
-        <Overwrite_input context onSubmit={_ => ()} isDisabled=false />
+        <Overwrite_input configuration onSubmit={_ => ()} isDisabled=false />
       | (Some(true), Some(_overwrite)) =>
         <>
-          <Overwrite_input context onSubmit={_ => ()} isDisabled=true />
-          <Create context onComplete onError />
+          <Overwrite_input configuration onSubmit={_ => ()} isDisabled=true />
+          <Create configuration onComplete onError />
         </>
-      | (Some(false), _) => <Create context onComplete onError />
+      | (Some(false), _) => <Create configuration onComplete onError />
       };
     };
   };
@@ -259,7 +262,8 @@ module V2 = {
   module Copy_base_templates = {
     open Ui;
     [@react.component]
-    let make = (~isActive, ~context: Context.t, ~onComplete, ~onError) => {
+    let make =
+        (~isActive, ~configuration: Configuration.t, ~onComplete, ~onError) => {
       let (copy_complete, set_copy_complete) = React.useState(() => false);
 
       let handleOnComplete = () => {
@@ -270,7 +274,7 @@ module V2 = {
       React.useEffect1(
         () => {
           if (isActive) {
-            context.configuration.directory
+            configuration.directory
             |> Engine.V2.copy_base_project
             |> Promise_result.perform(result =>
                  switch (result) {
@@ -297,7 +301,8 @@ module V2 = {
     module Copy_files = {
       open Ui;
       [@react.component]
-      let make = (~isActive, ~context: Context.t, ~onComplete, ~onError) => {
+      let make =
+          (~isActive, ~configuration: Configuration.t, ~onComplete, ~onError) => {
         let (copy_complete, set_copy_complete) = React.useState(() => false);
 
         let handleOnComplete = () => {
@@ -308,10 +313,8 @@ module V2 = {
         React.useEffect1(
           () => {
             if (isActive) {
-              context.configuration.directory
-              |> Engine.V2.copy_bundler_files(
-                   ~bundler=context.configuration.bundler,
-                 )
+              configuration.directory
+              |> Engine.V2.copy_bundler_files(~bundler=configuration.bundler)
               |> Promise_result.perform(result =>
                    switch (result) {
                    | Ok(res) => handleOnComplete(res)
@@ -326,7 +329,7 @@ module V2 = {
         );
 
         let bundler_name =
-          context.configuration.bundler
+          configuration.bundler
           |> Core.Bundler.to_string
           |> String.capitalize_ascii;
 
@@ -345,14 +348,52 @@ module V2 = {
     module Extend_package_json = {
       [@react.component]
       let make =
-          (~isActive as _, ~context as _, ~onComplete as _, ~onError as _) => {
-        <Text> {React.string("Bundler")} </Text>;
+          (~isActive, ~configuration: Configuration.t, ~onComplete, ~onError) => {
+        let (complete, set_complete) = React.useState(() => false);
+
+        let handleOnComplete = () => {
+          set_complete(_ => true);
+          onComplete();
+        };
+
+        React.useEffect1(
+          () => {
+            if (isActive) {
+              configuration.directory
+              |> Engine.V2.copy_bundler_files(~bundler=configuration.bundler)
+              |> Promise_result.perform(result =>
+                   switch (result) {
+                   | Ok(res) => handleOnComplete(res)
+                   | Error(err) => onError(err)
+                   }
+                 );
+            };
+
+            None;
+          },
+          [|isActive|],
+        );
+
+        let bundler_name =
+          configuration.bundler
+          |> Core.Bundler.to_string
+          |> String.capitalize_ascii;
+
+        <Box flexDirection=`column gap=1>
+          {complete
+             ? <Text>
+                 {React.string(
+                    "Copying " ++ bundler_name ++ " files complete",
+                  )}
+               </Text>
+             : <Spinner label={"Copying " ++ bundler_name ++ " files"} />}
+        </Box>;
       };
     };
 
     [@react.component]
     let make =
-        (~isActive as _, ~context as _, ~onComplete as _, ~onError as _) => {
+        (~isActive as _, ~configuration as _, ~onComplete as _, ~onError as _) => {
       <Text> {React.string("Bundler")} </Text>;
     };
   };
@@ -371,11 +412,7 @@ module V2 = {
       let (model, dispatch) =
         React.useReducer(
           update,
-          {
-            context: Context.of_configuration(configuration),
-            step: Create_dir,
-            error: None,
-          },
+          {configuration, step: Create_dir, error: None},
         );
       let (error, set_error) = React.useState(() => None);
 
@@ -399,25 +436,25 @@ module V2 = {
         <Box flexDirection=`column gap=1>
           <Create_dir
             isActive={model.step == Create_dir}
-            context={model.context}
+            configuration={model.configuration}
             onComplete={() => dispatch(Complete_create_dir)}
             onError
           />
           <Copy_base_templates
             isActive={model.step == Copy_base_templates}
-            context={model.context}
+            configuration={model.configuration}
             onComplete={() => dispatch(Complete_copy_base_project)}
             onError
           />
           <Bundler.Copy_files
             isActive={model.step == Bundler_copy_files}
-            context={model.context}
+            configuration={model.configuration}
             onComplete={() => dispatch(Complete_bundler_copy_files)}
             onError
           />
           <Bundler.Extend_package_json
             isActive={model.step == Bundler_extend_package_json}
-            context={model.context}
+            configuration={model.configuration}
             onComplete={() => dispatch(Complete_bundler_extend_package_json)}
             onError
           />

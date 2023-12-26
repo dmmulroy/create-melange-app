@@ -7,7 +7,6 @@ let dir_to_string = function `Base -> "./" | `Extension dir -> dir
 module type S = sig
   type t
 
-  val key : t Hmap.key
   val name : string
   val compile : dir:string -> t -> (unit, string) Promise_result.t
 end
@@ -18,13 +17,13 @@ module Config = struct
 
     val name : string
     val to_json : t -> Js.Json.t
+    (* val of_json : Js.Json.t -> t *)
   end
 end
 
 module Make (M : Config.S) : S with type t = M.t = struct
   type t = M.t
 
-  let key = Hmap.Key.create ()
   let name = M.name
 
   let compile ~dir value =

@@ -4,143 +4,102 @@ module Dependency = Dependency
 module Engine = Engine
 module Fs = Fs
 module Validation = Validation
-open Bindings
+module Template = Template
 
-module Template = struct
-  let root_dir = "templates"
-  let base_dir = Node.Path.join [| root_dir; "base" |]
-  let dir_to_string = function `Base -> "./" | `Extension dir -> dir
+(* module Context = struct
+     module String_map = Map.Make (String)
+     type t = {
+       configuration : Configuration.t;
+       (* Template name -> Template module *)
+       templates : (module Template.S) String_map.t;
+       (* Template key -> Template value*)
+       template_values : Hmap.t;
+     }
 
-  module type S = sig
-    type t
+     type template_instance =
+       | TemplateInstance :
+           (module Template.S with type t = 'a) * 'a
+           -> template_instance
 
-    val key : t Hmap.key
-    val name : string
-    val compile : dir:string -> t -> (unit, string) Promise_result.t
-  end
+     (* let base_templates : template_instance list =
+          [
+            TemplateInstance
+              ( (module Package_json.Template : Template.S with type t = Package_json.t),
+                Package_json.empty );
+            TemplateInstance
+              ( (module Dune_project.Template : Template.S with type t = Dune_project.t),
+                Dune_project.empty );
+          ]
+        ;; *)
 
-  module Config = struct
-    module type S = sig
-      type t
+     let make ?(templates = String_map.empty) ?(template_values = Hmap.empty)
+         ~configuration () =
+       { configuration; templates; template_values }
+     ;;
 
-      val name : string
-      val to_json : t -> Js.Json.t
-    end
-  end
+     let of_configuration (configuration : Configuration.t) =
+       List.fold_left
+         (fun ctx (TemplateInstance (template, empty_value)) ->
+           let module TemplateInstance =
+             (val template : Template.S with type t = 'a)
+           in
+           {
+             ctx with
+             templates =
+               String_map.add TemplateInstance.name
+                 (module TemplateInstance : Template.S)
+                 ctx.templates;
+             template_values =
+               Hmap.add TemplateInstance.key empty_value ctx.template_values;
+           })
+         (make ~configuration ()) []
+     ;;
 
-  module Make (M : Config.S) : S with type t = M.t = struct
-    type t = M.t
+     let get_template_by_name ~name ctx = String_map.find_opt name ctx.templates
 
-    let key = Hmap.Key.create ()
-    let name = M.name
+     let get_template_value (type a)
+         ~template:(module Template : Template.S with type t = a) ctx =
+       Hmap.find Template.key ctx.template_values
+     ;;
 
-    let compile ~dir value =
-      let open Promise_result.Syntax.Let in
-      let+ _ = Fs.validate_template_exists ~dir M.name in
-      let json = M.to_json value in
-      let| contents = Fs.read_template ~dir M.name in
-      let template = Handlebars.compile contents () in
-      let compiled_contents = template json () in
-      Fs.write_template ~dir name compiled_contents |> Promise.resolve
-    ;;
-  end
-end
+     let set_template_value (type a)
+         ~template:(module Template : Template.S with type t = a) ~(value : a) ctx
+         =
+       {
+         ctx with
+         template_values = Hmap.add Template.key value ctx.template_values;
+       }
+     ;;
+   end *)
 
-module Context = struct
-  module String_map = Map.Make (String)
+(* module Extension = struct
+     module type S = sig
+       val extend : Context.t -> (Context.t, string) Promise_result.t
+     end
 
-  type t = {
-    configuration : Configuration.t;
-    (* Template name -> Template module *)
-    templates : (module Template.S) String_map.t;
-    (* Template key -> Template value*)
-    template_values : Hmap.t;
-  }
+     module Config = struct
+       module type S = sig
+         include Template.S
 
-  type template_instance =
-    | TemplateInstance :
-        (module Template.S with type t = 'a) * 'a
-        -> template_instance
+         val input_of_context : Context.t -> (t, string) Promise_result.t
+         val extend : t -> (t, string) Promise_result.t
+       end
+     end
 
-  (* let base_templates : template_instance list =
-       [
-         TemplateInstance
-           ( (module Package_json.Template : Template.S with type t = Package_json.t),
-             Package_json.empty );
-         TemplateInstance
-           ( (module Dune_project.Template : Template.S with type t = Dune_project.t),
-             Dune_project.empty );
-       ]
-     ;; *)
-
-  let make ?(templates = String_map.empty) ?(template_values = Hmap.empty)
-      ~configuration () =
-    { configuration; templates; template_values }
-  ;;
-
-  let of_configuration (configuration : Configuration.t) =
-    List.fold_left
-      (fun ctx (TemplateInstance (template, empty_value)) ->
-        let module TemplateInstance =
-          (val template : Template.S with type t = 'a)
-        in
-        {
-          ctx with
-          templates =
-            String_map.add TemplateInstance.name
-              (module TemplateInstance : Template.S)
-              ctx.templates;
-          template_values =
-            Hmap.add TemplateInstance.key empty_value ctx.template_values;
-        })
-      (make ~configuration ()) []
-  ;;
-
-  let get_template_by_name ~name ctx = String_map.find_opt name ctx.templates
-
-  let get_template_value (type a)
-      ~template:(module Template : Template.S with type t = a) ctx =
-    Hmap.find Template.key ctx.template_values
-  ;;
-
-  let set_template_value (type a)
-      ~template:(module Template : Template.S with type t = a) ~(value : a) ctx
-      =
-    {
-      ctx with
-      template_values = Hmap.add Template.key value ctx.template_values;
-    }
-  ;;
-end
-
-module Extension = struct
-  module type S = sig
-    val extend : Context.t -> (Context.t, string) Promise_result.t
-  end
-
-  module Config = struct
-    module type S = sig
-      include Template.S
-
-      val input_of_context : Context.t -> (t, string) Promise_result.t
-      val extend : t -> (t, string) Promise_result.t
-    end
-  end
-
-  module Make (M : Config.S) = struct
-    let extend (ctx : Context.t) =
-      ctx
-      |> Context.get_template_value
-           ~template:(module M : Template.S with type t = M.t)
-      |> Option.to_result
-           ~none:
-             (Printf.sprintf "Template value not found for template: %s" M.name)
-      |> Promise_result.resolve
-      |. Promise_result.bind M.extend
-      |> Promise_result.map (fun updated_value ->
-             Context.set_template_value
-               ~template:(module M)
-               ~value:updated_value ctx)
-    ;;
-  end
-end
+     module Make (M : Config.S) = struct
+       let extend (ctx : Context.t) =
+         ctx
+         |> Context.get_template_value
+              ~template:(module M : Template.S with type t = M.t)
+         |> Option.to_result
+              ~none:
+                (Printf.sprintf "Template value not found for template: %s" M.name)
+         |> Promise_result.resolve
+         |. Promise_result.bind M.extend
+         |> Promise_result.map (fun updated_value ->
+                Context.set_template_value
+                  ~template:(module M)
+                  ~value:updated_value ctx)
+       ;;
+     end
+   end *)

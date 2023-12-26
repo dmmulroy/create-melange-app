@@ -101,18 +101,10 @@ let fold_compilation_results (ctx : Context.t)
 let dependencies : (module Dependency.S) list =
   [
     (module Opam.Dependency);
-    (* (module Node_js.Dependency : Dependency.S);
-       (module Git_scm.Dependency : Dependency.S); *)
+    (module Node_js.Dependency : Dependency.S);
+    (module Git_scm.Dependency : Dependency.S);
   ]
 ;;
-
-(* let fold_dependency_to_result
-       (acc : (Dependency.check list, string) Promise_result.t)
-       (module Dep : Dependency.S) =
-     let open Promise_result.Syntax.Let in
-     let+ check_result = Dep.check () in
-     acc |> Promise_result.map (fun results -> check_result :: results)
-   ;; *)
 
 let fold_dependency_to_result acc (module Dep : Dependency.S) =
   let open Promise_result.Syntax.Let in
@@ -143,11 +135,5 @@ module V2 = struct
     | Vite -> Vite.V2.Copy_vite_config_js.exec project_directory
   ;;
 
-  (* let extend_template name (ctx : V2.t) values =
-       let x = V2.get_template_by_name ~name ctx in
-       Option.map (fun (module T : Template.S) ->
-           let template_values = V2.get_template_value ~template:(module T) ctx in
-           ())
-     in
-     () *)
+  (* let extend_package_json  *)
 end
