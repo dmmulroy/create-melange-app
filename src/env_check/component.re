@@ -136,13 +136,3 @@ let make = (~onEnvCheck=?) => {
      }}
   </Box>;
 };
-//|> List.map((result: Core.Dependency.check) => {
-//     <Box key={result.name} gap=1>
-//       {switch (result.status) {
-//        | `Failed =>
-//        | `Pass =>
-//        }}
-//     </Box>
-//   })
-//|> Array.of_list
-//|> React.array}

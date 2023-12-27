@@ -1,10 +1,13 @@
 module Bundler = Bundler
 module Configuration = Configuration
 module Dependency = Dependency
+module Dune_project = Dune_project
 module Engine = Engine
 module Fs = Fs
-module Validation = Validation
+module Package_json = Package_json
 module Template = Template
+module Template_v2 = Template_v2
+module Validation = Validation
 
 (* module Context = struct
      module String_map = Map.Make (String)

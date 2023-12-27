@@ -59,7 +59,7 @@ let to_json dune_project =
 ;;
 
 let template project_name =
-  Template_v2.make ~name:"package.json.tmpl"
+  Template_v2.make ~name:"dune-project.tmpl"
     ~value:{ empty with name = project_name }
     ~to_json
 ;;

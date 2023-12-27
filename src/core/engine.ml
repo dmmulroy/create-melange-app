@@ -124,13 +124,15 @@ let check_dependencies () =
 ;;
 
 module V2 = struct
-  (* let extend_package_json  *)
-end
-
-module V3 = struct
   let directory_exists = Fs.exists
   let create_project_directory = Fs.create_project_directory
-  let copy_base_project = Fs.copy_base_project
+
+  let copy_base_project dir =
+    try
+      dir |> Fs.copy_base_project
+      |> Promise_result.catch Promise_result.resolve_error
+    with exn -> Promise_result.resolve_error Printexc.(to_string exn)
+  ;;
 
   let copy_bundler_files ~(bundler : Bundler.t) project_directory =
     match bundler with
@@ -139,7 +141,7 @@ module V3 = struct
     | Vite -> Vite.V2.Copy_vite_config_js.exec project_directory
   ;;
 
-  module Tea = struct
+  module Fsm = struct
     type state =
       | Idle
       | Create_dir
@@ -153,9 +155,14 @@ module V3 = struct
       | Opam_install_dev_deps
       | Dune_build
       | Finished
-      | Error
+      | Error of error
 
-    let state_to_string = function
+    and error = Invalid_state_transition of state * action
+    and action = Start of state | Complete of state | Finish
+
+    type transition = { from : state; action : action; to' : state }
+
+    let rec state_to_string = function
       | Idle -> "Idle"
       | Create_dir -> "Create_dir"
       | Copy_base_templates -> "Copy_base_templates"
@@ -168,12 +175,29 @@ module V3 = struct
       | Opam_install_dev_deps -> "Opam_install_dev_deps"
       | Dune_build -> "Dune_build"
       | Finished -> "Finished"
-      | Error -> "Error"
+      | Error error -> (
+          match error with
+          | Invalid_state_transition (state, action) ->
+              Format.sprintf "Invalid state transition: %s -> %s"
+                (state_to_string state)
+                (match action with
+                | Start state ->
+                    Printf.sprintf "Start %s" (state_to_string state)
+                | Complete state ->
+                    Printf.sprintf "Complete %s" (state_to_string state)
+                | Finish -> "Finish"))
     ;;
 
-    type action = Start of state | Complete of state | Finished
-    type transition = { from : state; action : action; to' : state }
-    type error = Invalid_state_transition of state * action
+    let error_to_string = function
+      | Invalid_state_transition (state, action) ->
+          Format.sprintf "Invalid state transition: %s -> %s"
+            (state_to_string state)
+            (match action with
+            | Start state -> Printf.sprintf "Start %s" (state_to_string state)
+            | Complete state ->
+                Printf.sprintf "Complete %s" (state_to_string state)
+            | Finish -> "Finish")
+    ;;
 
     type model = {
       configuration : Configuration.t;
@@ -212,22 +236,56 @@ module V3 = struct
       }
     ;;
 
-    let transition ~(action : action) (model : model) : (model, error) result =
+    let transition ~(action : action) (model : model) : model =
       match (model.state, action) with
       | (state, Start next_state | state, Complete next_state)
         when next_state = to_next_state state ->
-          Ok { model with state = next_state }
-      | _, _ -> Error (Invalid_state_transition (model.state, action))
+          model.on_transition { from = state; action; to' = next_state };
+          { model with state = next_state }
+      | state, Finish when state = Finished ->
+          model.on_finish ();
+          model
+      | _, _ ->
+          model.on_error (Invalid_state_transition (model.state, action));
+          {
+            model with
+            state = Error (Invalid_state_transition (model.state, action));
+          }
     ;;
 
-    let map ~f (model : model) = f model
+    let create_project_directory machine =
+      let open Promise_result.Syntax.Let in
+      let overwrite = machine.configuration.overwrite in
+      let directory = machine.configuration.directory in
+      machine
+      |> transition ~action:(Start Create_dir)
+      |> Promise_result.resolve_ok
+      |. Promise_result.bind (fun machine ->
+             let+ _ = create_project_directory ?overwrite directory in
+             transition ~action:(Complete Create_dir) machine
+             |> Promise_result.resolve_ok)
+    ;;
+
+    let copy_base_templates machine =
+      let open Promise_result.Syntax.Let in
+      let directory = machine.configuration.directory in
+      machine
+      |> transition ~action:(Start Copy_base_templates)
+      |> Promise_result.resolve_ok
+      |. Promise_result.bind (fun machine ->
+             let+ _ = copy_base_project directory in
+             transition ~action:(Complete Copy_base_templates) machine
+             |> Promise_result.resolve_ok)
+    ;;
   end
 
-  let run ~(on_transition : Tea.transition -> unit)
-      ~(on_error : Tea.error -> unit) ~(on_finish : unit -> unit)
+  let run ~(on_transition : Fsm.transition -> unit)
+      ~(on_error : Fsm.error -> unit) ~(on_finish : unit -> unit)
       ~(configuration : Configuration.t) =
-    Tea.make ~configuration ~on_transition ~on_error ~on_finish
-    |> Tea.map ~f:(Tea.transition ~action:(Start Idle))
-    |> Result.map (fun machine -> machine)
+    Fsm.make ~configuration ~on_transition ~on_error ~on_finish
+    |> Promise_result.resolve_ok
+    |. Promise_result.bind Fsm.create_project_directory
+    |. Promise_result.bind Fsm.copy_base_templates
+    |> Promise_result.map (Fun.const ())
   ;;
 end

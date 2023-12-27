@@ -65,7 +65,7 @@ let make = (~name as initial_name) => {
       (),
     );
 
-  <Box flexDirection=`column gap=1>
+  <Box flexDirection=`column>
     <Banner />
     {switch (initial_name_is_valid) {
      | Some(Error(`Msg(error))) =>

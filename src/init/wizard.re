@@ -1,5 +1,7 @@
 open Bindings;
 open Ink;
+open Ui;
+open Core;
 
 module Step = {
   [@react.component]
@@ -39,9 +41,7 @@ module Name = {
     <Box flexDirection=`column gap=1>
       <Spacer />
       <Box flexDirection=`row>
-        <Common.Prefix>
-          {React.string("What will your project be called? ")}
-        </Common.Prefix>
+        <Text> {React.string("What will your project be called? ")} </Text>
         <Ui.Text_input
           value
           isDisabled
@@ -81,9 +81,7 @@ module Bundler = {
     };
 
     <Box flexDirection=`column>
-      <Common.Prefix>
-        {React.string("Which bundler would you like to use?")}
-      </Common.Prefix>
+      <Text> {React.string("Which bundler would you like to use?")} </Text>
       <Ui.Select options=bundler_select_options onChange isDisabled />
     </Box>;
   };
@@ -108,11 +106,11 @@ module Git = {
         [|onSubmit|],
       );
     <Box flexDirection=`column>
-      <Common.Prefix>
+      <Text>
         {React.string(
            "Should we initialize a Git repository and stage the changes?",
          )}
-      </Common.Prefix>
+      </Text>
       <Ui.Select options=git_select_options onChange isDisabled />
     </Box>;
   };
@@ -140,14 +138,51 @@ module Npm = {
     let pkg_manager = Nodejs.Process.npm_config_user_agent;
 
     <Box flexDirection=`column>
-      <Common.Prefix>
+      <Text>
         {React.string(
            "Should we run '"
            ++ Nodejs.Process.npm_user_agent_to_string(pkg_manager)
            ++ " install' for you?",
          )}
-      </Common.Prefix>
+      </Text>
       <Ui.Select options=git_select_options onChange isDisabled />
+    </Box>;
+  };
+};
+
+module Overwrite_preference = {
+  open Ui;
+
+  let options: array(Select.select_option) = [|
+    {value: "abort", label: "Abort installation"},
+    {value: "clear", label: "Clear the directory and continue installation"},
+    {
+      value: "overwrite",
+      label: "Continue installation and overwrite conflicting files",
+    },
+  |];
+
+  let overwrite_preference_of_string = str =>
+    switch (str) {
+    | "abort" => `Abort
+    | "clear" => `Clear
+    | "overwrite" => `Overwrite
+    | _ => `Abort
+    };
+
+  [@react.component]
+  let make = (~name, ~onSubmit as onChange, ~isDisabled) => {
+    <Box flexDirection=`column gap=1>
+      <Box flexDirection=`row gap=1>
+        <Badge color=`yellow> {React.string("Warning")} </Badge>
+        <Text>
+          {React.string(
+             name
+             ++ " already exists and isn't empty. How would you like to proceed?",
+           )}
+        </Text>
+      </Box>
+      <Select options onChange isDisabled />
     </Box>;
   };
 };
@@ -157,6 +192,7 @@ type step =
   | Bundler
   | Git
   | Npm
+  | Overwrite_preference
   | Complete;
 
 let step_to_string =
@@ -165,6 +201,7 @@ let step_to_string =
   | Bundler => "Bundler"
   | Git => "Git"
   | Npm => "Npm"
+  | Overwrite_preference => "Overwrite_preference"
   | Complete => "Complete";
 
 [@react.component]
@@ -189,8 +226,11 @@ let make =
     React.useState(() => (None: option(Core.Bundler.t)));
   let (initialize_git, set_initialize_git) =
     React.useState(() => (None: option(bool)));
-  let (_initialize_npm, set_initialize_npm) =
+  let (initialize_npm, set_initialize_npm) =
     React.useState(() => (None: option(bool)));
+  let (overwrite_preference, set_overwrite_preference) =
+    React.useState(() => (None: option([ | `Clear | `Overwrite])));
+  let (error, set_error) = React.useState(() => None);
 
   let onSubmitName = ((name, directory)) =>
     if (active_step == Name) {
@@ -226,26 +266,63 @@ let make =
     React.useCallback3(
       value => {
         set_initialize_npm(_ => Some(value));
-        switch (name, directory, bundler) {
-        | (Some(name), Some(directory), Some(bundler)) =>
-          set_active_step(_ => Complete);
-          onComplete(
-            Core.Configuration.make(
-              ~name,
-              ~directory,
-              ~bundler,
-              ~initialize_git={
-                Option.value(~default=false, initialize_git);
-              },
-              ~initialize_npm=value,
-              ~overwrite=None,
-            ),
-          );
-        | _ => ()
-        };
+        Option.get(directory)
+        |> Engine.V2.directory_exists
+        |> Promise_result.perform(result =>
+             switch (result) {
+             | Ok(true) => set_active_step(_ => Overwrite_preference)
+             | Ok(false) => set_active_step(_ => Complete)
+             | Error(error) => set_error(_ => Some(error))
+             }
+           );
       },
       (name, bundler, initialize_git),
     );
+
+  let onSubmitOverwrite_preference =
+    React.useCallback0(value => {
+      let preference =
+        Overwrite_preference.overwrite_preference_of_string(value);
+      switch (preference) {
+      | `Abort => Node.Process.exit(0)
+      | `Clear as preference
+      | `Overwrite as preference =>
+        set_overwrite_preference(_ => Some(preference));
+        set_active_step(_ => Complete);
+      };
+    });
+
+  React.useEffect1(
+    () => {
+      if (active_step == Complete) {
+        onComplete(
+          Core.Configuration.make(
+            ~name={
+              Option.get(name);
+            },
+            ~directory={
+              Option.get(directory);
+            },
+            ~bundler={
+              Option.get(bundler);
+            },
+            ~initialize_git={
+              Option.value(~default=false, initialize_git);
+            },
+            ~initialize_npm={
+              Option.value(~default=false, initialize_npm);
+            },
+            ~overwrite={
+              overwrite_preference;
+            },
+          ),
+        );
+      };
+
+      None;
+    },
+    [|active_step|],
+  );
 
   let show_name_step = Option.is_none(initial_configuration.name);
   let show_bundler_step = Option.is_some(name);
@@ -254,6 +331,13 @@ let make =
     Option.is_some(initialize_git)
     || Option.is_some(bundler)
     && !should_prompt_git;
+  let show_overwrite_step =
+    Option.is_some(initialize_npm)
+    && (
+      active_step == Overwrite_preference
+      || active_step == Complete
+      && Option.is_some(overwrite_preference)
+    );
 
   <Box flexDirection=`column gap=1>
     <Step visible=show_name_step>
@@ -268,5 +352,23 @@ let make =
     <Step visible=show_npm_step>
       <Npm onSubmit=onSubmitNpm isDisabled={active_step != Npm} />
     </Step>
+    <Step visible=show_overwrite_step>
+      <Overwrite_preference
+        name={Option.get(name)}
+        onSubmit=onSubmitOverwrite_preference
+        isDisabled={active_step != Overwrite_preference}
+      />
+    </Step>
+    {switch (error) {
+     | Some(error) =>
+       <Box display=`flex>
+         <Box flexDirection=`row gap=1>
+           <Badge color=`red> {React.string("Error")} </Badge>
+           <Text> {React.string(error)} </Text>
+         </Box>
+         <Spacer />
+       </Box>
+     | None => React.null
+     }}
   </Box>;
 };
