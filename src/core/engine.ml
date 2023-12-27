@@ -124,6 +124,10 @@ let check_dependencies () =
 ;;
 
 module V2 = struct
+  (* let extend_package_json  *)
+end
+
+module V3 = struct
   let directory_exists = Fs.exists
   let create_project_directory = Fs.create_project_directory
   let copy_base_project = Fs.copy_base_project
@@ -135,5 +139,95 @@ module V2 = struct
     | Vite -> Vite.V2.Copy_vite_config_js.exec project_directory
   ;;
 
-  (* let extend_package_json  *)
+  module Tea = struct
+    type state =
+      | Idle
+      | Create_dir
+      | Copy_base_templates
+      | Bundler_copy_files
+      | Bundler_extend_package_json
+      | Node_pkg_manager
+      | Git
+      | Opam_create_switch
+      | Opam_install_deps
+      | Opam_install_dev_deps
+      | Dune_build
+      | Finished
+      | Error
+
+    let state_to_string = function
+      | Idle -> "Idle"
+      | Create_dir -> "Create_dir"
+      | Copy_base_templates -> "Copy_base_templates"
+      | Bundler_copy_files -> "Bundler_copy_files"
+      | Bundler_extend_package_json -> "Bundler_extend_package_json"
+      | Node_pkg_manager -> "Node_pkg_manager"
+      | Git -> "Git"
+      | Opam_create_switch -> "Opam_create_switch"
+      | Opam_install_deps -> "Opam_install_deps"
+      | Opam_install_dev_deps -> "Opam_install_dev_deps"
+      | Dune_build -> "Dune_build"
+      | Finished -> "Finished"
+      | Error -> "Error"
+    ;;
+
+    type action = Start of state | Complete of state | Finished
+    type transition = { from : state; action : action; to' : state }
+    type error = Invalid_state_transition of state * action
+
+    type model = {
+      configuration : Configuration.t;
+      pkg_json : Package_json.t Template_v2.t;
+      dune_project : Dune_project.t Template_v2.t;
+      state : state;
+      on_transition : transition -> unit;
+      on_error : error -> unit;
+      on_finish : unit -> unit;
+    }
+
+    let to_next_state = function
+      | Idle -> Create_dir
+      | Create_dir -> Copy_base_templates
+      | Copy_base_templates -> Bundler_copy_files
+      | Bundler_copy_files -> Bundler_extend_package_json
+      | Bundler_extend_package_json -> Node_pkg_manager
+      | Node_pkg_manager -> Git
+      | Git -> Opam_create_switch
+      | Opam_create_switch -> Opam_install_deps
+      | Opam_install_deps -> Opam_install_dev_deps
+      | Opam_install_dev_deps -> Dune_build
+      | Dune_build -> Finished
+      | _ -> assert false
+    ;;
+
+    let make ~configuration ~on_transition ~on_error ~on_finish =
+      {
+        configuration;
+        pkg_json = Package_json.template configuration.name;
+        dune_project = Dune_project.template configuration.name;
+        state = Idle;
+        on_transition;
+        on_error;
+        on_finish;
+      }
+    ;;
+
+    let transition ~(action : action) (model : model) : (model, error) result =
+      match (model.state, action) with
+      | (state, Start next_state | state, Complete next_state)
+        when next_state = to_next_state state ->
+          Ok { model with state = next_state }
+      | _, _ -> Error (Invalid_state_transition (model.state, action))
+    ;;
+
+    let map ~f (model : model) = f model
+  end
+
+  let run ~(on_transition : Tea.transition -> unit)
+      ~(on_error : Tea.error -> unit) ~(on_finish : unit -> unit)
+      ~(configuration : Configuration.t) =
+    Tea.make ~configuration ~on_transition ~on_error ~on_finish
+    |> Tea.map ~f:(Tea.transition ~action:(Start Idle))
+    |> Result.map (fun machine -> machine)
+  ;;
 end

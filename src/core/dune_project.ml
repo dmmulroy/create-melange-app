@@ -58,6 +58,12 @@ let to_json dune_project =
   Js.Json.object_ dict
 ;;
 
+let template project_name =
+  Template_v2.make ~name:"package.json.tmpl"
+    ~value:{ empty with name = project_name }
+    ~to_json
+;;
+
 module Template = struct
   include Make_template (struct
     type nonrec t = t

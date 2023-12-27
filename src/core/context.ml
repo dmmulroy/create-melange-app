@@ -1,5 +1,6 @@
 module String_map = Map.Make (String)
 
+(* TODO: Start here *)
 type 'a template_context = {
   template : (module Template.S with type t = 'a);
   instance : 'a;
