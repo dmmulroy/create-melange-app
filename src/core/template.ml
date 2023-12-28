@@ -1,38 +1,37 @@
 open Bindings
+open Js
 
-let root_dir = "templates"
-let base_dir = Node.Path.join [| root_dir; "base" |]
-let dir_to_string = function `Base -> "./" | `Extension dir -> dir
+type 'a t = {
+  name : string;
+  value : 'a;
+  dir : string;
+  state : [ `Uncompiled | `Compiled ];
+  to_json : 'a -> Json.t;
+}
 
-module type S = sig
-  type t
+let make ~name ~value ~dir ~to_json =
+  { name; value; dir; state = `Uncompiled; to_json }
+;;
 
-  val name : string
-  val compile : dir:string -> t -> (unit, string) Promise_result.t
-end
+let to_json (template : 'a t) : Json.t = template.value |> template.to_json
 
-module Config = struct
-  module type S = sig
-    type t
+let map (fn : 'a -> 'b) (template : 'a t) : 'b t =
+  { template with value = fn template.value }
+;;
 
-    val name : string
-    val to_json : t -> Js.Json.t
-    (* val of_json : Js.Json.t -> t *)
-  end
-end
-
-module Make (M : Config.S) : S with type t = M.t = struct
-  type t = M.t
-
-  let name = M.name
-
-  let compile ~dir value =
+let compile template =
+  if template.state = `Compiled then
+    Promise_result.resolve_error
+      (Format.sprintf "Already compiled '%s' template" template.name)
+  else
     let open Promise_result.Syntax.Let in
-    let+ _ = Fs.validate_template_exists ~dir M.name in
-    let json = M.to_json value in
-    let| contents = Fs.read_template ~dir M.name in
-    let template = Handlebars.compile contents () in
-    let compiled_contents = template json () in
-    Fs.write_template ~dir name compiled_contents |> Promise.resolve
-  ;;
-end
+    let dir = template.dir in
+    let+ _ = Fs.validate_template_exists ~dir template.name in
+    let json = to_json template in
+    let| contents = Fs.read_template ~dir template.name in
+    let compile_template = Handlebars.compile contents () in
+    let compiled_contents = compile_template json () in
+    Fs.write_template ~dir template.name compiled_contents
+    |> Promise_result.resolve
+    |> Promise_result.map (Fun.const { template with state = `Compiled })
+;;

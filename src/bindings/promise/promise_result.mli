@@ -40,7 +40,8 @@ val tap :
   (('value, 'error) result -> unit) -> ('value, 'error) t -> ('value, 'error) t
 (** [tap fn promise_result] applies [fn] to the result of [promise_result] and returns the original promise. *)
 
-val perform : (('value, 'error) result -> unit) -> ('value, 'error) t -> unit
+val perform :
+  (('value, 'error) result -> unit) -> ('value, 'error) t -> unit 
 (** [perform fn promise_result] applies [fn] to the result of [promise_result] and returns unit. *)
 
 val is_ok : ('value, 'error) t -> bool Promise.t

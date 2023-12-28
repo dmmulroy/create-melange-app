@@ -24,9 +24,9 @@ let bind (promise : 'value t) (fn : 'value -> 'next_value t) : 'next_value t =
 
 let tap (fn : 'value -> unit) (promise : 'value t) : 'value t =
   promise
-  |> map (fun value ->
+  |> and_then (fun value ->
          fn value;
-         value)
+         resolve value)
 ;;
 
 let perform (fn : 'value -> unit) (promise : 'value t) : unit =

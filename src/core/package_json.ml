@@ -1,5 +1,4 @@
 module String_map = Map.Make (String)
-module Make_template = Template.Make
 
 module Dependency = struct
   type descriptor = { name : string; version : string }
@@ -64,9 +63,15 @@ let add_dependency dependency pkg =
       }
 ;;
 
+let add_dependencies dependencies pkg =
+  List.fold_left (Fun.flip add_dependency) pkg dependencies
+;;
+
 let add_script (script : Script.t) pkg =
   { pkg with scripts = String_map.add script.name script pkg.scripts }
 ;;
+
+let add_scripts scripts pkg = List.fold_left (Fun.flip add_script) pkg scripts
 
 let depedencies_to_json dependencies =
   String_map.to_list dependencies
@@ -97,17 +102,9 @@ let to_json pkg =
   Js.Json.object_ dict
 ;;
 
-let template project_name =
-  Template_v2.make ~name:"package.json.tmpl"
+let template ~project_name ~project_directory =
+  let template_directory = Node.Path.join [| project_directory; "./" |] in
+  Template.make ~name:"package.json.tmpl"
     ~value:{ empty with name = project_name }
-    ~to_json
+    ~dir:template_directory ~to_json
 ;;
-
-module Template = struct
-  include Make_template (struct
-    type nonrec t = t
-
-    let name = "package.json.tmpl"
-    let to_json = to_json
-  end)
-end

@@ -17,14 +17,16 @@ struct
 end
 
 module Create_switch :
-  Process.S with type input = unit and type output = string = struct
-  type input = unit
+  Process.S with type input = string and type output = string = struct
+  type input = string
   type output = string
 
   let name = "opam switch create . 5.1.1 --deps-only --yes"
 
-  let exec (_ : input) =
-    let options = Node.Child_process.option ~encoding:"utf8" () in
+  let exec (project_directory : input) =
+    let options =
+      Node.Child_process.option ~cwd:project_directory ~encoding:"utf8" ()
+    in
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
@@ -58,14 +60,3 @@ module Dependency = Dependency.Make (struct
   let required = true
   let input = ()
 end)
-
-(* module Plugin = struct
-     module Create_switch = struct
-       include Plugin.Make_process (struct
-         include Create_switch
-
-         let stage = `Post_compile
-         let input_of_context _ = Ok ()
-       end)
-     end
-   end *)

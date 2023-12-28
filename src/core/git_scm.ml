@@ -44,26 +44,6 @@ module Copy_gitignore :
   ;;
 end
 
-(* module Plugin = struct
-     module Init_and_stage = struct
-       include Plugin.Make_process (struct
-         include Init_and_stage
-
-         let stage = `Post_compile
-         let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
-       end)
-     end
-
-     module Copy_gitignore = struct
-       include Plugin.Make_process (struct
-         include Copy_gitignore
-
-         let stage = `Post_compile
-         let input_of_context (ctx : Context.t) = Ok ctx.configuration.directory
-       end)
-     end
-   end *)
-
 module Version : Process.S with type input = unit and type output = string =
 struct
   type input = unit

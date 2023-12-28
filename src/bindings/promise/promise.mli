@@ -27,7 +27,7 @@ val bind : 'value t -> ('value -> 'next_value t) -> 'next_value t
 val tap : ('value -> unit) -> 'value t -> 'value t
 (** [tap fn promise] applies [fn] to the result of [promise], returning the original promise. *)
 
-val perform : ('value -> unit) -> 'value t -> unit
+val perform : ('value -> unit) -> 'value t -> unit 
 (** [perform fn promise] applies [fn] to the result of [promise], returning [unit]. *)
 
 (** Module containing syntax extensions for promises. *)

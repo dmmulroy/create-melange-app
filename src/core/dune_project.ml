@@ -1,5 +1,4 @@
 module String_map = Map.Make (String)
-module Make_template = Template.Make
 
 module Dependency = struct
   type t = {
@@ -58,17 +57,9 @@ let to_json dune_project =
   Js.Json.object_ dict
 ;;
 
-let template project_name =
-  Template_v2.make ~name:"dune-project.tmpl"
+let template ~project_name ~project_directory =
+  let template_directory = Node.Path.join [| project_directory; "./" |] in
+  Template.make ~name:"dune-project.tmpl"
     ~value:{ empty with name = project_name }
-    ~to_json
+    ~dir:template_directory ~to_json
 ;;
-
-module Template = struct
-  include Make_template (struct
-    type nonrec t = t
-
-    let name = "dune-project.tmpl"
-    let to_json = to_json
-  end)
-end

@@ -53,22 +53,4 @@ module V2 = struct
       Fs.copy_file_v2 ~dest webpack_config_js_path
     ;;
   end
-
-  module Extend_package_json = struct
-    (* include Template.Extenion.Make (struct
-         include Package_json.Template
-
-         let extend (pkg : Package_json.t) =
-           (* Add dependencies to package.json *)
-           let pkg =
-             dev_dependencies
-             |> List.fold_left (Fun.flip Package_json.add_dependency) pkg
-           in
-           (* Add scripts to package.json *)
-           scripts
-           |> List.fold_left (Fun.flip Package_json.add_script) pkg
-           |> Promise_result.resolve_ok
-         ;;
-       end) *)
-  end
 end
