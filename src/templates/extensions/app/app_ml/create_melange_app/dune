@@ -1,0 +1,6 @@
+(library
+ (name create_melange_app)
+ (modes melange)
+ (libraries melange.js bindings)
+ (preprocess
+  (pps melange.ppx)))

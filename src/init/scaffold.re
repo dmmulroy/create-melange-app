@@ -10,8 +10,14 @@ module V2 = {
     | Copy_base_templates
     | Bundler_copy_files
     | Bundler_extend_package_json
+    | App_copy_files
+    | App_extend_package_json
+    | App_extend_dune_project
     | Compile_package_json
     | Compile_dune_project
+    | Compile_root_dune_file
+    | Compile_app_dune_file
+    | Compile_app_module
     | Node_pkg_manager_install
     | Git_copy_ignore_file
     | Opam_create_switch
@@ -27,8 +33,14 @@ module V2 = {
     | Copy_base_templates => "Copy_base_templates"
     | Bundler_copy_files => "Bundler_copy_files"
     | Bundler_extend_package_json => "Bundler_extend_package_json"
+    | App_copy_files => "App_copy_files"
+    | App_extend_package_json => "App_extend_package_json"
+    | App_extend_dune_project => "App_extend_dune_project"
     | Compile_package_json => "Compile_package_json"
     | Compile_dune_project => "Compile_dune_project"
+    | Compile_root_dune_file => "Compile_root_dune_file"
+    | Compile_app_dune_file => "Compile_app_dune_file"
+    | Compile_app_module => "Compile_app_module"
     | Node_pkg_manager_install => "Node_pkg_manager_install"
     | Git_copy_ignore_file => "Git_copy_ignore_file"
     | Opam_create_switch => "Opam_create_switch"
@@ -45,22 +57,31 @@ module V2 = {
     | Copy_base_templates => 1
     | Bundler_copy_files => 2
     | Bundler_extend_package_json => 3
-    | Compile_package_json => 4
-    | Compile_dune_project => 5
-    | Node_pkg_manager_install => 6
-    | Git_copy_ignore_file => 7
-    | Opam_create_switch => 8
-    | Opam_install_dev_deps => 9
-    | Opam_install_deps => 10
-    | Dune_build => 11
-    | Git_init_and_stage => 12
-    | Finished => 13
+    | App_copy_files => 4
+    | App_extend_package_json => 5
+    | App_extend_dune_project => 6
+    | Compile_package_json => 7
+    | Compile_dune_project => 8
+    | Compile_root_dune_file => 9
+    | Compile_app_dune_file => 10
+    | Compile_app_module => 11
+    | Node_pkg_manager_install => 12
+    | Git_copy_ignore_file => 13
+    | Opam_create_switch => 14
+    | Opam_install_dev_deps => 15
+    | Opam_install_deps => 16
+    | Dune_build => 17
+    | Git_init_and_stage => 18
+    | Finished => 19
     };
 
   type state = {
     configuration: Configuration.t,
     pkg_json: Template.t(Package_json.t),
-    dune_project: Template.t(Dune_project.t),
+    dune_project: Template.t(Dune.Dune_project.t),
+    root_dune_file: Template.t(Dune.Dune_file.t),
+    app_dune_file: Template.t(Dune.Dune_file.t),
+    app_module: Template.t(App_module.t),
     step,
     error: option(string),
   };
@@ -216,9 +237,7 @@ module V2 = {
                ? <Box flexDirection=`row gap=1>
                    <Badge color=`green> {React.string("Complete")} </Badge>
                    <Text>
-                     {React.string(
-                        "Copying " ++ bundler_name ++ " files complete",
-                      )}
+                     {React.string("Copying " ++ bundler_name ++ " files")}
                    </Text>
                  </Box>
                : <Spinner label={"Copying " ++ bundler_name ++ " files"} />}
@@ -270,12 +289,159 @@ module V2 = {
                      {React.string(
                         "Extending package.json with "
                         ++ bundler_name
-                        ++ "scripts and dependencies complete",
+                        ++ "scripts and dependencies",
                       )}
                    </Text>
                  </Box>
                : <Spinner
                    label={"Extending package.json with " ++ bundler_name}
+                 />}
+          </Box>;
+        };
+      };
+    };
+  };
+
+  module App_files = {
+    module Copy_files = {
+      open Ui;
+      [@react.component]
+      let make = (~state, ~onComplete, ~onError) => {
+        let (copy_complete, set_copy_complete) = React.useState(() => false);
+
+        let handleOnComplete = () => {
+          set_copy_complete(_ => true);
+          onComplete();
+        };
+
+        let is_active = state.step == App_copy_files;
+        let is_visible =
+          step_to_int(state.step) >= step_to_int(App_copy_files);
+
+        React.useEffect1(
+          () => {
+            if (is_active) {
+              state.configuration.directory
+              |> Engine.V2.copy_app_files(
+                   ~syntax_preference=state.configuration.syntax_preference,
+                   ~is_react_app=state.configuration.is_react_app,
+                 )
+              |> Promise_result.perform(result =>
+                   switch (result) {
+                   | Ok(res) => handleOnComplete(res)
+                   | Error(err) => onError(err)
+                   }
+                 );
+            };
+
+            None;
+          },
+          [|is_active|],
+        );
+
+        if (!is_visible) {
+          React.null;
+        } else {
+          <Box flexDirection=`column gap=1>
+            {copy_complete
+               ? <Box flexDirection=`row gap=1>
+                   <Badge color=`green> {React.string("Complete")} </Badge>
+                   <Text> {React.string("Copying application files")} </Text>
+                 </Box>
+               : <Spinner label="Copying application files" />}
+          </Box>;
+        };
+      };
+    };
+
+    module Extend_package_json = {
+      [@react.component]
+      let make = (~state, ~onComplete, ~onError as _) => {
+        let (complete, set_complete) = React.useState(() => false);
+
+        let is_active = state.step == App_extend_package_json;
+        let is_visible =
+          step_to_int(state.step) >= step_to_int(App_extend_package_json);
+
+        React.useEffect1(
+          () => {
+            if (is_active) {
+              let updated_pkg_json =
+                state.pkg_json
+                |> Engine.V2.extend_package_json_with_app_settings(
+                     ~is_react_app=state.configuration.is_react_app,
+                   );
+              set_complete(_ => true);
+              onComplete({...state, pkg_json: updated_pkg_json});
+            };
+
+            None;
+          },
+          [|is_active|],
+        );
+
+        if (!is_visible) {
+          React.null;
+        } else {
+          <Box flexDirection=`column gap=1>
+            {complete
+               ? <Box flexDirection=`row gap=1>
+                   <Badge color=`green> {React.string("Complete")} </Badge>
+                   <Text>
+                     {React.string(
+                        "Extending package.json with app dependencies",
+                      )}
+                   </Text>
+                 </Box>
+               : <Spinner
+                   label="Extending package.json with app dependencies"
+                 />}
+          </Box>;
+        };
+      };
+    };
+
+    module Extend_dune_project = {
+      [@react.component]
+      let make = (~state, ~onComplete, ~onError as _) => {
+        let (complete, set_complete) = React.useState(() => false);
+
+        let is_active = state.step == App_extend_dune_project;
+        let is_visible =
+          step_to_int(state.step) >= step_to_int(App_extend_dune_project);
+
+        React.useEffect1(
+          () => {
+            if (is_active) {
+              let updated_dune_project =
+                state.dune_project
+                |> Engine.V2.extend_dune_project_with_app_settings(
+                     ~is_react_app=state.configuration.is_react_app,
+                   );
+              set_complete(_ => true);
+              onComplete({...state, dune_project: updated_dune_project});
+            };
+
+            None;
+          },
+          [|is_active|],
+        );
+
+        if (!is_visible) {
+          React.null;
+        } else {
+          <Box flexDirection=`column gap=1>
+            {complete
+               ? <Box flexDirection=`row gap=1>
+                   <Badge color=`green> {React.string("Complete")} </Badge>
+                   <Text>
+                     {React.string(
+                        "Extending dune_project with app dependencies",
+                      )}
+                   </Text>
+                 </Box>
+               : <Spinner
+                   label="Extending dune_project with app dependencies"
                  />}
           </Box>;
         };
@@ -323,7 +489,7 @@ module V2 = {
                ? <Box flexDirection=`row gap=1>
                    <Badge color=`green> {React.string("Complete")} </Badge>
                    <Text>
-                     {React.string("Compiling package.json template complete")}
+                     {React.string("Compiling package.json template")}
                    </Text>
                  </Box>
                : <Spinner label="Copying package.json template" />}
@@ -331,6 +497,7 @@ module V2 = {
         };
       };
     };
+
     module Compile_dune_project = {
       open Ui;
       [@react.component]
@@ -370,10 +537,154 @@ module V2 = {
                ? <Box flexDirection=`row gap=1>
                    <Badge color=`green> {React.string("Complete")} </Badge>
                    <Text>
-                     {React.string("Compiling dune_project template complete")}
+                     {React.string("Compiling dune_project template")}
                    </Text>
                  </Box>
                : <Spinner label="Copying dune_project template" />}
+          </Box>;
+        };
+      };
+    };
+
+    module Compile_root_dune_file = {
+      open Ui;
+      [@react.component]
+      let make = (~state, ~onComplete, ~onError) => {
+        let (copy_complete, set_copy_complete) = React.useState(() => false);
+
+        let is_active = state.step == Compile_root_dune_file;
+        let is_visible =
+          step_to_int(state.step) >= step_to_int(Compile_root_dune_file);
+
+        React.useEffect1(
+          () => {
+            if (is_active) {
+              state.root_dune_file
+              |> Engine.V2.compile
+              |> Promise_result.perform(result =>
+                   switch (result) {
+                   | Ok(res) =>
+                     set_copy_complete(_ => true);
+                     onComplete({...state, root_dune_file: res});
+                   | Error(err) => onError(err)
+                   }
+                 );
+              ();
+            };
+
+            None;
+          },
+          [|is_active|],
+        );
+
+        if (!is_visible) {
+          React.null;
+        } else {
+          <Box flexDirection=`column gap=1>
+            {copy_complete
+               ? <Box flexDirection=`row gap=1>
+                   <Badge color=`green> {React.string("Complete")} </Badge>
+                   <Text>
+                     {React.string("Compiling root dune file template")}
+                   </Text>
+                 </Box>
+               : <Spinner label="Compiling root dune file template" />}
+          </Box>;
+        };
+      };
+    };
+
+    module Compile_app_dune_file = {
+      open Ui;
+      [@react.component]
+      let make = (~state, ~onComplete, ~onError) => {
+        let (copy_complete, set_copy_complete) = React.useState(() => false);
+
+        let is_active = state.step == Compile_app_dune_file;
+        let is_visible =
+          step_to_int(state.step) >= step_to_int(Compile_app_dune_file);
+
+        React.useEffect1(
+          () => {
+            if (is_active) {
+              state.app_dune_file
+              |> Engine.V2.compile
+              |> Promise_result.perform(result =>
+                   switch (result) {
+                   | Ok(res) =>
+                     set_copy_complete(_ => true);
+                     onComplete({...state, app_dune_file: res});
+                   | Error(err) => onError(err)
+                   }
+                 );
+              ();
+            };
+
+            None;
+          },
+          [|is_active|],
+        );
+
+        if (!is_visible) {
+          React.null;
+        } else {
+          <Box flexDirection=`column gap=1>
+            {copy_complete
+               ? <Box flexDirection=`row gap=1>
+                   <Badge color=`green> {React.string("Complete")} </Badge>
+                   <Text>
+                     {React.string("Compiling app dune file template")}
+                   </Text>
+                 </Box>
+               : <Spinner label="Compiling app dune file template" />}
+          </Box>;
+        };
+      };
+    };
+
+    module Compile_app_module = {
+      open Ui;
+      [@react.component]
+      let make = (~state, ~onComplete, ~onError) => {
+        let (copy_complete, set_copy_complete) = React.useState(() => false);
+
+        let is_active = state.step == Compile_app_module;
+        let is_visible =
+          step_to_int(state.step) >= step_to_int(Compile_app_module);
+
+        React.useEffect1(
+          () => {
+            if (is_active) {
+              state.app_module
+              |> Engine.V2.compile
+              |> Promise_result.perform(result =>
+                   switch (result) {
+                   | Ok(res) =>
+                     set_copy_complete(_ => true);
+                     onComplete({...state, app_module: res});
+                   | Error(err) => onError(err)
+                   }
+                 );
+              ();
+            };
+
+            None;
+          },
+          [|is_active|],
+        );
+
+        if (!is_visible) {
+          React.null;
+        } else {
+          <Box flexDirection=`column gap=1>
+            {copy_complete
+               ? <Box flexDirection=`row gap=1>
+                   <Badge color=`green> {React.string("Complete")} </Badge>
+                   <Text>
+                     {React.string("Compiling app module template")}
+                   </Text>
+                 </Box>
+               : <Spinner label="Compiling app module template" />}
           </Box>;
         };
       };
@@ -427,9 +738,7 @@ module V2 = {
                  <Badge color=`green> {React.string("Complete")} </Badge>
                  <Text>
                    {React.string(
-                      "Installing npm dependncies with "
-                      ++ pkg_manger
-                      ++ " complete",
+                      "Installing npm dependncies with " ++ pkg_manger ++ "",
                     )}
                  </Text>
                </Box>
@@ -483,9 +792,7 @@ module V2 = {
             {copy_complete
                ? <Box flexDirection=`row gap=1>
                    <Badge color=`green> {React.string("Complete")} </Badge>
-                   <Text>
-                     {React.string("Copying .gitignore file complete")}
-                   </Text>
+                   <Text> {React.string("Copying .gitignore file")} </Text>
                  </Box>
                : <Spinner label="Copying .gitignore file" />}
           </Box>;
@@ -535,7 +842,7 @@ module V2 = {
                ? <Box flexDirection=`row gap=1>
                    <Badge color=`green> {React.string("Complete")} </Badge>
                    <Text>
-                     {React.string("Initializing git repository complete")}
+                     {React.string("Initializing git repository")}
                    </Text>
                  </Box>
                : <Spinner label="Initializing git repository" />}
@@ -587,9 +894,7 @@ module V2 = {
             {copy_complete
                ? <Box flexDirection=`row gap=1>
                    <Badge color=`green> {React.string("Complete")} </Badge>
-                   <Text>
-                     {React.string("Creating opam switch complete")}
-                   </Text>
+                   <Text> {React.string("Creating opam switch")} </Text>
                  </Box>
                : <Spinner
                    label="Creating opam switch, this may take a few minutes"
@@ -641,9 +946,7 @@ module V2 = {
                ? <Box flexDirection=`row gap=1>
                    <Badge color=`green> {React.string("Complete")} </Badge>
                    <Text>
-                     {React.string(
-                        "Installing OCaml dev dependencies complete",
-                      )}
+                     {React.string("Installing OCaml dev dependencies")}
                    </Text>
                  </Box>
                : <Spinner
@@ -695,7 +998,7 @@ module V2 = {
                ? <Box flexDirection=`row gap=1>
                    <Badge color=`green> {React.string("Complete")} </Badge>
                    <Text>
-                     {React.string("Installing OCaml dependencies complete")}
+                     {React.string("Installing OCaml dependencies")}
                    </Text>
                  </Box>
                : <Spinner
@@ -748,7 +1051,7 @@ module V2 = {
              ? <Box flexDirection=`row gap=1>
                  <Badge color=`green> {React.string("Complete")} </Badge>
                  <Text>
-                   {React.string("Installing OCaml dependencies complete")}
+                   {React.string("Installing OCaml dependencies")}
                  </Text>
                </Box>
              : <Spinner
@@ -773,10 +1076,30 @@ module V2 = {
                 ~project_directory=configuration.directory,
               ),
             dune_project:
-              Dune_project.template(
+              Dune.Dune_project.template(
                 ~project_name=configuration.name,
                 ~project_directory=configuration.directory,
               ),
+            root_dune_file:
+              Dune.Dune_file.template(
+                ~project_directory=configuration.directory,
+                ~template_directory=".",
+                configuration.name,
+              ),
+            app_dune_file:
+              Dune.Dune_file.template(
+                ~project_directory=configuration.directory,
+                ~template_directory="./src",
+                ~ppxs=
+                  configuration.is_react_app
+                    ? [
+                      Dune.Dune_file.Ppx.make("melange.ppx"),
+                      Dune.Dune_file.Ppx.make("reason-react-ppx"),
+                    ]
+                    : [Dune.Dune_file.Ppx.make("melange.ppx")],
+                "app",
+              ),
+            app_module: App_module.template(configuration),
             error: None,
           }
         );
@@ -834,6 +1157,41 @@ module V2 = {
           <Bundler.Extend_package_json
             state
             onComplete={(updated_state: state) => {
+              set_state(_ => {...updated_state, step: App_copy_files});
+
+              set_step_transitions((prev: list(step)) =>
+                prev @ [App_copy_files]
+              );
+            }}
+            onError
+          />
+          <App_files.Copy_files
+            state
+            onComplete={() => {
+              set_state(_ => {...state, step: App_extend_package_json});
+
+              set_step_transitions((prev: list(step)) =>
+                prev @ [App_extend_package_json]
+              );
+            }}
+            onError
+          />
+          <App_files.Extend_package_json
+            state
+            onComplete={updated_state => {
+              set_state(_ =>
+                {...updated_state, step: App_extend_dune_project}
+              );
+
+              set_step_transitions((prev: list(step)) =>
+                prev @ [App_extend_dune_project]
+              );
+            }}
+            onError
+          />
+          <App_files.Extend_dune_project
+            state
+            onComplete={updated_state => {
               set_state(_ => {...updated_state, step: Compile_package_json});
 
               set_step_transitions((prev: list(step)) =>
@@ -856,6 +1214,40 @@ module V2 = {
           <Compile.Compile_dune_project
             state
             onComplete={updated_state => {
+              let next_step = Compile_root_dune_file;
+              set_state(_ => {{...updated_state, step: next_step}});
+
+              set_step_transitions((prev: list(step)) =>
+                prev @ [next_step]
+              );
+            }}
+            onError
+          />
+          <Compile.Compile_root_dune_file
+            state
+            onComplete={updated_state => {
+              let next_step = Compile_app_dune_file;
+              set_state(_ => {{...updated_state, step: next_step}});
+              set_step_transitions((prev: list(step)) =>
+                prev @ [next_step]
+              );
+            }}
+            onError
+          />
+          <Compile.Compile_app_dune_file
+            state
+            onComplete={updated_state => {
+              let next_step = Compile_app_module;
+              set_state(_ => {{...updated_state, step: next_step}});
+              set_step_transitions((prev: list(step)) =>
+                prev @ [next_step]
+              );
+            }}
+            onError
+          />
+          <Compile.Compile_app_module
+            state
+            onComplete={updated_state => {
               let next_step =
                 switch (
                   configuration.initialize_npm,
@@ -868,7 +1260,6 @@ module V2 = {
                 | _ => Finished
                 };
               set_state(_ => {{...updated_state, step: next_step}});
-
               set_step_transitions((prev: list(step)) =>
                 prev @ [next_step]
               );

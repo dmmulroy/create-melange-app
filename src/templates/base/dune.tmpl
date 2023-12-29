@@ -1,13 +1,9 @@
 (dirs :standard \ node_modules)
 
-(data_only_dirs templates* build*)
-
 (melange.emit
  (target build)
- (alias create-melange-app)
+ (alias {{name}})
  (libraries app)
- (runtime_deps
-  (source_tree src/templates))
  (promote (until-clean))
  (module_systems
   (es6 mjs)))

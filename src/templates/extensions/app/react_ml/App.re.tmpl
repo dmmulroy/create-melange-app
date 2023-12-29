@@ -1,0 +1,57 @@
+module App = {
+  [@react.component]
+  let make = () => {
+    let (show_configuration, setShow_configuration) =
+      React.useState(() => false);
+
+    let configuration =
+      Create_melange_app.Configuration.make(
+        ~name="{{name}}",
+        ~directory="{{directory}}",
+        ~bundler={{bundler}},
+        ~is_react_app={{is_react_app}},
+        ~initialize_git={{initialize_git}},
+        ~initialize_npm={{initialize_npm}},
+        ~initialize_ocaml_toolchain={{initialize_ocaml_toolchain}},
+        ~overwrite={{overwrite}},
+      );
+
+    /*
+     * Because ReasonML is has a stronger type system than TypeScript, we have
+     * different variants of `useEffect` depending on the number of dependencies
+     * we have in our effect.
+     *
+     * For example, if we have no dependencies, we use `useEffect0`.
+     * The equivalent in JavaScript would be `useEffect(() => {}, [])`
+     *
+     * If we have one dependency, we use `useEffect1`.
+     * The equivalent in JavaScript would be `useEffect(() => {}, [dependency])`
+     */
+    React.useEffect0(() => {
+      let timeout_id =
+        Js.Global.setTimeout(() => setShow_configuration(_ => true), 1000);
+
+      // Return a cleanup function to cancel the timeout
+      // If we didn't need a cleanup function, we would return `None` instead of
+      // `Some(() => Js.Global.clearTimeout(timeout_id))`
+      Some(() => Js.Global.clearTimeout(timeout_id));
+    });
+
+    <div>
+      <h1> {React.string("create-melange-app")} </h1>
+      <h2> {React.string("Welcome to Melange & ReasonML!")} </h2>
+      {show_configuration ? <Configuration configuration /> : React.null}
+    </div>;
+  };
+};
+
+ReactDOM.querySelector("#root")
+->(
+    fun
+    | Some(root) => ReactDOM.render(<App />, root)
+    | None =>
+      Js.Console.error(
+        "Failed to start React: couldn't find the #root element",
+      )
+  );
+

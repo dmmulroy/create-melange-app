@@ -1,0 +1,8 @@
+(data_only_dirs templates*)
+
+(library
+ (name app)
+ (modes melange)
+ (libraries bindings)
+ (preprocess
+  (pps {{#each ppxs}}{{this}}{{#unless @last}} {{/unless}}{{/each}})))

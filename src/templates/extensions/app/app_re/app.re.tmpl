@@ -1,0 +1,26 @@
+module App = {
+  // TODO: Explain this open syntax
+  open Create_melange_app;
+  let run = () => {
+    let configuration =
+      Configuration.make(
+        ~name="{{name}}",
+        ~directory="{{directory}}",
+        ~bundler={{bundler}},
+        ~is_react_app={{is_react_app}},
+        ~initialize_git={{initialize_git}},
+        ~initialize_npm={{initialize_npm}},
+        ~initialize_ocaml_toolchain={{initialize_ocaml_toolchain}},
+        ~overwrite={{overwrite}},
+      );
+
+    Format.printf(
+      "create-melange-app\n\
+      Welcome to Melange & ReasonML!\n\
+      %s",
+      Configuration.to_string(configuration),
+    );
+  };
+};
+
+let () = App.run();

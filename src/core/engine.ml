@@ -1,4 +1,4 @@
-[@@@ocaml.warning "-27"]
+[@@@ocaml.warning "-27-32"]
 
 open Bindings
 module String_map = Map.Make (String)
@@ -55,6 +55,29 @@ module V2 = struct
     pkg_json_tmpl
     |> Template.map (Package_json.add_scripts scripts)
     |> Template.map (Package_json.add_dependencies dependencies)
+  ;;
+
+  let copy_app_files ~syntax_preference ~is_react_app project_directory =
+    let open App_files in
+    Copy.exec { project_directory; syntax_preference; is_react_app }
+  ;;
+
+  let extend_package_json_with_app_settings ~(is_react_app : bool)
+      (pkg_json_tmpl : Package_json.t Template.t) =
+    if is_react_app then
+      pkg_json_tmpl
+      |> Template.map
+           (Package_json.add_dependencies React.Package_json.dependencies)
+    else pkg_json_tmpl
+  ;;
+
+  let extend_dune_project_with_app_settings ~(is_react_app : bool)
+      (dune_project_tmpl : Dune.Dune_project.t Template.t) =
+    if is_react_app then
+      dune_project_tmpl
+      |> Template.map
+           (Dune.Dune_project.add_dependencies React.Dune_project.dependencies)
+    else dune_project_tmpl
   ;;
 
   let compile = Template.compile
