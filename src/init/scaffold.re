@@ -386,9 +386,12 @@ module V2 = {
     let make = (~state, ~onComplete, ~onError) => {
       let (copy_complete, set_copy_complete) = React.useState(() => false);
 
-      let is_active = state.step == Node_pkg_manager_install;
+      let is_active =
+        state.step == Node_pkg_manager_install
+        && state.configuration.initialize_npm;
       let is_visible =
-        step_to_int(state.step) >= step_to_int(Node_pkg_manager_install);
+        state.configuration.initialize_npm
+        && step_to_int(state.step) >= step_to_int(Node_pkg_manager_install);
 
       React.useEffect1(
         () => {
@@ -445,9 +448,12 @@ module V2 = {
       let make = (~state, ~onComplete, ~onError) => {
         let (copy_complete, set_copy_complete) = React.useState(() => false);
 
-        let is_active = state.step == Git_copy_ignore_file;
+        let is_active =
+          state.step == Git_copy_ignore_file
+          && state.configuration.initialize_git;
         let is_visible =
-          step_to_int(state.step) >= step_to_int(Git_copy_ignore_file);
+          state.configuration.initialize_git
+          && step_to_int(state.step) >= step_to_int(Git_copy_ignore_file);
 
         React.useEffect1(
           () => {
@@ -493,9 +499,12 @@ module V2 = {
       let make = (~state, ~onComplete, ~onError) => {
         let (copy_complete, set_copy_complete) = React.useState(() => false);
 
-        let is_active = state.step == Git_init_and_stage;
+        let is_active =
+          state.step == Git_init_and_stage
+          && state.configuration.initialize_git;
         let is_visible =
-          step_to_int(state.step) >= step_to_int(Git_init_and_stage);
+          state.configuration.initialize_git
+          && step_to_int(state.step) >= step_to_int(Git_init_and_stage);
 
         React.useEffect1(
           () => {
@@ -543,9 +552,12 @@ module V2 = {
       let make = (~state, ~onComplete, ~onError) => {
         let (copy_complete, set_copy_complete) = React.useState(() => false);
 
-        let is_active = state.step == Opam_create_switch;
+        let is_active =
+          state.step == Opam_create_switch
+          && state.configuration.initialize_ocaml_toolchain;
         let is_visible =
-          step_to_int(state.step) >= step_to_int(Opam_create_switch);
+          state.configuration.initialize_ocaml_toolchain
+          && step_to_int(state.step) >= step_to_int(Opam_create_switch);
 
         React.useEffect1(
           () => {
@@ -593,9 +605,12 @@ module V2 = {
       let make = (~state, ~onComplete, ~onError) => {
         let (copy_complete, set_copy_complete) = React.useState(() => false);
 
-        let is_active = state.step == Opam_install_dev_deps;
+        let is_active =
+          state.step == Opam_install_dev_deps
+          && state.configuration.initialize_ocaml_toolchain;
         let is_visible =
-          step_to_int(state.step) >= step_to_int(Opam_install_dev_deps);
+          state.configuration.initialize_ocaml_toolchain
+          && step_to_int(state.step) >= step_to_int(Opam_install_dev_deps);
 
         React.useEffect1(
           () => {
@@ -645,9 +660,12 @@ module V2 = {
       let make = (~state, ~onComplete, ~onError) => {
         let (copy_complete, set_copy_complete) = React.useState(() => false);
 
-        let is_active = state.step == Opam_install_deps;
+        let is_active =
+          state.step == Opam_install_deps
+          && state.configuration.initialize_ocaml_toolchain;
         let is_visible =
-          step_to_int(state.step) >= step_to_int(Opam_install_deps);
+          state.configuration.initialize_ocaml_toolchain
+          && step_to_int(state.step) >= step_to_int(Opam_install_deps);
 
         React.useEffect1(
           () => {
@@ -695,8 +713,12 @@ module V2 = {
     let make = (~state, ~onComplete, ~onError) => {
       let (copy_complete, set_copy_complete) = React.useState(() => false);
 
-      let is_active = state.step == Dune_build;
-      let is_visible = step_to_int(state.step) >= step_to_int(Dune_build);
+      let is_active =
+        state.step == Dune_build
+        && state.configuration.initialize_ocaml_toolchain;
+      let is_visible =
+        state.configuration.initialize_ocaml_toolchain
+        && step_to_int(state.step) >= step_to_int(Dune_build);
 
       React.useEffect1(
         () => {
@@ -834,12 +856,21 @@ module V2 = {
           <Compile.Compile_dune_project
             state
             onComplete={updated_state => {
-              set_state(_ =>
-                {...updated_state, step: Node_pkg_manager_install}
-              );
+              let next_step =
+                switch (
+                  configuration.initialize_npm,
+                  configuration.initialize_git,
+                  configuration.initialize_ocaml_toolchain,
+                ) {
+                | (true, _, _) => Node_pkg_manager_install
+                | (_, true, _) => Git_copy_ignore_file
+                | (_, _, true) => Opam_create_switch
+                | _ => Finished
+                };
+              set_state(_ => {{...updated_state, step: next_step}});
 
               set_step_transitions((prev: list(step)) =>
-                prev @ [Node_pkg_manager_install]
+                prev @ [next_step]
               );
             }}
             onError
@@ -847,10 +878,20 @@ module V2 = {
           <Node_pkg_manager_install
             state
             onComplete={() => {
-              set_state(_ => {...state, step: Git_copy_ignore_file});
+              let next_step =
+                switch (
+                  configuration.initialize_git,
+                  configuration.initialize_ocaml_toolchain,
+                ) {
+                | (true, _) => Git_copy_ignore_file
+                | (_, true) => Opam_create_switch
+                | _ => Finished
+                };
+
+              set_state(_ => {{...state, step: next_step}});
 
               set_step_transitions((prev: list(step)) =>
-                prev @ [Git_copy_ignore_file]
+                prev @ [next_step]
               );
             }}
             onError
@@ -858,21 +899,20 @@ module V2 = {
           <Git.Copy_ignore_file
             state
             onComplete={() => {
-              set_state(_ => {...state, step: Git_init_and_stage});
+              let next_step =
+                switch (
+                  configuration.initialize_ocaml_toolchain,
+                  configuration.initialize_git,
+                ) {
+                | (true, _) => Opam_create_switch
+                | (_, true) => Git_init_and_stage
+                | _ => Finished
+                };
+
+              set_state(_ => {...state, step: next_step});
 
               set_step_transitions((prev: list(step)) =>
-                prev @ [Git_init_and_stage]
-              );
-            }}
-            onError
-          />
-          <Git.Init_and_stage
-            state
-            onComplete={() => {
-              set_state(_ => {...state, step: Opam_create_switch});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [Opam_create_switch]
+                prev @ [next_step]
               );
             }}
             onError
@@ -911,6 +951,19 @@ module V2 = {
             onError
           />
           <Dune_build
+            state
+            onComplete={() => {
+              let next_step =
+                configuration.initialize_git ? Git_init_and_stage : Finished;
+              set_state(_ => {...state, step: next_step});
+
+              set_step_transitions((prev: list(step)) =>
+                prev @ [next_step]
+              );
+            }}
+            onError
+          />
+          <Git.Init_and_stage
             state
             onComplete={() => {
               set_state(_ => {...state, step: Finished});

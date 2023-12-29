@@ -150,6 +150,34 @@ module Npm = {
   };
 };
 
+module OCaml_toolchain = {
+  let options: array(Ui.Select.select_option) = [|
+    Ui.Select.{value: "yes", label: "Yes"},
+    Ui.Select.{value: "no", label: "No"},
+  |];
+
+  [@react.component]
+  let make = (~onSubmit, ~isDisabled) => {
+    let onChange =
+      React.useCallback1(
+        (value: string) => {
+          switch (value) {
+          | "yes" => onSubmit(true)
+          | _ => onSubmit(false)
+          }
+        },
+        [|onSubmit|],
+      );
+
+    <Box flexDirection=`column>
+      <Text>
+        {React.string("Should we initialize the OCaml toolchain for you?")}
+      </Text>
+      <Ui.Select options onChange isDisabled />
+    </Box>;
+  };
+};
+
 module Overwrite_preference = {
   open Ui;
 
@@ -192,6 +220,7 @@ type step =
   | Bundler
   | Git
   | Npm
+  | OCaml_toolchain
   | Overwrite_preference
   | Complete;
 
@@ -201,6 +230,7 @@ let step_to_string =
   | Bundler => "Bundler"
   | Git => "Git"
   | Npm => "Npm"
+  | OCaml_toolchain => "OCaml_toolchain"
   | Overwrite_preference => "Overwrite_preference"
   | Complete => "Complete";
 
@@ -227,6 +257,8 @@ let make =
   let (initialize_git, set_initialize_git) =
     React.useState(() => (None: option(bool)));
   let (initialize_npm, set_initialize_npm) =
+    React.useState(() => (None: option(bool)));
+  let (initialize_ocaml_toolchain, set_initialize_ocaml_toolchain) =
     React.useState(() => (None: option(bool)));
   let (overwrite_preference, set_overwrite_preference) =
     React.useState(() => (None: option([ | `Clear | `Overwrite])));
@@ -263,9 +295,19 @@ let make =
     );
 
   let onSubmitNpm =
-    React.useCallback3(
+    React.useCallback1(
+      value =>
+        if (active_step == Npm) {
+          set_initialize_npm(_ => Some(value));
+          set_active_step(_ => OCaml_toolchain);
+        },
+      [|active_step|],
+    );
+
+  let onSubmitOcamlToolchain =
+    React.useCallback1(
       value => {
-        set_initialize_npm(_ => Some(value));
+        set_initialize_ocaml_toolchain(_ => Some(value));
         Option.get(directory)
         |> Engine.V2.directory_exists
         |> Promise_result.perform(result =>
@@ -276,7 +318,7 @@ let make =
              }
            );
       },
-      (name, bundler, initialize_git),
+      [|directory|],
     );
 
   let onSubmitOverwrite_preference =
@@ -312,6 +354,9 @@ let make =
             ~initialize_npm={
               Option.value(~default=false, initialize_npm);
             },
+            ~initialize_ocaml_toolchain={
+              Option.value(~default=false, initialize_ocaml_toolchain);
+            },
             ~overwrite={
               overwrite_preference;
             },
@@ -331,8 +376,9 @@ let make =
     Option.is_some(initialize_git)
     || Option.is_some(bundler)
     && !should_prompt_git;
+  let show_ocaml_toolchain_step = Option.is_some(initialize_npm);
   let show_overwrite_step =
-    Option.is_some(initialize_npm)
+    Option.is_some(initialize_ocaml_toolchain)
     && (
       active_step == Overwrite_preference
       || active_step == Complete
@@ -351,6 +397,12 @@ let make =
     </Step>
     <Step visible=show_npm_step>
       <Npm onSubmit=onSubmitNpm isDisabled={active_step != Npm} />
+    </Step>
+    <Step visible=show_ocaml_toolchain_step>
+      <OCaml_toolchain
+        onSubmit=onSubmitOcamlToolchain
+        isDisabled={active_step != OCaml_toolchain}
+      />
     </Step>
     <Step visible=show_overwrite_step>
       <Overwrite_preference
