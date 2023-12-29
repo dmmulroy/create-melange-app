@@ -135,8 +135,8 @@ let get_template_file_names dir =
 let read_template ~dir file_name =
   let file_path = Node.Path.join [| dir; file_name |] in
   try
-    let contents = Fs_extra.readFileSync file_path `utf8 in
-    Ok contents
+    let contents = Fs_extra.readFileSync file_path in
+    contents
   with exn ->
     Error
       (Printf.sprintf {js|Failed to read template %s from %s: %s|js} file_name

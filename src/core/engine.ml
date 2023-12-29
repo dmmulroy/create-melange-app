@@ -62,9 +62,7 @@ module V2 = struct
   let copy_git_ignore = Git_scm.Copy_gitignore.exec
   let git_init_and_stage = Git_scm.Init_and_stage.exec
   let opam_create_switch = Opam.Create_switch.exec
-  let opam_install ~project_directory = failwith "Not implemented"
-
-  let opem_install_dev_dependencies ~project_directory =
-    failwith "Not implemented"
-  ;;
+  let opem_install_dev_dependencies = Opam.Install_dev_dependencies.exec
+  let opam_install = Opam.Install_dependencies.exec
+  let dune_build = Dune.Build.exec
 end

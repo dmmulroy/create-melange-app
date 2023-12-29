@@ -61,6 +61,11 @@ external readdir : string -> string array Js.Promise.t = "readdir"
 external readFileSync : string -> Node.Fs.encoding -> string = "readFileSync"
 [@@mel.module "node:fs"]
 
+let readFileSync string =
+  try readFileSync string `utf8 |> Result.ok
+  with _ -> Result.error "readFileSync failed"
+;;
+
 external readFile : string -> Node.Fs.encoding -> string Js.Promise.t
   = "readFile"
 [@@mel.module "node:fs/promises"]

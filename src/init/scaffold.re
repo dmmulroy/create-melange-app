@@ -14,11 +14,11 @@ module V2 = {
     | Compile_dune_project
     | Node_pkg_manager_install
     | Git_copy_ignore_file
-    | Git_init_and_stage
     | Opam_create_switch
-    | Opam_install_deps
     | Opam_install_dev_deps
+    | Opam_install_deps
     | Dune_build
+    | Git_init_and_stage
     | Finished;
 
   let step_to_string = step =>
@@ -31,11 +31,11 @@ module V2 = {
     | Compile_dune_project => "Compile_dune_project"
     | Node_pkg_manager_install => "Node_pkg_manager_install"
     | Git_copy_ignore_file => "Git_copy_ignore_file"
-    | Git_init_and_stage => "Git_init_and_stage"
     | Opam_create_switch => "Opam_create_switch"
-    | Opam_install_deps => "Opam_install_deps"
     | Opam_install_dev_deps => "Opam_install_dev_deps"
+    | Opam_install_deps => "Opam_install_deps"
     | Dune_build => "Dune_build"
+    | Git_init_and_stage => "Git_init_and_stage"
     | Finished => "Finished"
     };
 
@@ -49,11 +49,11 @@ module V2 = {
     | Compile_dune_project => 5
     | Node_pkg_manager_install => 6
     | Git_copy_ignore_file => 7
-    | Git_init_and_stage => 8
-    | Opam_create_switch => 9
+    | Opam_create_switch => 8
+    | Opam_install_dev_deps => 9
     | Opam_install_deps => 10
-    | Opam_install_dev_deps => 11
-    | Dune_build => 12
+    | Dune_build => 11
+    | Git_init_and_stage => 12
     | Finished => 13
     };
 
@@ -586,10 +586,156 @@ module V2 = {
         };
       };
     };
-    module Install_deps = {};
-    module Install_dev_deps = {};
+
+    module Install_dev_deps = {
+      open Ui;
+      [@react.component]
+      let make = (~state, ~onComplete, ~onError) => {
+        let (copy_complete, set_copy_complete) = React.useState(() => false);
+
+        let is_active = state.step == Opam_install_dev_deps;
+        let is_visible =
+          step_to_int(state.step) >= step_to_int(Opam_install_dev_deps);
+
+        React.useEffect1(
+          () => {
+            if (is_active) {
+              state.configuration.directory
+              |> Engine.V2.opem_install_dev_dependencies
+              |> Promise_result.perform(result =>
+                   switch (result) {
+                   | Ok(_) =>
+                     set_copy_complete(_ => true);
+                     onComplete();
+                   | Error(err) => onError(err)
+                   }
+                 );
+              ();
+            };
+
+            None;
+          },
+          [|is_active|],
+        );
+
+        if (!is_visible) {
+          React.null;
+        } else {
+          <Box flexDirection=`column gap=1>
+            {copy_complete
+               ? <Box flexDirection=`row gap=1>
+                   <Badge color=`green> {React.string("Complete")} </Badge>
+                   <Text>
+                     {React.string(
+                        "Installing OCaml dev dependencies complete",
+                      )}
+                   </Text>
+                 </Box>
+               : <Spinner
+                   label="Installing OCaml dev dependencies, this may take a few minutes"
+                 />}
+          </Box>;
+        };
+      };
+    };
+
+    module Install_deps = {
+      open Ui;
+      [@react.component]
+      let make = (~state, ~onComplete, ~onError) => {
+        let (copy_complete, set_copy_complete) = React.useState(() => false);
+
+        let is_active = state.step == Opam_install_deps;
+        let is_visible =
+          step_to_int(state.step) >= step_to_int(Opam_install_deps);
+
+        React.useEffect1(
+          () => {
+            if (is_active) {
+              state.configuration.directory
+              |> Engine.V2.opam_install
+              |> Promise_result.perform(result =>
+                   switch (result) {
+                   | Ok(_) =>
+                     set_copy_complete(_ => true);
+                     onComplete();
+                   | Error(err) => onError(err)
+                   }
+                 );
+            };
+
+            None;
+          },
+          [|is_active|],
+        );
+
+        if (!is_visible) {
+          React.null;
+        } else {
+          <Box flexDirection=`column gap=1>
+            {copy_complete
+               ? <Box flexDirection=`row gap=1>
+                   <Badge color=`green> {React.string("Complete")} </Badge>
+                   <Text>
+                     {React.string("Installing OCaml dependencies complete")}
+                   </Text>
+                 </Box>
+               : <Spinner
+                   label="Installing OCaml dependencies, this may take a few minutes"
+                 />}
+          </Box>;
+        };
+      };
+    };
   };
-  module Dune_build = {};
+
+  module Dune_build = {
+    open Ui;
+    [@react.component]
+    let make = (~state, ~onComplete, ~onError) => {
+      let (copy_complete, set_copy_complete) = React.useState(() => false);
+
+      let is_active = state.step == Dune_build;
+      let is_visible = step_to_int(state.step) >= step_to_int(Dune_build);
+
+      React.useEffect1(
+        () => {
+          if (is_active) {
+            state.configuration.directory
+            |> Engine.V2.dune_build
+            |> Promise_result.perform(result =>
+                 switch (result) {
+                 | Ok(_) =>
+                   set_copy_complete(_ => true);
+                   onComplete();
+                 | Error(err) => onError(err)
+                 }
+               );
+          };
+
+          None;
+        },
+        [|is_active|],
+      );
+
+      if (!is_visible) {
+        React.null;
+      } else {
+        <Box flexDirection=`column gap=1>
+          {copy_complete
+             ? <Box flexDirection=`row gap=1>
+                 <Badge color=`green> {React.string("Complete")} </Badge>
+                 <Text>
+                   {React.string("Installing OCaml dependencies complete")}
+                 </Text>
+               </Box>
+             : <Spinner
+                 label="Installing OCaml dependencies, this may take a few minutes"
+               />}
+        </Box>;
+      };
+    };
+  };
 
   module Scaffold = {
     [@react.component]
@@ -734,11 +880,42 @@ module V2 = {
           <Opam.Create_switch
             state
             onComplete={() => {
+              set_state(_ => {...state, step: Opam_install_dev_deps});
+
+              set_step_transitions((prev: list(step)) =>
+                prev @ [Opam_install_dev_deps]
+              );
+            }}
+            onError
+          />
+          <Opam.Install_dev_deps
+            state
+            onComplete={() => {
               set_state(_ => {...state, step: Opam_install_deps});
 
               set_step_transitions((prev: list(step)) =>
                 prev @ [Opam_install_deps]
               );
+            }}
+            onError
+          />
+          <Opam.Install_deps
+            state
+            onComplete={() => {
+              set_state(_ => {...state, step: Dune_build});
+
+              set_step_transitions((prev: list(step)) =>
+                prev @ [Dune_build]
+              );
+            }}
+            onError
+          />
+          <Dune_build
+            state
+            onComplete={() => {
+              set_state(_ => {...state, step: Finished});
+
+              set_step_transitions((prev: list(step)) => prev @ [Finished]);
             }}
             onError
           />

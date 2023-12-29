@@ -1,5 +1,6 @@
 module Commander = Commander
 module Fs_extra = Fs_extra
+module Fss = Fs
 module Handlebars = Handlebars
 module Ink = Ink
 module Nodejs = Nodejs
