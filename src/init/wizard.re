@@ -23,21 +23,26 @@ module Name = {
     let (value, set_value) = React.useState(() => "");
     let (error, set_error) = React.useState(() => None);
 
-    let handleOnChange = new_value =>
-      if (String.equal(value, new_value)) {
-        ();
-      } else {
-        set_value(_ => new_value);
-        set_error(_ => None);
-      };
+    let handleOnChange =
+      React.useCallback1(
+        new_value =>
+          if (String.equal(value, new_value)) {
+            ();
+          } else {
+            set_value(_ => new_value);
+            set_error(_ => None);
+          },
+        [|value|],
+      );
 
-    let handleOnSubmit = name => {
-      let (name, directory) = Core.Fs.parse_project_name_and_dir(name);
-      switch (Core.Validation.Project_name.validate(name)) {
-      | Ok(name) => onSubmit((name, directory))
-      | Error(`Msg(error)) => set_error(_ => Some(error))
-      };
-    };
+    let handleOnSubmit =
+      React.useCallback(name => {
+        let (name, directory) = Core.Fs.parse_project_name_and_dir(name);
+        switch (Core.Validation.Project_name.validate(name)) {
+        | Ok(name) => onSubmit((name, directory))
+        | Error(`Msg(error)) => set_error(_ => Some(error))
+        };
+      });
 
     <Box flexDirection=`column gap=1>
       <Spacer />
@@ -102,9 +107,13 @@ module Bundler = {
 
   [@react.component]
   let make = (~onSubmit, ~isDisabled) => {
-    let onChange = (bundler_str: string) => {
-      onSubmit(Core.Bundler.of_string(bundler_str));
-    };
+    let onChange =
+      React.useCallback1(
+        (bundler_str: string) => {
+          onSubmit(Core.Bundler.of_string(bundler_str))
+        },
+        [|onSubmit|],
+      );
 
     <Box flexDirection=`column>
       <Text> {React.string("Which bundler would you like to use?")} </Text>

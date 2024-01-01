@@ -102,10 +102,14 @@ let make = (~onEnvCheck=?) => {
   );
 
   let is_successful =
-    Option.fold(
-      ~none=false,
-      ~some=dependency_check_result_is_successful,
-      dependency_results,
+    React.useMemo1(
+      () =>
+        Option.fold(
+          ~none=false,
+          ~some=dependency_check_result_is_successful,
+          dependency_results,
+        ),
+      [|dependency_results|],
     );
 
   <Box flexDirection=`column gap=1>

@@ -15,44 +15,52 @@ let make = (~name as initial_name) => {
     React.useState(() => (None: option(Core.Configuration.t)));
 
   let parsed_name_and_dir =
-    Option.map(Core.Fs.parse_project_name_and_dir, initial_name);
+    React.useMemo1(
+      () => Option.map(Core.Fs.parse_project_name_and_dir, initial_name),
+      [|initial_name|],
+    );
 
   let initial_name_is_valid =
-    parsed_name_and_dir
-    |> Option.map(fst)
-    |> Option.map(Core.Validation.Project_name.validate);
+    React.useMemo1(
+      () =>
+        parsed_name_and_dir
+        |> Option.map(fst)
+        |> Option.map(Core.Validation.Project_name.validate),
+      [|parsed_name_and_dir|],
+    );
 
-  let on_env_check = result => {
-    switch (result) {
-    | `Pass(results) =>
-      set_env_check_result(_ => Some(`Pass));
-      let should_prompt_git =
-        List.exists(
-          result => {
-            switch (result) {
-            | `Fail(_) => true
-            | `Pass(module Dep: Core.Dependency.S) =>
-              Dep.name == "Git" ? true : false
-            }
-          },
-          results,
-        );
+  let on_env_check =
+    React.useCallback0(result => {
+      switch (result) {
+      | `Pass(results) =>
+        set_env_check_result(_ => Some(`Pass));
+        let should_prompt_git =
+          List.exists(
+            result => {
+              switch (result) {
+              | `Fail(_) => true
+              | `Pass(module Dep: Core.Dependency.S) =>
+                Dep.name == "Git" ? true : false
+              }
+            },
+            results,
+          );
 
-      set_should_prompt_git(_ => should_prompt_git);
-      ();
-    | `Fail(_) =>
-      set_env_check_result(_ => Some(`Fail));
-      set_is_active(_ => Some(false));
-    };
-  };
+        set_should_prompt_git(_ => should_prompt_git);
+        ();
+      | `Fail(_) =>
+        set_env_check_result(_ => Some(`Fail));
+        set_is_active(_ => Some(false));
+      }
+    });
 
-  let on_complete_wizard = configuration => {
-    set_configuration(_ => Some(configuration));
-  };
+  let on_complete_wizard =
+    React.useCallback0(configuration => {
+      set_configuration(_ => Some(configuration))
+    });
 
-  let on_complete_scaffold = () => {
-    set_is_active(_ => Some(false));
-  };
+  let on_complete_scaffold =
+    React.useCallback0(() => {set_is_active(_ => Some(false))});
 
   Ink.Hooks.use_input(
     (~input as _input, ~key as _key) => (),
@@ -60,10 +68,14 @@ let make = (~name as initial_name) => {
   );
 
   let initial_configuration =
-    Core.Configuration.make_partial(
-      ~name=?Option.map(fst, parsed_name_and_dir),
-      ~directory=?Option.map(snd, parsed_name_and_dir),
-      (),
+    React.useMemo1(
+      () =>
+        Core.Configuration.make_partial(
+          ~name=?Option.map(fst, parsed_name_and_dir),
+          ~directory=?Option.map(snd, parsed_name_and_dir),
+          (),
+        ),
+      [|parsed_name_and_dir|],
     );
 
   <Box flexDirection=`column>
