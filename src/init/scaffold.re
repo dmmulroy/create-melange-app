@@ -1046,13 +1046,9 @@ module V2 = {
           {copy_complete
              ? <Box flexDirection=`row gap=1>
                  <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text>
-                   {React.string("Installing OCaml dependencies")}
-                 </Text>
+                 <Text> {React.string("Building project with Dune")} </Text>
                </Box>
-             : <Spinner
-                 label="Installing OCaml dependencies, this may take a few minutes"
-               />}
+             : <Spinner label="Building project with Dune" />}
         </Box>;
       };
     };
