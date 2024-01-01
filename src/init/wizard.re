@@ -1,3 +1,4 @@
+[@ocaml.warning "-26-27"];
 open Bindings;
 open Ink;
 open Ui;
@@ -267,9 +268,9 @@ module Overwrite_preference = {
 
 type step =
   | Name
-  | Bundler
   | Syntax_preference
   | React_app
+  | Bundler
   | Git
   | Npm
   | OCaml_toolchain
@@ -279,9 +280,9 @@ type step =
 let step_to_string =
   fun
   | Name => "Name"
-  | Bundler => "Bundler"
   | Syntax_preference => "Syntax_preference"
   | React_app => "React_app"
+  | Bundler => "Bundler"
   | Git => "Git"
   | Npm => "Npm"
   | OCaml_toolchain => "OCaml_toolchain"
@@ -308,10 +309,10 @@ let make =
     React.useState(() => initial_configuration.directory);
   let (syntax_preference, set_syntax_preference) =
     React.useState(() => (None: option(Configuration.syntax_preference)));
-  let (bundler, set_bundler) =
-    React.useState(() => (None: option(Core.Bundler.t)));
   let (is_react_app, set_is_react_app) =
     React.useState(() => (None: option(bool)));
+  let (bundler, set_bundler) =
+    React.useState(() => (None: option(Core.Bundler.t)));
   let (initialize_git, set_initialize_git) =
     React.useState(() => (None: option(bool)));
   let (initialize_npm, set_initialize_npm) =
@@ -322,27 +323,23 @@ let make =
     React.useState(() => (None: option([ | `Clear | `Overwrite])));
   let (error, set_error) = React.useState(() => None);
 
-  let onSubmitName = ((name, directory)) =>
-    if (active_step == Name) {
-      set_name(_ => Some(name));
-      set_directory(_ => Some(directory));
-      set_active_step(_ => Syntax_preference);
-    };
+  let onSubmitName =
+    React.useCallback1(
+      ((name, directory)) =>
+        if (active_step == Name) {
+          set_name(_ => Some(name));
+          set_directory(_ => Some(directory));
+          set_active_step(_ => Syntax_preference);
+        },
+      [|active_step|],
+    );
 
   let onSubmitSyntaxPreference =
-      (syntax_preference: Configuration.syntax_preference) =>
-    if (active_step == Syntax_preference) {
-      set_syntax_preference(_ => Some(syntax_preference));
-      set_active_step(_ => Bundler);
-    };
-
-  let onSubmitBundler =
     React.useCallback1(
-      (new_bundler: Core.Bundler.t) =>
-        if (active_step == Bundler) {
-          set_bundler(_ => Some(new_bundler));
-          let next_step = React_app;
-          set_active_step(_ => next_step);
+      (syntax_preference: Configuration.syntax_preference) =>
+        if (active_step == Syntax_preference) {
+          set_syntax_preference(_ => Some(syntax_preference));
+          set_active_step(_ => React_app);
         },
       [|active_step|],
     );
@@ -351,9 +348,19 @@ let make =
     React.useCallback1(
       (is_react_app: bool) =>
         if (active_step == React_app) {
-          let next_step = if (should_prompt_git) {Git} else {Npm};
           set_is_react_app(_ => Some(is_react_app));
 
+          set_active_step(_ => Bundler);
+        },
+      [|active_step|],
+    );
+
+  let onSubmitBundler =
+    React.useCallback1(
+      (new_bundler: Core.Bundler.t) =>
+        if (active_step == Bundler) {
+          set_bundler(_ => Some(new_bundler));
+          let next_step = if (should_prompt_git) {Git} else {Npm};
           set_active_step(_ => next_step);
         },
       [|active_step|],
@@ -452,9 +459,9 @@ let make =
 
   let show_name_step = Option.is_none(initial_configuration.name);
   let show_syntax_preference_step = Option.is_some(name);
-  let show_bundler_step = Option.is_some(syntax_preference);
-  let show_react_step = Option.is_some(bundler);
-  let show_git_step = Option.is_some(is_react_app) && should_prompt_git;
+  let show_react_step = Option.is_some(syntax_preference);
+  let show_bundler_step = Option.is_some(is_react_app);
+  let show_git_step = Option.is_some(bundler) && should_prompt_git;
   let show_npm_step =
     Option.is_some(initialize_git)
     || Option.is_some(bundler)
@@ -478,14 +485,14 @@ let make =
         isDisabled={active_step != Syntax_preference}
       />
     </Step>
-    <Step visible=show_bundler_step>
-      <Bundler onSubmit=onSubmitBundler isDisabled={active_step != Bundler} />
-    </Step>
     <Step visible=show_react_step>
       <React_app
         onSubmit=onSubmitReact
         isDisabled={active_step != React_app}
       />
+    </Step>
+    <Step visible=show_bundler_step>
+      <Bundler onSubmit=onSubmitBundler isDisabled={active_step != Bundler} />
     </Step>
     <Step visible=show_git_step>
       <Git onSubmit=onSubmitGit isDisabled={active_step != Git} />
@@ -499,13 +506,15 @@ let make =
         isDisabled={active_step != OCaml_toolchain}
       />
     </Step>
-    <Step visible=show_overwrite_step>
-      <Overwrite_preference
-        name={Option.get(name)}
-        onSubmit=onSubmitOverwrite_preference
-        isDisabled={active_step != Overwrite_preference}
-      />
-    </Step>
+    {Option.is_some(name)
+       ? <Step visible=show_overwrite_step>
+           <Overwrite_preference
+             name={Option.get(name)}
+             onSubmit=onSubmitOverwrite_preference
+             isDisabled={active_step != Overwrite_preference}
+           />
+         </Step>
+       : React.null}
     {switch (error) {
      | Some(error) =>
        <Box display=`flex>

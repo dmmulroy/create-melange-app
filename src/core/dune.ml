@@ -5,7 +5,7 @@ struct
   type input = string
   type output = string
 
-  let name = "dune build"
+  let name = "opam exec -- dune build"
 
   let exec (project_directory : input) =
     let options =
@@ -33,6 +33,26 @@ module Install_dev_dependencies :
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
     |> Promise_result.map_error (Fun.const "Failed to install dev dependencies")
+  ;;
+end
+
+module Install : Process.S with type input = string and type output = string =
+struct
+  (* We are using this command to force dune to generate an opam file without
+     erroring prior to the first build *)
+  type input = string
+  type output = string
+
+  let name = "dune build @install"
+
+  let exec (project_directory : input) =
+    let options =
+      Node.Child_process.option ~cwd:project_directory ~encoding:"utf8" ()
+    in
+    Nodejs.Child_process.async_exec name options
+    |> Promise_result.of_js_promise
+    |> Promise_result.catch Promise_result.resolve_error
+    |> Promise_result.map_error (Fun.const "Failed to 'dune build @install'")
   ;;
 end
 

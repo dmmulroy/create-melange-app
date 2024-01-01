@@ -84,8 +84,8 @@ module V2 = struct
   let node_pkg_manager_install = Npm.Install.exec
   let copy_git_ignore = Git_scm.Copy_gitignore.exec
   let git_init_and_stage = Git_scm.Init_and_stage.exec
+  let dune_install = Dune.Install.exec
   let opam_create_switch = Opam.Create_switch.exec
   let opem_install_dev_dependencies = Opam.Install_dev_dependencies.exec
-  let opam_install = Opam.Install_dependencies.exec
   let dune_build = Dune.Build.exec
 end

@@ -176,7 +176,7 @@ let trim_trailing_slash str =
 
 let parse_project_name_and_dir (str : string) =
   let trimmed = trim_trailing_slash str in
-  if trimmed = "." then
+  if String.equal trimmed "." then
     let name = [| trimmed |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
     let directory = [| Nodejs.Process.cwd () |] |> Nodejs.Path.resolve in
     (name, directory)

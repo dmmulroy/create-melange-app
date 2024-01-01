@@ -1,3 +1,4 @@
+[@ocaml.warning "-27-26"];
 open Bindings;
 open Ink;
 open Common;

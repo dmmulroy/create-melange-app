@@ -20,9 +20,9 @@ module V2 = {
     | Compile_app_module
     | Node_pkg_manager_install
     | Git_copy_ignore_file
+    | Dune_install
     | Opam_create_switch
     | Opam_install_dev_deps
-    | Opam_install_deps
     | Dune_build
     | Git_init_and_stage
     | Finished;
@@ -43,9 +43,9 @@ module V2 = {
     | Compile_app_module => "Compile_app_module"
     | Node_pkg_manager_install => "Node_pkg_manager_install"
     | Git_copy_ignore_file => "Git_copy_ignore_file"
+    | Dune_install => "Dune_install"
     | Opam_create_switch => "Opam_create_switch"
     | Opam_install_dev_deps => "Opam_install_dev_deps"
-    | Opam_install_deps => "Opam_install_deps"
     | Dune_build => "Dune_build"
     | Git_init_and_stage => "Git_init_and_stage"
     | Finished => "Finished"
@@ -67,9 +67,9 @@ module V2 = {
     | Compile_app_module => 11
     | Node_pkg_manager_install => 12
     | Git_copy_ignore_file => 13
-    | Opam_create_switch => 14
-    | Opam_install_dev_deps => 15
-    | Opam_install_deps => 16
+    | Dune_install => 14
+    | Opam_create_switch => 15
+    | Opam_install_dev_deps => 16
     | Dune_build => 17
     | Git_init_and_stage => 18
     | Finished => 19
@@ -956,56 +956,52 @@ module V2 = {
         };
       };
     };
+  };
 
-    module Install_deps = {
-      open Ui;
-      [@react.component]
-      let make = (~state, ~onComplete, ~onError) => {
-        let (copy_complete, set_copy_complete) = React.useState(() => false);
+  module Dune_install = {
+    open Ui;
+    [@react.component]
+    let make = (~state, ~onComplete, ~onError) => {
+      let (copy_complete, set_copy_complete) = React.useState(() => false);
 
-        let is_active =
-          state.step == Opam_install_deps
-          && state.configuration.initialize_ocaml_toolchain;
-        let is_visible =
-          state.configuration.initialize_ocaml_toolchain
-          && step_to_int(state.step) >= step_to_int(Opam_install_deps);
+      let is_active =
+        state.step == Dune_install
+        && state.configuration.initialize_ocaml_toolchain;
+      let is_visible =
+        state.configuration.initialize_ocaml_toolchain
+        && step_to_int(state.step) >= step_to_int(Dune_install);
 
-        React.useEffect1(
-          () => {
-            if (is_active) {
-              state.configuration.directory
-              |> Engine.V2.opam_install
-              |> Promise_result.perform(result =>
-                   switch (result) {
-                   | Ok(_) =>
-                     set_copy_complete(_ => true);
-                     onComplete();
-                   | Error(err) => onError(err)
-                   }
-                 );
-            };
+      React.useEffect1(
+        () => {
+          if (is_active) {
+            state.configuration.directory
+            |> Engine.V2.dune_install
+            |> Promise_result.perform(result =>
+                 switch (result) {
+                 | Ok(_) =>
+                   set_copy_complete(_ => true);
+                   onComplete();
+                 | Error(err) => onError(err)
+                 }
+               );
+          };
 
-            None;
-          },
-          [|is_active|],
-        );
+          None;
+        },
+        [|is_active|],
+      );
 
-        if (!is_visible) {
-          React.null;
-        } else {
-          <Box flexDirection=`column gap=1>
-            {copy_complete
-               ? <Box flexDirection=`row gap=1>
-                   <Badge color=`green> {React.string("Complete")} </Badge>
-                   <Text>
-                     {React.string("Installing OCaml dependencies")}
-                   </Text>
-                 </Box>
-               : <Spinner
-                   label="Installing OCaml dependencies, this may take a few minutes"
-                 />}
-          </Box>;
-        };
+      if (!is_visible) {
+        React.null;
+      } else {
+        <Box flexDirection=`column gap=1>
+          {copy_complete
+             ? <Box flexDirection=`row gap=1>
+                 <Badge color=`green> {React.string("Complete")} </Badge>
+                 <Text> {React.string("Generating project opam file")} </Text>
+               </Box>
+             : <Spinner label="Generating project opam file" />}
+        </Box>;
       };
     };
   };
@@ -1103,8 +1099,6 @@ module V2 = {
             error: None,
           }
         );
-      let (step_transitions, set_step_transitions) = React.useState(() => []);
-
       let onError = err => set_state(_ => {...state, error: Some(err)});
 
       React.useEffect1(
@@ -1124,21 +1118,14 @@ module V2 = {
           <Create_dir
             state
             onComplete={() => {
-              set_state(_ => {...state, step: Copy_base_templates});
-              set_step_transitions((prev: list(step)) =>
-                prev @ [Copy_base_templates]
-              );
+              set_state(_ => {...state, step: Copy_base_templates})
             }}
             onError
           />
           <Copy_base_templates
             state
             onComplete={() => {
-              set_state(state => {...state, step: Bundler_copy_files});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [Bundler_copy_files]
-              );
+              set_state(state => {...state, step: Bundler_copy_files})
             }}
             onError
           />
@@ -1147,32 +1134,21 @@ module V2 = {
             onComplete={() => {
               set_state(state =>
                 {...state, step: Bundler_extend_package_json}
-              );
-              set_step_transitions((prev: list(step)) =>
-                prev @ [Bundler_extend_package_json]
-              );
+              )
             }}
             onError
           />
           <Bundler.Extend_package_json
             state
             onComplete={(updated_state: state) => {
-              set_state(_ => {...updated_state, step: App_copy_files});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [App_copy_files]
-              );
+              set_state(_ => {...updated_state, step: App_copy_files})
             }}
             onError
           />
           <App_files.Copy_files
             state
             onComplete={() => {
-              set_state(_ => {...state, step: App_extend_package_json});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [App_extend_package_json]
-              );
+              set_state(_ => {...state, step: App_extend_package_json})
             }}
             onError
           />
@@ -1181,33 +1157,21 @@ module V2 = {
             onComplete={updated_state => {
               set_state(_ =>
                 {...updated_state, step: App_extend_dune_project}
-              );
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [App_extend_dune_project]
-              );
+              )
             }}
             onError
           />
           <App_files.Extend_dune_project
             state
             onComplete={updated_state => {
-              set_state(_ => {...updated_state, step: Compile_package_json});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [Compile_package_json]
-              );
+              set_state(_ => {...updated_state, step: Compile_package_json})
             }}
             onError
           />
           <Compile.Compile_package_json
             state
             onComplete={updated_state => {
-              set_state(_ => {...updated_state, step: Compile_dune_project});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [Compile_dune_project]
-              );
+              set_state(_ => {...updated_state, step: Compile_dune_project})
             }}
             onError
           />
@@ -1216,10 +1180,6 @@ module V2 = {
             onComplete={updated_state => {
               let next_step = Compile_root_dune_file;
               set_state(_ => {{...updated_state, step: next_step}});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [next_step]
-              );
             }}
             onError
           />
@@ -1228,9 +1188,6 @@ module V2 = {
             onComplete={updated_state => {
               let next_step = Compile_app_dune_file;
               set_state(_ => {{...updated_state, step: next_step}});
-              set_step_transitions((prev: list(step)) =>
-                prev @ [next_step]
-              );
             }}
             onError
           />
@@ -1239,9 +1196,6 @@ module V2 = {
             onComplete={updated_state => {
               let next_step = Compile_app_module;
               set_state(_ => {{...updated_state, step: next_step}});
-              set_step_transitions((prev: list(step)) =>
-                prev @ [next_step]
-              );
             }}
             onError
           />
@@ -1260,9 +1214,6 @@ module V2 = {
                 | _ => Finished
                 };
               set_state(_ => {{...updated_state, step: next_step}});
-              set_step_transitions((prev: list(step)) =>
-                prev @ [next_step]
-              );
             }}
             onError
           />
@@ -1280,10 +1231,6 @@ module V2 = {
                 };
 
               set_state(_ => {{...state, step: next_step}});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [next_step]
-              );
             }}
             onError
           />
@@ -1295,50 +1242,33 @@ module V2 = {
                   configuration.initialize_ocaml_toolchain,
                   configuration.initialize_git,
                 ) {
-                | (true, _) => Opam_create_switch
+                | (true, _) => Dune_install
                 | (_, true) => Git_init_and_stage
                 | _ => Finished
                 };
 
               set_state(_ => {...state, step: next_step});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [next_step]
-              );
+            }}
+            onError
+          />
+          <Dune_install
+            state
+            onComplete={() => {
+              let next_step = Opam_create_switch;
+              set_state(_ => {...state, step: next_step});
             }}
             onError
           />
           <Opam.Create_switch
             state
             onComplete={() => {
-              set_state(_ => {...state, step: Opam_install_dev_deps});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [Opam_install_dev_deps]
-              );
+              set_state(_ => {...state, step: Opam_install_dev_deps})
             }}
             onError
           />
           <Opam.Install_dev_deps
             state
-            onComplete={() => {
-              set_state(_ => {...state, step: Opam_install_deps});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [Opam_install_deps]
-              );
-            }}
-            onError
-          />
-          <Opam.Install_deps
-            state
-            onComplete={() => {
-              set_state(_ => {...state, step: Dune_build});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [Dune_build]
-              );
-            }}
+            onComplete={() => {set_state(_ => {...state, step: Dune_build})}}
             onError
           />
           <Dune_build
@@ -1347,31 +1277,14 @@ module V2 = {
               let next_step =
                 configuration.initialize_git ? Git_init_and_stage : Finished;
               set_state(_ => {...state, step: next_step});
-
-              set_step_transitions((prev: list(step)) =>
-                prev @ [next_step]
-              );
             }}
             onError
           />
           <Git.Init_and_stage
             state
-            onComplete={() => {
-              set_state(_ => {...state, step: Finished});
-
-              set_step_transitions((prev: list(step)) => prev @ [Finished]);
-            }}
+            onComplete={() => {set_state(_ => {...state, step: Finished})}}
             onError
           />
-          <Text> {React.string("Transitions:")} </Text>
-          {step_transitions
-           |> List.map(step =>
-                <Text key={step_to_string(step)}>
-                  {React.string(step_to_string(step))}
-                </Text>
-              )
-           |> Array.of_list
-           |> React.array}
         </Box>
       };
     };
