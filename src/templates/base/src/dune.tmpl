@@ -3,7 +3,7 @@
 (melange.emit
  (target output)
  (alias app)
- (libraries reason-react create_melange_app bindings)
+ (libraries {{#each libraries}}{{this}}{{#unless @last}} {{/unless}}{{/each}})
  (modules :standard)
  (preprocess
   (pps {{#each ppxs}}{{this}}{{#unless @last}} {{/unless}}{{/each}}))

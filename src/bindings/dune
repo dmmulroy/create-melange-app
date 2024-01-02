@@ -3,6 +3,6 @@
 (library
  (name bindings)
  (modes melange)
- (libraries melange melange.js melange.node reason-react)
+ (libraries  melange.js melange.node reason-react)
  (preprocess
   (pps melange.ppx reason-react-ppx)))

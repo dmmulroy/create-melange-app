@@ -4,6 +4,10 @@ open Ui;
 
 open Core;
 
+// For Minttea rewrite:
+// This file is a great example of do as I say not as I do. It's a mess and
+// I just brute forced it to work w/ lots of copy/paste. I think a better way
+// to have done this would have been to create functor to create the steps
 module V2 = {
   type step =
     | Create_dir
@@ -1025,6 +1029,20 @@ module V2 = {
               Dune.Dune_file.template(
                 ~project_directory=configuration.directory,
                 ~template_directory="./src",
+                // It'd be nice if when refactoring to minttea we could find
+                // A way to make this more type safe and not rely on strings
+                // to match up to templates in other directories
+                ~libraries=
+                  configuration.is_react_app
+                    ? [
+                      Dune.Dune_file.Library.make("bindings"),
+                      Dune.Dune_file.Library.make("create_melange_app"),
+                      Dune.Dune_file.Library.make("reason-react"),
+                    ]
+                    : [
+                      Dune.Dune_file.Library.make("bindings"),
+                      Dune.Dune_file.Library.make("create_melange_app"),
+                    ],
                 ~ppxs=
                   configuration.is_react_app
                     ? [

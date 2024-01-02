@@ -63,13 +63,23 @@ module Dune_file = struct
     let make name = { name }
   end
 
-  type t = { name : string; ppxs : Ppx.t list }
+  module Library = struct
+    type t = { name : string }
 
-  let make ?(ppxs = []) name = { name; ppxs }
+    let make name = { name }
+  end
+
+  type t = { name : string; libraries : Library.t list; ppxs : Ppx.t list }
+
+  let make ?(libraries = []) ?(ppxs = []) name = { name; libraries; ppxs }
 
   let to_json dune_file =
     let dict = Js.Dict.empty () in
     Js.Dict.set dict "name" (Js.Json.string dune_file.name);
+    Js.Dict.set dict "libraries"
+      (dune_file.libraries
+      |> List.map (fun (library : Library.t) -> Js.Json.string library.name)
+      |> Array.of_list |> Js.Json.array);
     Js.Dict.set dict "ppxs"
       (dune_file.ppxs
       |> List.map (fun (ppx : Ppx.t) -> Js.Json.string ppx.name)
@@ -77,11 +87,13 @@ module Dune_file = struct
     Js.Json.object_ dict
   ;;
 
-  let template ~project_directory ~template_directory ?(ppxs = []) name =
+  let template ~project_directory ~template_directory ?(libraries = [])
+      ?(ppxs = []) name =
     let template_directory =
       Node.Path.join [| project_directory; template_directory |]
     in
-    Template.make ~name:"dune.tmpl" ~value:(make ~ppxs name)
+    Template.make ~name:"dune.tmpl"
+      ~value:(make ~libraries ~ppxs name)
       ~dir:template_directory ~to_json
   ;;
 end
