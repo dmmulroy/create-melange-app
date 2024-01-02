@@ -1,10 +1,6 @@
-(dirs :standard \ node_modules)
-
-(melange.emit
- (target output)
+(library
  (alias app)
+ (modes melange)
  (libraries {{#each libraries}}{{this}}{{#unless @last}} {{/unless}}{{/each}})
- (modules :standard)
  (preprocess
-  (pps {{#each ppxs}}{{this}}{{#unless @last}} {{/unless}}{{/each}}))
- (module_systems es6))
+  (pps {{#each ppxs}}{{this}}{{#unless @last}} {{/unless}}{{/each}})))

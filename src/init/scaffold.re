@@ -80,6 +80,7 @@ module V2 = {
     configuration: Configuration.t,
     pkg_json: Template.t(Package_json.t),
     dune_project: Template.t(Dune.Dune_project.t),
+    root_dune_file: Template.t(Dune.Dune_file.t),
     app_dune_file: Template.t(Dune.Dune_file.t),
     app_module: Template.t(App_module.t),
     step,
@@ -1025,6 +1026,7 @@ module V2 = {
                 ~project_name=configuration.name,
                 ~project_directory=configuration.directory,
               ),
+
             app_dune_file:
               Dune.Dune_file.template(
                 ~project_directory=configuration.directory,

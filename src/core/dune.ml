@@ -56,48 +56,6 @@ struct
   ;;
 end
 
-module Dune_file = struct
-  module Ppx = struct
-    type t = { name : string }
-
-    let make name = { name }
-  end
-
-  module Library = struct
-    type t = { name : string }
-
-    let make name = { name }
-  end
-
-  type t = { name : string; libraries : Library.t list; ppxs : Ppx.t list }
-
-  let make ?(libraries = []) ?(ppxs = []) name = { name; libraries; ppxs }
-
-  let to_json dune_file =
-    let dict = Js.Dict.empty () in
-    Js.Dict.set dict "name" (Js.Json.string dune_file.name);
-    Js.Dict.set dict "libraries"
-      (dune_file.libraries
-      |> List.map (fun (library : Library.t) -> Js.Json.string library.name)
-      |> Array.of_list |> Js.Json.array);
-    Js.Dict.set dict "ppxs"
-      (dune_file.ppxs
-      |> List.map (fun (ppx : Ppx.t) -> Js.Json.string ppx.name)
-      |> Array.of_list |> Js.Json.array);
-    Js.Json.object_ dict
-  ;;
-
-  let template ~project_directory ~template_directory ?(libraries = [])
-      ?(ppxs = []) name =
-    let template_directory =
-      Node.Path.join [| project_directory; template_directory |]
-    in
-    Template.make ~name:"dune.tmpl"
-      ~value:(make ~libraries ~ppxs name)
-      ~dir:template_directory ~to_json
-  ;;
-end
-
 module Dune_project = struct
   module String_map = Map.Make (String)
 
@@ -167,5 +125,141 @@ module Dune_project = struct
     Template.make ~name:"dune-project.tmpl"
       ~value:{ empty with name = project_name }
       ~dir:template_directory ~to_json
+  ;;
+end
+
+module Dune_file = struct
+  (* Note these are the bare minimum stanzas/fields required to get our project to build *)
+  module Alias = struct
+    type t = { name : string; deps : string list }
+
+    let empty = { name = ""; deps = [] }
+    let set_name name alias = { alias with name }
+    let add_dep dep alias = { alias with deps = dep :: alias.deps }
+    let add_deps deps alias = { alias with deps = deps @ alias.deps }
+
+    let to_json alias =
+      let dict = Js.Dict.empty () in
+      Js.Dict.set dict "name" (Js.Json.string alias.name);
+      Js.Dict.set dict "deps"
+        (alias.deps |> List.map Js.Json.string |> Array.of_list |> Js.Json.array);
+      Js.Json.object_ dict
+    ;;
+  end
+
+  module Rule = struct
+    type t = {
+      alias : string;
+      targets : string list;
+      deps : string list;
+      action : string;
+    }
+
+    let empty = { alias = ""; targets = []; deps = []; action = "" }
+    let add_target target rule = { rule with targets = target :: rule.targets }
+
+    let add_targets targets rule =
+      { rule with targets = targets @ rule.targets }
+    ;;
+
+    let add_dep dep rule = { rule with deps = dep :: rule.deps }
+    let add_deps deps rule = { rule with deps = deps @ rule.deps }
+    let set_action action rule = { rule with action }
+    let set_alias alias rule = { rule with alias }
+
+    let to_json rule =
+      let dict = Js.Dict.empty () in
+      Js.Dict.set dict "alias" (Js.Json.string rule.alias);
+      Js.Dict.set dict "targets"
+        (rule.targets |> List.map Js.Json.string |> Array.of_list
+       |> Js.Json.array);
+      Js.Dict.set dict "deps"
+        (rule.deps |> List.map Js.Json.string |> Array.of_list |> Js.Json.array);
+      Js.Dict.set dict "action" (Js.Json.string rule.action);
+      Js.Json.object_ dict
+    ;;
+  end
+
+  module Library = struct
+    type t = { alias : string; libraries : string list; ppxs : string list }
+
+    let empty = { alias = ""; libraries = []; ppxs = [] }
+    let set_alias alias library = { library with alias }
+
+    let add_library lib library =
+      { library with libraries = lib :: library.libraries }
+    ;;
+
+    let add_libraries libraries library =
+      { library with libraries = libraries @ library.libraries }
+    ;;
+
+    let to_json library =
+      let dict = Js.Dict.empty () in
+      Js.Dict.set dict "alias" (Js.Json.string library.alias);
+      Js.Dict.set dict "libraries"
+        (library.libraries |> List.map Js.Json.string |> Array.of_list
+       |> Js.Json.array);
+      Js.Dict.set dict "ppxs"
+        (library.ppxs |> List.map Js.Json.string |> Array.of_list
+       |> Js.Json.array);
+      Js.Json.object_ dict
+    ;;
+  end
+
+  type t = {
+    project_name : string;
+    aliases : Alias.t list;
+    rules : Rule.t list;
+    libraries : Library.t list;
+  }
+
+  let empty = { project_name = ""; aliases = []; rules = []; libraries = [] }
+  let set_project_name project_name dune_file = { dune_file with project_name }
+
+  let add_alias alias dune_file =
+    { dune_file with aliases = alias :: dune_file.aliases }
+  ;;
+
+  let add_aliases aliases dune_file =
+    { dune_file with aliases = aliases @ dune_file.aliases }
+  ;;
+
+  let add_rule rule dune_file =
+    { dune_file with rules = rule :: dune_file.rules }
+  ;;
+
+  let add_rules rules dune_file =
+    { dune_file with rules = rules @ dune_file.rules }
+  ;;
+
+  let add_library library dune_file =
+    { dune_file with libraries = library :: dune_file.libraries }
+  ;;
+
+  let add_libraries libraries dune_file =
+    { dune_file with libraries = libraries @ dune_file.libraries }
+  ;;
+
+  let to_json = function
+    | { project_name; aliases; rules; libraries } ->
+        let dict = Js.Dict.empty () in
+        Js.Dict.set dict "name" (Js.Json.string project_name);
+        Js.Dict.set dict "aliases"
+          (aliases |> List.map Alias.to_json |> Array.of_list |> Js.Json.array);
+        Js.Dict.set dict "rules"
+          (rules |> List.map Rule.to_json |> Array.of_list |> Js.Json.array);
+        Js.Dict.set dict "libraries"
+          (libraries |> List.map Library.to_json |> Array.of_list
+         |> Js.Json.array);
+        Js.Json.object_ dict
+  ;;
+
+  let template ~project_directory ~template_directory dune_file =
+    let template_directory =
+      Node.Path.join [| project_directory; template_directory |]
+    in
+    Template.make ~name:"dune.tmpl" ~value:dune_file ~dir:template_directory
+      ~to_json
   ;;
 end
