@@ -37,11 +37,16 @@ module V2 = struct
     |> Promise_result.catch Promise_result.resolve_error
   ;;
 
-  let copy_bundler_files ~(bundler : Bundler.t) project_directory =
+  let copy_bundler_files ~(bundler : Bundler.t) ~is_react_app project_directory
+      =
+    let open Promise_result.Syntax.Let in
     match bundler with
     | None -> Promise_result.resolve_ok ()
     | Webpack -> Webpack.V2.Copy_webpack_config_js.exec project_directory
-    | Vite -> Vite.V2.Copy_vite_config_js.exec project_directory
+    | Vite ->
+        let+ _ = Vite.V2.Copy_vite_config_js.exec project_directory in
+        let+ _ = Vite.V2.Copy_index_html.exec project_directory in
+        Promise_result.resolve_ok ()
   ;;
 
   let extend_package_json_with_bundler ~(bundler : Bundler.t)

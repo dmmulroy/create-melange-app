@@ -1,72 +1,92 @@
 // TODO: Writ comment explaing open Module;
 open Create_melange_app;
+open Configuration;
 // TODO: Write comment introducing React.string and why we need it
 [@react.component]
 let make = (~configuration: Configuration.t) => {
-  <div>
-    <h3> {React.string("Your create-melange-app configuration:")} </h3>
+  let node_package_manager_str =
+    configuration.node_package_manager |> Node_package_manager.to_string;
+
+  <div className="text-[#b8c0e0] text-2xl">
+    <h3 className="font-bold text-3xl mb-2">
+      <>
+        {React.string("Your")}
+        <span
+          className="bg-gradient-to-r from-[#f5bde6] to-[#c6a0f6] bg-clip-text text-transparent">
+          {React.string(" create-melange-app ")}
+        </span>
+        {React.string("configuration:")}
+      </>
+    </h3>
     <ul>
-      <li> {React.string(Configuration.to_string(configuration))} </li>
       <li>
-        {React.string(
-           Format.sprintf("Your project name is %s", configuration.name),
-         )}
+        <>
+          {React.string("Project name: ")}
+          <span
+            className="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">
+            {React.string(configuration.name)}
+          </span>
+        </>
       </li>
       <li>
-        {React.string(
-           Format.sprintf(
-             "Your project was created in %s (relative to where you invoked `create-melange-app`)",
-             configuration.directory,
-           ),
-         )}
+        <>
+          {React.string("Project directory: ")}
+          <span
+            className="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">
+            {React.string(configuration.directory)}
+          </span>
+        </>
       </li>
       <li>
-        {React.string(
-           Format.sprintf(
-             "Your bundler is %s",
-             Configuration.Bundler.to_string(configuration.bundler),
-           ),
-         )}
+        <>
+          {React.string("Bundler: ")}
+          <span
+            className="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">
+            {configuration.bundler
+             |> Bundler.to_string
+             |> String.capitalize_ascii
+             |> React.string}
+          </span>
+        </>
       </li>
-      <li>
-        {React.string(Format.sprintf("Your project is a React app"))}
-      </li>
-      <li>
-        {React.string(
-           Format.sprintf(
-             "Your project was %s initialized with git",
-             configuration.initialize_git ? "" : "not",
-           ),
-         )}
-      </li>
-      <li>
-        {React.string(
-           Format.sprintf(
-             "Your project was %s initialized with npm",
-             configuration.initialize_npm ? "" : "not",
-           ),
-         )}
-      </li>
-      <li>
-        {React.string(
-           Format.sprintf(
-             "Your project was %s initialized with the OCaml toolchain",
-             configuration.initialize_ocaml_toolchain ? "" : "not",
-           ),
-         )}
-      </li>
-      <li>
-        {React.string(
-           Format.sprintf(
-             "Your overwrite preference is %s",
-             switch (configuration.overwrite) {
-             | None => "none"
-             | Some(overwrite) =>
-               Configuration.overwrite_preference_to_string(overwrite)
-             },
-           ),
-         )}
-      </li>
+      {configuration.initialize_git
+       || configuration.initialize_npm
+       || configuration.initialize_ocaml_toolchain
+         ? <li>
+             <>
+               {React.string("Initialized with: ")}
+               <span
+                 className="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">
+                 {switch (
+                    configuration.initialize_git,
+                    configuration.initialize_npm,
+                    configuration.initialize_ocaml_toolchain,
+                  ) {
+                  | (true, false, false) => React.string("Git")
+                  | (true, true, false) =>
+                    "Git and " ++ node_package_manager_str |> React.string
+                  | (true, true, true) =>
+                    "Git, "
+                    ++ node_package_manager_str
+                    ++ " , and the OCaml toolchain"
+                    |> React.string
+                  | (false, true, false) =>
+                    React.string(node_package_manager_str)
+                  | (false, true, true) =>
+                    node_package_manager_str
+                    ++ " and the OCaml toolchain"
+                    |> React.string
+                  | (false, false, true) =>
+                    "The OCaml toolchain" |> React.string
+                  | (true, false, true) =>
+                    "Git and the OCaml toolchain" |> React.string
+                  | (false, false, false) => assert(false)
+                  }}
+               </span>
+             </>
+           </li>
+         : React.null}
     </ul>
   </div>;
 };
+

@@ -79,12 +79,12 @@ let make = (~name as initial_name) => {
     );
 
   <Box flexDirection=`column>
-    <Banner />
     {switch (initial_name_is_valid) {
      | Some(Error(`Msg(error))) =>
        <Ui.Badge color=`red> {React.string(error)} </Ui.Badge>
      | _ =>
        <>
+         {Option.is_none(configuration) ? <Banner /> : React.null}
          <Env_check.Component onEnvCheck=on_env_check />
          {switch (env_check_result) {
           | Some(result) when result == `Pass =>

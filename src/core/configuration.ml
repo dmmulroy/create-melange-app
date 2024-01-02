@@ -1,3 +1,5 @@
+open Bindings
+
 type overwrite_preference = [ `Clear | `Overwrite ]
 
 let overwrite_preference_to_string = function
@@ -22,6 +24,7 @@ let syntax_preference_of_string str =
 type t = {
   name : string;
   directory : string;
+  node_package_manager : Nodejs.Process.npm_user_agent;
   syntax_preference : syntax_preference;
   bundler : Bundler.t;
   is_react_app : bool;
@@ -36,6 +39,7 @@ let make ~name ~directory ~syntax_preference ~bundler ~is_react_app
   {
     name;
     directory;
+    node_package_manager = Nodejs.Process.npm_config_user_agent;
     syntax_preference;
     bundler;
     is_react_app;
@@ -69,6 +73,10 @@ let to_json (configuration : t) =
   let dict = Js.Dict.empty () in
   Js.Dict.set dict "name" (Js.Json.string configuration.name);
   Js.Dict.set dict "directory" (Js.Json.string configuration.directory);
+  Js.Dict.set dict "node_package_manager"
+    (Js.Json.string
+       (configuration.node_package_manager
+      |> Nodejs.Process.npm_user_agent_to_string |> String.capitalize_ascii));
   Js.Dict.set dict "syntax_preference"
     (Js.Json.string
        (syntax_preference_to_string configuration.syntax_preference));

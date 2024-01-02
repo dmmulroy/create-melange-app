@@ -1,20 +1,3 @@
-module Bundler = struct
-  type t = Vite | Webpack | None
-
-  let to_string = function
-    | Vite -> "vite"
-    | Webpack -> "webpack"
-    | None -> "none"
-  ;;
-
-  let of_string = function
-    | "vite" -> Ok Vite
-    | "webpack" -> Ok Webpack
-    | "none" -> Ok None
-    | _ -> Error "Invalid bundler"
-  ;;
-end
-
 type overwrite_preference = [ `Clear | `Overwrite ]
 
 let overwrite_preference_to_string = function
@@ -31,6 +14,7 @@ let overwrite_preference_of_string = function
 type t = {
   name : string;
   directory : string;
+  node_package_manager : Node_package_manager.t;
   bundler : Bundler.t;
   is_react_app : bool;
   initialize_git : bool;
@@ -39,11 +23,12 @@ type t = {
   overwrite : overwrite_preference option;
 }
 
-let make ~name ~directory ~bundler ~is_react_app ~initialize_git ~initialize_npm
-    ~initialize_ocaml_toolchain ~overwrite =
+let make ~name ~directory ~node_package_manager ~bundler ~is_react_app
+    ~initialize_git ~initialize_npm ~initialize_ocaml_toolchain ?overwrite () =
   {
     name;
     directory;
+    node_package_manager;
     bundler;
     is_react_app;
     initialize_git;

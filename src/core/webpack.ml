@@ -16,11 +16,11 @@ let scripts =
     Script.make ~name:"bundle"
       ~script:
         "webpack --mode production --entry \
-         ./_build/default/src/output/src/app.js";
+         ./_build/default/src/output/src/App.js";
     Script.make ~name:"server"
       ~script:
         "webpack serve --open --mode development --entry \
-         ./_build/default/src/output/src/app.js";
+         ./_build/default/src/output/src/App.js";
   ]
 ;;
 

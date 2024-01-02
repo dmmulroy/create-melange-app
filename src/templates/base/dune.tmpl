@@ -1,9 +1,0 @@
-(dirs :standard \ node_modules)
-
-(melange.emit
- (target build)
- (alias {{name}})
- (libraries app)
- (promote (until-clean))
- (module_systems
-  (es6 mjs)))

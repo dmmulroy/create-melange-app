@@ -1,8 +1,10 @@
-(data_only_dirs templates*)
+(dirs :standard \ node_modules)
 
-(library
- (name app)
- (modes melange)
- (libraries create_melange_app bindings)
+(melange.emit
+ (target output)
+ (alias app)
+ (libraries reason-react create_melange_app bindings)
+ (modules :standard)
  (preprocess
-  (pps {{#each ppxs}}{{this}}{{#unless @last}} {{/unless}}{{/each}})))
+  (pps {{#each ppxs}}{{this}}{{#unless @last}} {{/unless}}{{/each}}))
+ (module_systems es6))

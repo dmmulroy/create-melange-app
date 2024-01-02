@@ -13,11 +13,7 @@ let items: array(unit) = [|()|];
 
 [@react.component]
 let make = () => {
-  <Static items>
-    {(. _, _) => {
-       <Gradient key="key" name=`Retro>
-         <Big_text font=`Tiny text="create-melange-app" />
-       </Gradient>;
-     }}
-  </Static>;
+  <Gradient key="key" name=`Retro>
+    <Big_text font=`Tiny text="create-melange-app" />
+  </Gradient>;
 };
