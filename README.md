@@ -10,7 +10,7 @@
 3. `opam switch create .`
 4. `dune build`
 5. `bun install`
-6. `bun run prepend-node-shebang`
+6. `npm run prepend-node-shebang` (b/c bun run caused Undefined Behavior)
 7. `chmod a+x ./build/src/app.mjs`
 8. `./build/src/app.mjs`
 
