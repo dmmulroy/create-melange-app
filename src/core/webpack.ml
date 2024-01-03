@@ -8,21 +8,49 @@ let dev_dependencies =
     Dependency.make ~kind:`Development ~name:"webpack-cli" ~version:"^5.1.4";
     Dependency.make ~kind:`Development ~name:"webpack-dev-server"
       ~version:"^4.15.1";
+    Dependency.make ~kind:`Development ~name:"concurrently" ~version:"^8.2.2";
   ]
 ;;
 
 let scripts =
   [
-    Script.make ~name:"bundle"
-      ~script:
-        "webpack --mode production --entry \
-         ./_build/default/src/output/src/App.js";
-    Script.make ~name:"server"
+    Script.make ~name:"dev"
+      ~script:"dune build && concurrently 'npm:webpack-dev' 'npm:dune-watch'";
+    Script.make ~name:"webpack-dev"
       ~script:
         "webpack serve --open --mode development --entry \
-         ./_build/default/src/output/src/App.js";
+         ./_build/default/output/src/App.mjs";
+    Script.make ~name:"build" ~script:"dune build";
+    Script.make ~name:"dune-watch" ~script:"dune build -w";
   ]
 ;;
+
+module Copy_index_html :
+  Process.S with type input = string and type output = unit = struct
+  type input = string
+  (** The project directory name *)
+
+  type output = unit
+
+  let name = "copy public/index.html"
+
+  let webpack_public_dir_path =
+    Node.Path.join
+      [|
+        Nodejs.Util.__dirname [%mel.raw "import.meta.url"];
+        "..";
+        "templates";
+        "extensions";
+        "webpack";
+        "public";
+      |]
+  ;;
+
+  let exec (project_dir_name : input) =
+    let dest = Node.Path.join [| project_dir_name; "./public" |] in
+    Fs.copy_file_v2 ~dest webpack_public_dir_path
+  ;;
+end
 
 module Copy_webpack_config_js :
   Process.S with type input = string and type output = unit = struct

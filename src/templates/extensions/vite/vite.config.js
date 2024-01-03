@@ -1,20 +1,8 @@
-import { defineConfig } from "vite";
-import melangePlugin from "vite-plugin-melange";
+import { nodeResolve } from "@rollup/plugin-node-resolve";
 
-export default defineConfig({
-  plugins: [
-    melangePlugin({
-      emitDir: "src",
-      buildCommand: "opam exec -- dune build @app",
-      watchCommand: "opam exec -- dune build --watch @app",
-    }),
-  ],
-  server: {
-    watch: {
-      awaitWriteFinish: {
-        stabilityThreshold: 500,
-        pollInterval: 20,
-      },
-    },
+export default {
+  build: {
+    outDir: "./dist",
   },
-});
+  plugins: [nodeResolve()],
+};

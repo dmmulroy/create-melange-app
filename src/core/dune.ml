@@ -1,3 +1,5 @@
+[@@@ocaml.warning "-32"]
+
 open Bindings
 
 module Build : Process.S with type input = string and type output = string =
@@ -183,14 +185,14 @@ module Dune_file = struct
 
   module Library = struct
     type t = {
-      alias : string;
+      name : string;
       modes : string;
       libraries : string list;
       ppxs : string list;
     }
 
-    let empty = { alias = ""; modes = ""; libraries = []; ppxs = [] }
-    let set_alias alias library = { library with alias }
+    let empty = { name = ""; modes = ""; libraries = []; ppxs = [] }
+    let set_alias name library = { library with name }
     let set_modes modes library = { library with modes }
 
     let add_library lib library =
@@ -206,7 +208,7 @@ module Dune_file = struct
 
     let to_json library =
       let dict = Js.Dict.empty () in
-      Js.Dict.set dict "alias" (Js.Json.string library.alias);
+      Js.Dict.set dict "name" (Js.Json.string library.name);
       Js.Dict.set dict "modes" (Js.Json.string library.modes);
       Js.Dict.set dict "libraries"
         (library.libraries |> List.map Js.Json.string |> Array.of_list
@@ -261,7 +263,7 @@ module Dune_file = struct
     aliases : Alias.t list;
     rules : Rule.t list;
     libraries : Library.t list;
-    melange_emit : Melange_emit.t list;
+    melange_emits : Melange_emit.t list;
   }
 
   let empty =
@@ -271,7 +273,7 @@ module Dune_file = struct
       aliases = [];
       rules = [];
       libraries = [];
-      melange_emit = [];
+      melange_emits = [];
     }
   ;;
 
@@ -302,15 +304,15 @@ module Dune_file = struct
   ;;
 
   let add_melange_emit melange_emit dune_file =
-    { dune_file with melange_emit = melange_emit :: dune_file.melange_emit }
+    { dune_file with melange_emits = melange_emit :: dune_file.melange_emits }
   ;;
 
   let add_melange_emits melange_emits dune_file =
-    { dune_file with melange_emit = melange_emits @ dune_file.melange_emit }
+    { dune_file with melange_emits = melange_emits @ dune_file.melange_emits }
   ;;
 
   let to_json = function
-    | { project_name; dirs; aliases; rules; libraries; melange_emit } ->
+    | { project_name; dirs; aliases; rules; libraries; melange_emits } ->
         let dict = Js.Dict.empty () in
         Js.Dict.set dict "project_name" (Js.Json.string project_name);
         Js.Dict.set dict "dirs"
@@ -322,8 +324,8 @@ module Dune_file = struct
         Js.Dict.set dict "libraries"
           (libraries |> List.map Library.to_json |> Array.of_list
          |> Js.Json.array);
-        Js.Dict.set dict "melange_emit"
-          (melange_emit
+        Js.Dict.set dict "melange_emits"
+          (melange_emits
           |> List.map Melange_emit.to_json
           |> Array.of_list |> Js.Json.array);
         Js.Json.object_ dict
@@ -336,47 +338,73 @@ module Dune_file = struct
     Template.make ~name:"dune.tmpl" ~value:dune_file ~dir:template_directory
       ~to_json
   ;;
+
+  (* TODO: Hide via mli *)
+  let vite_root project_name =
+    empty
+    |> add_rule
+         (Rule.empty |> Rule.set_alias "vite" |> Rule.add_target "dir dist"
+         |> Rule.add_deps
+              [
+                "alias_rec " ^ project_name;
+                ":vite ./vite.config.js";
+                ":index_html ./index.html";
+              ]
+         |> Rule.set_action {|system "../../node_modules/.bin/vite build"|})
+    |> add_alias
+         (Alias.empty |> Alias.set_name "all" |> Alias.add_dep "alias_rec vite")
+  ;;
+
+  let webpack_root project_name =
+    empty
+    |> add_rule
+         (Rule.empty |> Rule.set_alias "webpack" |> Rule.add_target "dir dist"
+         |> Rule.add_deps
+              [
+                "alias_rec " ^ project_name;
+                ":webpack ./webpack.config.js";
+                "source_tree ./public";
+              ]
+         |> Rule.set_action
+              {|system "../../node_modules/.bin/webpack --mode production \
+              --entry ./output/src/App.mjs && cp ./public/index.html dist/index.html"|}
+         )
+    |> add_alias
+         (Alias.empty |> Alias.set_name "all"
+         |> Alias.add_dep "alias_rec webpack")
+  ;;
+
+  let root (configuration : Configuration.t) =
+    let melange_emit =
+      Melange_emit.empty
+      |> Melange_emit.set_alias configuration.name
+      |> Melange_emit.set_target "output"
+      |> Melange_emit.add_library "app"
+      |> Melange_emit.set_module_system "es6 mjs"
+    in
+    match configuration.bundler with
+    | Vite -> configuration.name |> vite_root |> add_melange_emit melange_emit
+    | Webpack ->
+        configuration.name |> webpack_root |> add_melange_emit melange_emit
+    | _ ->
+        empty
+        |> set_project_name configuration.name
+        |> add_melange_emit melange_emit
+  ;;
+
+  let app_library (configuration : Configuration.t) =
+    let libraries, ppxs =
+      match configuration.is_react_app with
+      | true ->
+          ( [ "bindings"; "create_melange_app"; "reason-react" ],
+            [ "melange.ppx"; "reason-react-ppx" ] )
+      | false -> ([ "bindings"; "create_melange_app" ], [ "melange.ppx" ])
+    in
+    empty
+    |> add_library
+         (Library.empty |> Library.set_alias "app"
+         |> Library.set_modes "melange"
+         |> Library.add_libraries libraries
+         |> Library.add_ppxs ppxs)
+  ;;
 end
-
-let vite_root_dune_file project_name =
-  let open Dune_file in
-  empty
-  |> add_rule
-       (Rule.empty |> Rule.set_alias "vite" |> Rule.add_target "dir dist"
-       |> Rule.add_deps
-            [
-              "alias_rec" ^ project_name;
-              ":vite ./vite.config.js";
-              ":index_html ./index.html";
-            ]
-       |> Rule.set_action {|system "../../node_modules/.bin/vite build"|})
-  |> add_alias
-       (Alias.empty |> Alias.set_name "all" |> Alias.add_dep "alias_rec vite")
-  |> add_melange_emit
-       (Melange_emit.empty
-       |> Melange_emit.set_alias project_name
-       |> Melange_emit.set_target "output"
-       |> Melange_emit.add_library "app"
-       |> Melange_emit.set_module_system "es6 mjs")
-;;
-
-(* (libraries bindings create_melange_app reason-react) *)
-let app_library_dune_file ?(is_react_app = false) () =
-  let open Dune_file in
-  let ppxs =
-    match is_react_app with
-    | true -> [ "melange.ppx"; "reason-react-ppx" ]
-    | false -> [ "melange.ppx" ]
-  in
-  let libraries =
-    match is_react_app with
-    | true -> [ "bindings"; "create_melange_app"; "reason-react" ]
-    | false -> [ "bindings"; "create_melange_app" ]
-  in
-  empty
-  |> add_library
-       (Library.empty |> Library.set_alias "app"
-       |> Library.set_modes "melange"
-       |> Library.add_libraries libraries
-       |> Library.add_ppxs ppxs)
-;;

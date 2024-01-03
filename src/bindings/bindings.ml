@@ -6,3 +6,4 @@ module Ink = Ink
 module Nodejs = Nodejs
 module Promise = Promise
 module Promise_result = Promise_result
+module Open = Open

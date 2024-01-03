@@ -1,6 +1,9 @@
+{{#each libraries}}
 (library
- (alias app)
- (modes melange)
- (libraries {{#each libraries}}{{this}}{{#unless @last}} {{/unless}}{{/each}})
+ (name {{this.name}})
+ (modes {{this.modes}})
+ (libraries {{#each this.libraries}}{{this}}{{#unless @last}} {{/unless}}{{#if @last}}){{/if}}{{/each}}
  (preprocess
-  (pps {{#each ppxs}}{{this}}{{#unless @last}} {{/unless}}{{/each}})))
+  (pps {{#each this.ppxs}}{{this}}{{#unless @last}} {{/unless}}{{#if @last}}){{/if}}{{/each}}))
+
+{{/each}}
