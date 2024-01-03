@@ -52,33 +52,31 @@ module Copy_index_html :
   ;;
 end
 
-module V2 = struct
-  module Copy_webpack_config_js :
-    Process.S with type input = string and type output = unit = struct
-    type input = string
-    (** The project directory name *)
+module Copy_webpack_config_js :
+  Process.S with type input = string and type output = unit = struct
+  type input = string
+  (** The project directory name *)
 
-    type output = unit
+  type output = unit
 
-    let name = "copy webpack.config.js"
+  let name = "copy webpack.config.js"
 
-    let webpack_config_js_path =
-      Node.Path.join
-        [|
-          Nodejs.Util.__dirname [%mel.raw "import.meta.url"];
-          "..";
-          "templates";
-          "extensions";
-          "webpack";
-          "webpack.config.js";
-        |]
-    ;;
+  let webpack_config_js_path =
+    Node.Path.join
+      [|
+        Nodejs.Util.__dirname [%mel.raw "import.meta.url"];
+        "..";
+        "templates";
+        "extensions";
+        "webpack";
+        "webpack.config.js";
+      |]
+  ;;
 
-    let exec (project_dir_name : input) =
-      let dest =
-        Node.Path.join [| project_dir_name; "/"; "webpack.config.js" |]
-      in
-      Fs.copy_file_v2 ~dest webpack_config_js_path
-    ;;
-  end
+  let exec (project_dir_name : input) =
+    let dest =
+      Node.Path.join [| project_dir_name; "/"; "webpack.config.js" |]
+    in
+    Fs.copy_file ~dest webpack_config_js_path
+  ;;
 end

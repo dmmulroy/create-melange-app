@@ -400,7 +400,7 @@ let make =
       value => {
         set_initialize_ocaml_toolchain(_ => Some(value));
         Option.get(directory)
-        |> Engine.V2.directory_exists
+        |> Engine.directory_exists
         |> Promise_result.perform(result =>
              switch (result) {
              | Ok(true) => set_active_step(_ => Overwrite_preference)

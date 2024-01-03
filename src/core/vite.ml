@@ -24,58 +24,56 @@ let scripts =
   ]
 ;;
 
-module V2 = struct
-  module Copy_vite_config_js :
-    Process.S with type input = string and type output = unit = struct
-    type input = string
-    (** The project directory name *)
+module Copy_vite_config_js :
+  Process.S with type input = string and type output = unit = struct
+  type input = string
+  (** The project directory name *)
 
-    type output = unit
+  type output = unit
 
-    let name = "copy vite.config.js"
+  let name = "copy vite.config.js"
 
-    let vite_config_js_path =
-      Node.Path.join
-        [|
-          Nodejs.Util.__dirname [%mel.raw "import.meta.url"];
-          "..";
-          "templates";
-          "extensions";
-          "vite";
-          "vite.config.js";
-        |]
-    ;;
+  let vite_config_js_path =
+    Node.Path.join
+      [|
+        Nodejs.Util.__dirname [%mel.raw "import.meta.url"];
+        "..";
+        "templates";
+        "extensions";
+        "vite";
+        "vite.config.js";
+      |]
+  ;;
 
-    let exec (project_dir_name : input) =
-      let dest = Node.Path.join [| project_dir_name; "/"; "vite.config.js" |] in
-      Fs.copy_file_v2 ~dest vite_config_js_path
-    ;;
-  end
+  let exec (project_dir_name : input) =
+    let dest = Node.Path.join [| project_dir_name; "/"; "vite.config.js" |] in
+    Fs.copy_file ~dest vite_config_js_path
+  ;;
+end
 
-  module Copy_index_html :
-    Process.S with type input = string and type output = unit = struct
-    type input = string
-    (** The project directory name *)
+module Copy_index_html :
+  Process.S with type input = string and type output = unit = struct
+  type input = string
+  (** The project directory name *)
 
-    type output = unit
+  type output = unit
 
-    let name = "copy index.html"
+  let name = "copy index.html"
 
-    let vite_config_js_path =
-      Node.Path.join
-        [|
-          Nodejs.Util.__dirname [%mel.raw "import.meta.url"];
-          "..";
-          "templates";
-          "extensions";
-          "vite";
-          "index.html";
-        |]
-    ;;
+  let vite_config_js_path =
+    Node.Path.join
+      [|
+        Nodejs.Util.__dirname [%mel.raw "import.meta.url"];
+        "..";
+        "templates";
+        "extensions";
+        "vite";
+        "index.html";
+      |]
+  ;;
 
-    let exec (project_dir_name : input) =
-      let dest = Node.Path.join [| project_dir_name; "/"; "index.html" |] in
-      Fs.copy_file_v2 ~dest vite_config_js_path
-    ;;
-  end
+  let exec (project_dir_name : input) =
+    let dest = Node.Path.join [| project_dir_name; "/"; "index.html" |] in
+    Fs.copy_file ~dest vite_config_js_path
+  ;;
 end

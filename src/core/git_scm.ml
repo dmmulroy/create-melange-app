@@ -40,7 +40,7 @@ module Copy_gitignore :
 
   let exec (project_dir_name : input) =
     let dest = Node.Path.join [| project_dir_name; "/"; ".gitignore" |] in
-    Fs.copy_file_v2 ~dest gitignore_path
+    Fs.copy_file ~dest gitignore_path
   ;;
 end
 
