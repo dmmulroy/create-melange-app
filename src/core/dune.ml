@@ -355,6 +355,25 @@ module Dune_file = struct
          (Alias.empty |> Alias.set_name "all" |> Alias.add_dep "alias_rec vite")
   ;;
 
+  let webpack_root project_name =
+    empty
+    |> add_rule
+         (Rule.empty |> Rule.set_alias "webpack" |> Rule.add_target "dir dist"
+         |> Rule.add_deps
+              [
+                "alias_rec " ^ project_name;
+                ":webpack ./webpack.config.js";
+                "source_tree ./public";
+              ]
+         |> Rule.set_action
+              {|system "../../node_modules/.bin/webpack --mode production \
+              --entry ./output/src/App.mjs && cp ./public/index.html dist/index.html"|}
+         )
+    |> add_alias
+         (Alias.empty |> Alias.set_name "all"
+         |> Alias.add_dep "alias_rec webpack")
+  ;;
+
   let root (configuration : Configuration.t) =
     let melange_emit =
       Melange_emit.empty
@@ -365,6 +384,8 @@ module Dune_file = struct
     in
     match configuration.bundler with
     | Vite -> configuration.name |> vite_root |> add_melange_emit melange_emit
+    | Webpack ->
+        configuration.name |> webpack_root |> add_melange_emit melange_emit
     | _ ->
         empty
         |> set_project_name configuration.name

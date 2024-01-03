@@ -42,7 +42,10 @@ module V2 = struct
     let open Promise_result.Syntax.Let in
     match bundler with
     | None -> Promise_result.resolve_ok ()
-    | Webpack -> Webpack.V2.Copy_webpack_config_js.exec project_directory
+    | Webpack ->
+        let+ _ = Webpack.V2.Copy_webpack_config_js.exec project_directory in
+        let+ _ = Webpack.Copy_index_html.exec project_directory in
+        Promise_result.resolve_ok ()
     | Vite ->
         let+ _ = Vite.V2.Copy_vite_config_js.exec project_directory in
         let+ _ = Vite.V2.Copy_index_html.exec project_directory in
