@@ -1,0 +1,34 @@
+(dirs :standard \ node_modules)
+
+{{#each aliases}}
+(alias 
+  (name {{this.name}})
+  (deps
+     {{#each this.deps}}
+     ({{this}}){{#unless @last}} {{/unless}}{{#if @last}}){{/if}})
+     {{/each}}
+
+{{/each}}
+{{#each rules}}
+(rule
+  (alias {{this.alias}})
+   (targets {{#each this.targets}}({{this}}){{#unless @last}} {{/unless}}{{/each}})
+   (deps
+     {{#each this.deps}}
+     ({{this}}){{#unless @last}} {{/unless}}{{#if @last}}){{/if}}
+     {{/each}}
+   (action
+    ({{{this.action}}}))
+   (mode
+     (promote (until-clean))))
+
+{{/each}}
+{{#each melange_emits}}
+  (melange.emit
+   (target {{this.target}})
+   (alias {{this.alias}})
+   (libraries {{#each this.libraries}}{{this}}{{#unless @last}} {{/unless}}{{#if @last}}){{/if}}{{/each}}
+   (module_systems ({{this.module_system}})))
+{{/each}}
+
+

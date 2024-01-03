@@ -19,6 +19,7 @@ module V2 = {
     | App_extend_dune_project
     | Compile_package_json
     | Compile_dune_project
+    | Compile_root_dune_file
     | Compile_app_dune_file
     | Compile_app_module
     | Node_pkg_manager_install
@@ -41,6 +42,7 @@ module V2 = {
     | App_extend_dune_project => "App_extend_dune_project"
     | Compile_package_json => "Compile_package_json"
     | Compile_dune_project => "Compile_dune_project"
+    | Compile_root_dune_file => "Compile_root_dune_file"
     | Compile_app_dune_file => "Compile_app_dune_file"
     | Compile_app_module => "Compile_app_module"
     | Node_pkg_manager_install => "Node_pkg_manager_install"
@@ -64,16 +66,17 @@ module V2 = {
     | App_extend_dune_project => 6
     | Compile_package_json => 7
     | Compile_dune_project => 8
-    | Compile_app_dune_file => 9
-    | Compile_app_module => 10
-    | Node_pkg_manager_install => 11
-    | Git_copy_ignore_file => 12
-    | Dune_install => 13
-    | Opam_create_switch => 14
-    | Opam_install_dev_deps => 15
-    | Dune_build => 16
-    | Git_init_and_stage => 17
-    | Finished => 18
+    | Compile_root_dune_file => 9
+    | Compile_app_dune_file => 10
+    | Compile_app_module => 11
+    | Node_pkg_manager_install => 12
+    | Git_copy_ignore_file => 13
+    | Dune_install => 14
+    | Opam_create_switch => 15
+    | Opam_install_dev_deps => 16
+    | Dune_build => 17
+    | Git_init_and_stage => 18
+    | Finished => 19
     };
 
   type state = {
@@ -548,6 +551,53 @@ module V2 = {
       };
     };
 
+    module Compile_root_dune_file = {
+      open Ui;
+      [@react.component]
+      let make = (~state, ~onComplete, ~onError) => {
+        let (copy_complete, set_copy_complete) = React.useState(() => false);
+
+        let is_active = state.step == Compile_root_dune_file;
+        let is_visible =
+          step_to_int(state.step) >= step_to_int(Compile_root_dune_file);
+
+        React.useEffect1(
+          () => {
+            if (is_active) {
+              state.root_dune_file
+              |> Engine.V2.compile
+              |> Promise_result.perform(result =>
+                   switch (result) {
+                   | Ok(res) =>
+                     set_copy_complete(_ => true);
+                     onComplete({...state, root_dune_file: res});
+                   | Error(err) => onError(err)
+                   }
+                 );
+              ();
+            };
+
+            None;
+          },
+          [|is_active|],
+        );
+
+        if (!is_visible) {
+          React.null;
+        } else {
+          <Box flexDirection=`column gap=1>
+            {copy_complete
+               ? <Box flexDirection=`row gap=1>
+                   <Badge color=`green> {React.string("Complete")} </Badge>
+                   <Text>
+                     {React.string("Compiling root dune file template")}
+                   </Text>
+                 </Box>
+               : <Spinner label="Compiling root dune file template" />}
+          </Box>;
+        };
+      };
+    };
     module Compile_app_dune_file = {
       open Ui;
       [@react.component]
@@ -1026,33 +1076,17 @@ module V2 = {
                 ~project_name=configuration.name,
                 ~project_directory=configuration.directory,
               ),
-
+            root_dune_file:
+              Dune.Dune_file.template(
+                ~project_directory=configuration.directory,
+                ~template_directory="./",
+                Dune.Dune_file.root(configuration),
+              ),
             app_dune_file:
               Dune.Dune_file.template(
                 ~project_directory=configuration.directory,
                 ~template_directory="./src",
-                // It'd be nice if when refactoring to minttea we could find
-                // A way to make this more type safe and not rely on strings
-                // to match up to templates in other directories
-                ~libraries=
-                  configuration.is_react_app
-                    ? [
-                      Dune.Dune_file.Library.make("bindings"),
-                      Dune.Dune_file.Library.make("create_melange_app"),
-                      Dune.Dune_file.Library.make("reason-react"),
-                    ]
-                    : [
-                      Dune.Dune_file.Library.make("bindings"),
-                      Dune.Dune_file.Library.make("create_melange_app"),
-                    ],
-                ~ppxs=
-                  configuration.is_react_app
-                    ? [
-                      Dune.Dune_file.Ppx.make("melange.ppx"),
-                      Dune.Dune_file.Ppx.make("reason-react-ppx"),
-                    ]
-                    : [Dune.Dune_file.Ppx.make("melange.ppx")],
-                "app",
+                Dune.Dune_file.app_library(configuration),
               ),
             app_module: App_module.template(configuration),
             error: None,
@@ -1135,6 +1169,14 @@ module V2 = {
             onError
           />
           <Compile.Compile_dune_project
+            state
+            onComplete={updated_state => {
+              let next_step = Compile_root_dune_file;
+              set_state(_ => {{...updated_state, step: next_step}});
+            }}
+            onError
+          />
+          <Compile.Compile_root_dune_file
             state
             onComplete={updated_state => {
               let next_step = Compile_app_dune_file;

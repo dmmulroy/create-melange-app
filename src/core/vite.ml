@@ -7,14 +7,20 @@ let dev_dependencies =
     Dependency.make ~kind:`Development ~name:"vite" ~version:"^4.5.0";
     Dependency.make ~kind:`Development ~name:"vite-plugin-melange"
       ~version:"^2.2.0";
+    Dependency.make ~kind:`Development ~name:"@rollup/plugin-node-resolve"
+      ~version:"^15.2.3";
+    Dependency.make ~kind:`Development ~name:"concurrently" ~version:"^8.2.2";
   ]
 ;;
 
 let scripts =
   [
-    Script.make ~name:"dev" ~script:"vite";
-    Script.make ~name:"serve" ~script:"vite preview";
-    Script.make ~name:"bundle" ~script:"vite build";
+    Script.make ~name:"dev"
+      ~script:"dune build && concurrently 'npm:vite-dev' 'npm:dune-watch'";
+    Script.make ~name:"vite-dev" ~script:"vite _build/default";
+    Script.make ~name:"build" ~script:"dune build";
+    Script.make ~name:"dune-watch" ~script:"dune build -w";
+    Script.make ~name:"serve" ~script:"dune build && vite preview";
   ]
 ;;
 
