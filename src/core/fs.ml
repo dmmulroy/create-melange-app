@@ -94,16 +94,6 @@ let copy_file_sync ~dest file_path =
 
 let copy_file ~dest file_path =
   Fs_extra.copy file_path dest
-  |> Js.Promise.then_ (fun _ -> Js.Promise.resolve @@ Ok ())
-  |> Js.Promise.catch (fun _ ->
-         Js.Promise.resolve
-         @@ Error
-              (Printf.sprintf {js|Failed to copy file %s to %s|js} file_path
-                 dest))
-;;
-
-let copy_file_v2 ~dest file_path =
-  Fs_extra.copy file_path dest
   |> Promise_result.of_js_promise
   |> Promise_result.catch Promise_result.resolve_error
   |> Promise_result.map_error

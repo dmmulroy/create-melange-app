@@ -49,6 +49,6 @@ module Copy_webpack_config_js :
     let dest =
       Node.Path.join [| project_dir_name; "/"; "webpack.config.js" |]
     in
-    Fs.copy_file_v2 ~dest webpack_config_js_path
+    Fs.copy_file ~dest webpack_config_js_path
   ;;
 end

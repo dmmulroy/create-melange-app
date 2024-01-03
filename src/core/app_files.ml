@@ -31,7 +31,7 @@ struct
 
   let exec (input : input) =
     let dest = Node.Path.join [| input.project_directory; "/"; "src" |] in
-    let copy = Fs.copy_file_v2 ~dest in
+    let copy = Fs.copy_file ~dest in
     match (input.syntax_preference, input.is_react_app) with
     | `OCaml, false -> copy app_ml_path
     | `OCaml, true -> copy react_ml_path
