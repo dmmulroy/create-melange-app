@@ -2,7 +2,7 @@
 open Bindings;
 open Ink;
 open Common;
-module Scaffold = Scaffold.V2.Scaffold;
+module Scaffold = Scaffold;
 
 [@react.component]
 let make = (~name as initial_name) => {
