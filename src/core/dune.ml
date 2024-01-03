@@ -360,6 +360,7 @@ let vite_root_dune_file project_name =
        |> Melange_emit.set_module_system "es6 mjs")
 ;;
 
+(* (libraries bindings create_melange_app reason-react) *)
 let app_library_dune_file ?(is_react_app = false) () =
   let open Dune_file in
   let ppxs =
@@ -367,9 +368,15 @@ let app_library_dune_file ?(is_react_app = false) () =
     | true -> [ "melange.ppx"; "reason-react-ppx" ]
     | false -> [ "melange.ppx" ]
   in
+  let libraries =
+    match is_react_app with
+    | true -> [ "bindings"; "create_melange_app"; "reason-react" ]
+    | false -> [ "bindings"; "create_melange_app" ]
+  in
   empty
   |> add_library
        (Library.empty |> Library.set_alias "app"
        |> Library.set_modes "melange"
+       |> Library.add_libraries libraries
        |> Library.add_ppxs ppxs)
 ;;
