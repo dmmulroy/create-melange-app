@@ -1087,7 +1087,10 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
   React.useEffect1(
     () => {
       if (state.step == Finished) {
-        onComplete();
+        switch (state.error) {
+        | Some(err) => onComplete(Result.error(err))
+        | None => onComplete(Result.ok())
+        };
       };
       None;
     },
@@ -1267,4 +1270,3 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     </Box>
   };
 };
-

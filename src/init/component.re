@@ -1,8 +1,35 @@
 [@ocaml.warning "-27-26"];
 open Bindings;
+open Core;
 open Ink;
 open Common;
 module Scaffold = Scaffold;
+
+module Complete = {
+  [@react.component]
+  let make = (~configuration: Configuration.t) => {
+    let config_str =
+      Configuration.to_json(configuration)
+      |> JavaScript.Json.stringify(~indent=2)
+      |> React.string;
+
+    React.useEffect0(() => {
+      switch (configuration.bundler) {
+      | Vite => Open.open_browser("localhost:5173")
+      | Webpack => Open.open_browser("localhost:8080")
+      | _ => ()
+      };
+
+      None;
+    });
+
+    <Box flexDirection=`column>
+      <Text> {React.string("Your project configuration:")} </Text>
+      <Spacer />
+      <Text> config_str </Text>
+    </Box>;
+  };
+};
 
 [@react.component]
 let make = (~name as initial_name) => {
@@ -13,6 +40,8 @@ let make = (~name as initial_name) => {
     React.useState(() => false);
   let (configuration, set_configuration) =
     React.useState(() => (None: option(Core.Configuration.t)));
+  let (scaffold_result, set_scaffold_result) =
+    React.useState(() => (None: option(result(unit, string))));
 
   let parsed_name_and_dir =
     React.useMemo1(
@@ -60,7 +89,22 @@ let make = (~name as initial_name) => {
     });
 
   let on_complete_scaffold =
-    React.useCallback0(() => {set_is_active(_ => Some(false))});
+    React.useCallback0(scaffold_result => {
+      set_scaffold_result(_ => Some(scaffold_result))
+    });
+
+  React.useEffect1(
+    () => {
+      let _ =
+        switch (scaffold_result) {
+        | None => ()
+        | Some(_) => set_is_active(_ => Some(false))
+        };
+
+      None;
+    },
+    [|scaffold_result|],
+  );
 
   Ink.Hooks.use_input(
     (~input as _input, ~key as _key) => (),
@@ -99,6 +143,11 @@ let make = (~name as initial_name) => {
           | Some(configuration) =>
             <Scaffold configuration onComplete=on_complete_scaffold />
           | None => React.null
+          }}
+         {switch (scaffold_result, configuration) {
+          | (Some(Ok(_)), Some(configuration)) => <Complete configuration />
+          | (None, _) => React.null
+          | _ => React.null
           }}
        </>
      }}

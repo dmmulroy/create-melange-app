@@ -4,6 +4,7 @@ module Fss = Fs
 module Handlebars = Handlebars
 module Ink = Ink
 module Nodejs = Nodejs
+module JavaScript = Javascript
 module Promise = Promise
 module Promise_result = Promise_result
 module Open = Open
