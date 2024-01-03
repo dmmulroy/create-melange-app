@@ -48,7 +48,7 @@ module Copy_index_html :
 
   let exec (project_dir_name : input) =
     let dest = Node.Path.join [| project_dir_name; "./public" |] in
-    Fs.copy_file_v2 ~dest webpack_public_dir_path
+    Fs.copy_file ~dest webpack_public_dir_path
   ;;
 end
 

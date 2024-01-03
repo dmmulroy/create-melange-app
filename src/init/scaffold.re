@@ -1049,224 +1049,222 @@ module Dune_build = {
   };
 };
 
-module Scaffold = {
-  [@react.component]
-  let make = (~configuration: Configuration.t, ~onComplete) => {
-    let (state, set_state) =
-      React.useState(_ =>
-        {
-          configuration,
-          step: Create_dir,
-          pkg_json:
-            Package_json.template(
-              ~project_name=configuration.name,
-              ~project_directory=configuration.directory,
-            ),
-          dune_project:
-            Dune.Dune_project.template(
-              ~project_name=configuration.name,
-              ~project_directory=configuration.directory,
-            ),
-          root_dune_file:
-            Dune.Dune_file.template(
-              ~project_directory=configuration.directory,
-              ~template_directory="./",
-              Dune.Dune_file.root(configuration),
-            ),
-          app_dune_file:
-            Dune.Dune_file.template(
-              ~project_directory=configuration.directory,
-              ~template_directory="./src",
-              Dune.Dune_file.app_library(configuration),
-            ),
-          app_module: App_module.template(configuration),
-          error: None,
-        }
-      );
-    let onError = err => set_state(_ => {...state, error: Some(err)});
-
-    React.useEffect1(
-      () => {
-        if (state.step == Finished) {
-          onComplete();
-        };
-        None;
-      },
-      [|state.step|],
+[@react.component]
+let make = (~configuration: Configuration.t, ~onComplete) => {
+  let (state, set_state) =
+    React.useState(_ =>
+      {
+        configuration,
+        step: Create_dir,
+        pkg_json:
+          Package_json.template(
+            ~project_name=configuration.name,
+            ~project_directory=configuration.directory,
+          ),
+        dune_project:
+          Dune.Dune_project.template(
+            ~project_name=configuration.name,
+            ~project_directory=configuration.directory,
+          ),
+        root_dune_file:
+          Dune.Dune_file.template(
+            ~project_directory=configuration.directory,
+            ~template_directory="./",
+            Dune.Dune_file.root(configuration),
+          ),
+        app_dune_file:
+          Dune.Dune_file.template(
+            ~project_directory=configuration.directory,
+            ~template_directory="./src",
+            Dune.Dune_file.app_library(configuration),
+          ),
+        app_module: App_module.template(configuration),
+        error: None,
+      }
     );
+  let onError = err => set_state(_ => {...state, error: Some(err)});
 
-    switch (state.error) {
-    | Some(err) => <Text> {React.string(err)} </Text>
-    | None =>
-      <Box flexDirection=`column gap=1>
-        <Create_dir
-          state
-          onComplete={() => {
-            set_state(_ => {...state, step: Copy_base_templates})
-          }}
-          onError
-        />
-        <Copy_base_templates
-          state
-          onComplete={() => {
-            set_state(state => {...state, step: Bundler_copy_files})
-          }}
-          onError
-        />
-        <Bundler.Copy_files
-          state
-          onComplete={() => {
-            set_state(state => {...state, step: Bundler_extend_package_json})
-          }}
-          onError
-        />
-        <Bundler.Extend_package_json
-          state
-          onComplete={(updated_state: state) => {
-            set_state(_ => {...updated_state, step: App_copy_files})
-          }}
-          onError
-        />
-        <App_files.Copy_files
-          state
-          onComplete={() => {
-            set_state(_ => {...state, step: App_extend_package_json})
-          }}
-          onError
-        />
-        <App_files.Extend_package_json
-          state
-          onComplete={updated_state => {
-            set_state(_ => {...updated_state, step: App_extend_dune_project})
-          }}
-          onError
-        />
-        <App_files.Extend_dune_project
-          state
-          onComplete={updated_state => {
-            set_state(_ => {...updated_state, step: Compile_package_json})
-          }}
-          onError
-        />
-        <Compile.Compile_package_json
-          state
-          onComplete={updated_state => {
-            set_state(_ => {...updated_state, step: Compile_dune_project})
-          }}
-          onError
-        />
-        <Compile.Compile_dune_project
-          state
-          onComplete={updated_state => {
-            let next_step = Compile_root_dune_file;
-            set_state(_ => {{...updated_state, step: next_step}});
-          }}
-          onError
-        />
-        <Compile.Compile_root_dune_file
-          state
-          onComplete={updated_state => {
-            let next_step = Compile_app_dune_file;
-            set_state(_ => {{...updated_state, step: next_step}});
-          }}
-          onError
-        />
-        <Compile.Compile_app_dune_file
-          state
-          onComplete={updated_state => {
-            let next_step = Compile_app_module;
-            set_state(_ => {{...updated_state, step: next_step}});
-          }}
-          onError
-        />
-        <Compile.Compile_app_module
-          state
-          onComplete={updated_state => {
-            let next_step =
-              switch (
-                configuration.initialize_npm,
-                configuration.initialize_git,
-                configuration.initialize_ocaml_toolchain,
-              ) {
-              | (true, _, _) => Node_pkg_manager_install
-              | (_, true, _) => Git_copy_ignore_file
-              | (_, _, true) => Opam_create_switch
-              | _ => Finished
-              };
-            set_state(_ => {{...updated_state, step: next_step}});
-          }}
-          onError
-        />
-        <Node_pkg_manager_install
-          state
-          onComplete={() => {
-            let next_step =
-              switch (
-                configuration.initialize_git,
-                configuration.initialize_ocaml_toolchain,
-              ) {
-              | (true, _) => Git_copy_ignore_file
-              | (_, true) => Opam_create_switch
-              | _ => Finished
-              };
+  React.useEffect1(
+    () => {
+      if (state.step == Finished) {
+        onComplete();
+      };
+      None;
+    },
+    [|state.step|],
+  );
 
-            set_state(_ => {{...state, step: next_step}});
-          }}
-          onError
-        />
-        <Git.Copy_ignore_file
-          state
-          onComplete={() => {
-            let next_step =
-              switch (
-                configuration.initialize_ocaml_toolchain,
-                configuration.initialize_git,
-              ) {
-              | (true, _) => Dune_install
-              | (_, true) => Git_init_and_stage
-              | _ => Finished
-              };
+  switch (state.error) {
+  | Some(err) => <Text> {React.string(err)} </Text>
+  | None =>
+    <Box flexDirection=`column gap=1>
+      <Create_dir
+        state
+        onComplete={() => {
+          set_state(_ => {...state, step: Copy_base_templates})
+        }}
+        onError
+      />
+      <Copy_base_templates
+        state
+        onComplete={() => {
+          set_state(state => {...state, step: Bundler_copy_files})
+        }}
+        onError
+      />
+      <Bundler.Copy_files
+        state
+        onComplete={() => {
+          set_state(state => {...state, step: Bundler_extend_package_json})
+        }}
+        onError
+      />
+      <Bundler.Extend_package_json
+        state
+        onComplete={(updated_state: state) => {
+          set_state(_ => {...updated_state, step: App_copy_files})
+        }}
+        onError
+      />
+      <App_files.Copy_files
+        state
+        onComplete={() => {
+          set_state(_ => {...state, step: App_extend_package_json})
+        }}
+        onError
+      />
+      <App_files.Extend_package_json
+        state
+        onComplete={updated_state => {
+          set_state(_ => {...updated_state, step: App_extend_dune_project})
+        }}
+        onError
+      />
+      <App_files.Extend_dune_project
+        state
+        onComplete={updated_state => {
+          set_state(_ => {...updated_state, step: Compile_package_json})
+        }}
+        onError
+      />
+      <Compile.Compile_package_json
+        state
+        onComplete={updated_state => {
+          set_state(_ => {...updated_state, step: Compile_dune_project})
+        }}
+        onError
+      />
+      <Compile.Compile_dune_project
+        state
+        onComplete={updated_state => {
+          let next_step = Compile_root_dune_file;
+          set_state(_ => {{...updated_state, step: next_step}});
+        }}
+        onError
+      />
+      <Compile.Compile_root_dune_file
+        state
+        onComplete={updated_state => {
+          let next_step = Compile_app_dune_file;
+          set_state(_ => {{...updated_state, step: next_step}});
+        }}
+        onError
+      />
+      <Compile.Compile_app_dune_file
+        state
+        onComplete={updated_state => {
+          let next_step = Compile_app_module;
+          set_state(_ => {{...updated_state, step: next_step}});
+        }}
+        onError
+      />
+      <Compile.Compile_app_module
+        state
+        onComplete={updated_state => {
+          let next_step =
+            switch (
+              configuration.initialize_npm,
+              configuration.initialize_git,
+              configuration.initialize_ocaml_toolchain,
+            ) {
+            | (true, _, _) => Node_pkg_manager_install
+            | (_, true, _) => Git_copy_ignore_file
+            | (_, _, true) => Opam_create_switch
+            | _ => Finished
+            };
+          set_state(_ => {{...updated_state, step: next_step}});
+        }}
+        onError
+      />
+      <Node_pkg_manager_install
+        state
+        onComplete={() => {
+          let next_step =
+            switch (
+              configuration.initialize_git,
+              configuration.initialize_ocaml_toolchain,
+            ) {
+            | (true, _) => Git_copy_ignore_file
+            | (_, true) => Opam_create_switch
+            | _ => Finished
+            };
 
-            set_state(_ => {...state, step: next_step});
-          }}
-          onError
-        />
-        <Dune_install
-          state
-          onComplete={() => {
-            let next_step = Opam_create_switch;
-            set_state(_ => {...state, step: next_step});
-          }}
-          onError
-        />
-        <Opam.Create_switch
-          state
-          onComplete={() => {
-            set_state(_ => {...state, step: Opam_install_dev_deps})
-          }}
-          onError
-        />
-        <Opam.Install_dev_deps
-          state
-          onComplete={() => {set_state(_ => {...state, step: Dune_build})}}
-          onError
-        />
-        <Dune_build
-          state
-          onComplete={() => {
-            let next_step =
-              configuration.initialize_git ? Git_init_and_stage : Finished;
-            set_state(_ => {...state, step: next_step});
-          }}
-          onError
-        />
-        <Git.Init_and_stage
-          state
-          onComplete={() => {set_state(_ => {...state, step: Finished})}}
-          onError
-        />
-      </Box>
-    };
+          set_state(_ => {{...state, step: next_step}});
+        }}
+        onError
+      />
+      <Git.Copy_ignore_file
+        state
+        onComplete={() => {
+          let next_step =
+            switch (
+              configuration.initialize_ocaml_toolchain,
+              configuration.initialize_git,
+            ) {
+            | (true, _) => Dune_install
+            | (_, true) => Git_init_and_stage
+            | _ => Finished
+            };
+
+          set_state(_ => {...state, step: next_step});
+        }}
+        onError
+      />
+      <Dune_install
+        state
+        onComplete={() => {
+          let next_step = Opam_create_switch;
+          set_state(_ => {...state, step: next_step});
+        }}
+        onError
+      />
+      <Opam.Create_switch
+        state
+        onComplete={() => {
+          set_state(_ => {...state, step: Opam_install_dev_deps})
+        }}
+        onError
+      />
+      <Opam.Install_dev_deps
+        state
+        onComplete={() => {set_state(_ => {...state, step: Dune_build})}}
+        onError
+      />
+      <Dune_build
+        state
+        onComplete={() => {
+          let next_step =
+            configuration.initialize_git ? Git_init_and_stage : Finished;
+          set_state(_ => {...state, step: next_step});
+        }}
+        onError
+      />
+      <Git.Init_and_stage
+        state
+        onComplete={() => {set_state(_ => {...state, step: Finished})}}
+        onError
+      />
+    </Box>
   };
 };
 
