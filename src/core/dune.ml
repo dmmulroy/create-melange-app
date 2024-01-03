@@ -156,6 +156,7 @@ module Dune_file = struct
     }
 
     let empty = { alias = ""; targets = []; deps = []; action = "" }
+    let set_alias alias rule = { rule with alias }
     let add_target target rule = { rule with targets = target :: rule.targets }
 
     let add_targets targets rule =
@@ -181,10 +182,16 @@ module Dune_file = struct
   end
 
   module Library = struct
-    type t = { alias : string; libraries : string list; ppxs : string list }
+    type t = {
+      alias : string;
+      modes : string;
+      libraries : string list;
+      ppxs : string list;
+    }
 
-    let empty = { alias = ""; libraries = []; ppxs = [] }
+    let empty = { alias = ""; modes = ""; libraries = []; ppxs = [] }
     let set_alias alias library = { library with alias }
+    let set_modes modes library = { library with modes }
 
     let add_library lib library =
       { library with libraries = lib :: library.libraries }
@@ -194,9 +201,13 @@ module Dune_file = struct
       { library with libraries = libraries @ library.libraries }
     ;;
 
+    let add_ppx ppx library = { library with ppxs = ppx :: library.ppxs }
+    let add_ppxs ppxs library = { library with ppxs = ppxs @ library.ppxs }
+
     let to_json library =
       let dict = Js.Dict.empty () in
       Js.Dict.set dict "alias" (Js.Json.string library.alias);
+      Js.Dict.set dict "modes" (Js.Json.string library.modes);
       Js.Dict.set dict "libraries"
         (library.libraries |> List.map Js.Json.string |> Array.of_list
        |> Js.Json.array);
@@ -207,14 +218,63 @@ module Dune_file = struct
     ;;
   end
 
+  module Melange_emit = struct
+    type t = {
+      alias : string;
+      target : string;
+      libraries : string list;
+      module_system : string;
+    }
+
+    let empty = { alias = ""; target = ""; libraries = []; module_system = "" }
+    let set_alias alias melange_emit = { melange_emit with alias }
+    let set_target target melange_emit = { melange_emit with target }
+
+    let add_library library melange_emit =
+      { melange_emit with libraries = library :: melange_emit.libraries }
+    ;;
+
+    let add_libraries libraries melange_emit =
+      { melange_emit with libraries = libraries @ melange_emit.libraries }
+    ;;
+
+    let set_module_system module_system melange_emit =
+      { melange_emit with module_system }
+    ;;
+
+    let to_json melange_emit =
+      let dict = Js.Dict.empty () in
+      Js.Dict.set dict "alias" (Js.Json.string melange_emit.alias);
+      Js.Dict.set dict "target" (Js.Json.string melange_emit.target);
+      Js.Dict.set dict "libraries"
+        (melange_emit.libraries |> List.map Js.Json.string |> Array.of_list
+       |> Js.Json.array);
+      Js.Dict.set dict "module_system"
+        (Js.Json.string melange_emit.module_system);
+      Js.Json.object_ dict
+    ;;
+  end
+
   type t = {
     project_name : string;
+    dirs : string list;
     aliases : Alias.t list;
     rules : Rule.t list;
     libraries : Library.t list;
+    melange_emit : Melange_emit.t list;
   }
 
-  let empty = { project_name = ""; aliases = []; rules = []; libraries = [] }
+  let empty =
+    {
+      project_name = "";
+      dirs = [];
+      aliases = [];
+      rules = [];
+      libraries = [];
+      melange_emit = [];
+    }
+  ;;
+
   let set_project_name project_name dune_file = { dune_file with project_name }
 
   let add_alias alias dune_file =
@@ -241,10 +301,20 @@ module Dune_file = struct
     { dune_file with libraries = libraries @ dune_file.libraries }
   ;;
 
+  let add_melange_emit melange_emit dune_file =
+    { dune_file with melange_emit = melange_emit :: dune_file.melange_emit }
+  ;;
+
+  let add_melange_emits melange_emits dune_file =
+    { dune_file with melange_emit = melange_emits @ dune_file.melange_emit }
+  ;;
+
   let to_json = function
-    | { project_name; aliases; rules; libraries } ->
+    | { project_name; dirs; aliases; rules; libraries; melange_emit } ->
         let dict = Js.Dict.empty () in
-        Js.Dict.set dict "name" (Js.Json.string project_name);
+        Js.Dict.set dict "project_name" (Js.Json.string project_name);
+        Js.Dict.set dict "dirs"
+          (dirs |> List.map Js.Json.string |> Array.of_list |> Js.Json.array);
         Js.Dict.set dict "aliases"
           (aliases |> List.map Alias.to_json |> Array.of_list |> Js.Json.array);
         Js.Dict.set dict "rules"
@@ -252,6 +322,10 @@ module Dune_file = struct
         Js.Dict.set dict "libraries"
           (libraries |> List.map Library.to_json |> Array.of_list
          |> Js.Json.array);
+        Js.Dict.set dict "melange_emit"
+          (melange_emit
+          |> List.map Melange_emit.to_json
+          |> Array.of_list |> Js.Json.array);
         Js.Json.object_ dict
   ;;
 
@@ -263,3 +337,39 @@ module Dune_file = struct
       ~to_json
   ;;
 end
+
+let vite_root_dune_file project_name =
+  let open Dune_file in
+  empty
+  |> add_rule
+       (Rule.empty |> Rule.set_alias "vite" |> Rule.add_target "dir dist"
+       |> Rule.add_deps
+            [
+              "alias_rec" ^ project_name;
+              ":vite ./vite.config.js";
+              ":index_html ./index.html";
+            ]
+       |> Rule.set_action {|system "../../node_modules/.bin/vite build"|})
+  |> add_alias
+       (Alias.empty |> Alias.set_name "all" |> Alias.add_dep "alias_rec vite")
+  |> add_melange_emit
+       (Melange_emit.empty
+       |> Melange_emit.set_alias project_name
+       |> Melange_emit.set_target "output"
+       |> Melange_emit.add_library "app"
+       |> Melange_emit.set_module_system "es6 mjs")
+;;
+
+let app_library_dune_file ?(is_react_app = false) () =
+  let open Dune_file in
+  let ppxs =
+    match is_react_app with
+    | true -> [ "melange.ppx"; "reason-react-ppx" ]
+    | false -> [ "melange.ppx" ]
+  in
+  empty
+  |> add_library
+       (Library.empty |> Library.set_alias "app"
+       |> Library.set_modes "melange"
+       |> Library.add_ppxs ppxs)
+;;
