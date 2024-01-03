@@ -1,27 +1,98 @@
-module App = {
-  // TODO: Explain this open syntax
-  open Create_melange_app;
-  let run = () => {
-    let configuration =
-      Configuration.make(
-        ~name="{{name}}",
-        ~directory="{{directory}}",
-        ~node_package_manager={{node_package_manager}},
-        ~bundler={{bundler}},
-        ~is_react_app={{is_react_app}},
-        ~initialize_git={{initialize_git}},
-        ~initialize_npm={{initialize_npm}},
-        ~initialize_ocaml_toolchain={{initialize_ocaml_toolchain}},
-        (),
-      );
+open Bindings;
+open Create_melange_app;
 
-    Format.printf(
-      "create-melange-app\n\
-      Welcome to Melange & ReasonML!\n\
-      %s",
-      Configuration.to_string(configuration),
+let render_app_html = () => {j|
+<div class="h-[15%]"></div>
+<div class="flex flex-col items-center justify-center rounded-3xl bg-gradient-to-b from-[#24273a] to-[#181926] p-6 shadow outline outline-2 outline-[#f5bde6]">
+  <h1 class="mb-2 pb-1 bg-gradient-to-r from-[#f5bde6] to-[#c6a0f6] bg-clip-text text-7xl font-black text-transparent">
+    create-melange-app
+  </h1>
+  <h2 class="mb-3 border-b-2 bg-gradient-to-r from-[#ee99a0] to-[#f5a97f] bg-clip-text text-4xl  font-black text-transparent pb-1">
+    Welcome to Melange &amp; ReasonML!
+  </h2>
+  <div id="inner" class="text-[#b8c0e0] text-2xl">
+  </div>
+</div>
+|j};
+
+let render_configuration_html = (configuration: Configuration.t) => {
+  let name = configuration.name;
+
+  let directory = configuration.directory;
+
+  let bundler = configuration.bundler |> Bundler.to_string;
+
+  let node_package_manager_str =
+    configuration.node_package_manager |> Node_package_manager.to_string;
+
+  let initialization =
+    switch (
+      configuration.initialize_git,
+      configuration.initialize_npm,
+      configuration.initialize_ocaml_toolchain,
+    ) {
+    | (true, false, false) => "Git"
+    | (true, true, false) => "Git and " ++ node_package_manager_str
+    | (true, true, true) =>
+      "Git, " ++ node_package_manager_str ++ " , and the OCaml toolchain"
+    | (false, true, false) => node_package_manager_str
+    | (false, true, true) =>
+      node_package_manager_str ++ " and the OCaml toolchain"
+    | (false, false, true) => "The OCaml toolchain"
+    | (true, false, true) => "Git and the OCaml toolchain"
+    | (false, false, false) => assert(false)
+    };
+
+  {j|
+    <h3 class="font-bold text-3xl mb-2">
+    Your<span class="bg-gradient-to-r from-[#f5bde6] to-[#c6a0f6] bg-clip-text text-transparent"> create-melange-app </span>configuration:
+    </h3>
+    <ul>
+    <li>Project name: <span class="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">$name</span></li>
+    <li>Project directory: <span class="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">$directory</span></li>
+    <li>Bundler: <span class="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">$bundler</span></li>
+    <li>Initialized with: <span class="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">$initialization</span></li>
+    </ul>
+    </div>
+  |j};
+};
+
+let main = () => {
+  let configuration =
+    Create_melange_app.Configuration.make(
+      ~name="foobaz",
+      ~directory="/Users/dillon/Code/cma-testing/foobar",
+      ~node_package_manager=Npm,
+      ~bundler=Webpack,
+      ~is_react_app=true,
+      ~initialize_git=true,
+      ~initialize_npm=true,
+      ~initialize_ocaml_toolchain=true,
+      (),
     );
+
+  let html = render_app_html();
+  let root = Browser.get_element_by_id("root");
+
+  switch (root) {
+  | None => Js.log("Root element not found!")
+  | Some(root) =>
+    Browser.set_inner_html(root, html);
+    let inner = Browser.get_element_by_id("inner");
+    switch (inner) {
+    | None => Js.log("Inner element not found!")
+    | Some(inner) =>
+      let _ =
+        Js.Global.setTimeout(
+          () => {
+            let configuration_html = render_configuration_html(configuration);
+            Browser.set_inner_html(inner, configuration_html);
+          },
+          1000,
+        );
+      ();
+    };
   };
 };
 
-let () = App.run();
+let _ = main();

@@ -9,8 +9,8 @@ let template (configuration : Configuration.t) =
   let name =
     match (configuration.syntax_preference, configuration.is_react_app) with
     | _, true -> "App.re.tmpl"
-    | `OCaml, false -> "app.ml.tmpl"
-    | `ReasonML, false -> "app.re.tmpl"
+    | `OCaml, false -> "App.ml.tmpl"
+    | `ReasonML, false -> "App.re.tmpl"
   in
 
   Template.make ~name ~value:configuration ~dir:template_directory ~to_json
