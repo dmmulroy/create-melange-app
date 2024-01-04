@@ -4,14 +4,12 @@
  */
 include Dom;
 
-[@mel.scope "document"] [@mel.return.nullable]
+[@mel.scope "document"] [@mel.return nullable]
 external get_element_by_id: string => option(Dom.element) = "getElementById";
 /* TODO: Write docs on bindings */
 
 [@mel.set]
 external set_inner_html: (Dom.element, string) => unit = "innerHTML";
-
-let test = "";
 
 /*
  * You can use the above bindings like so:

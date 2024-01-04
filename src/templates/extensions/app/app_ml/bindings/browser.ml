@@ -5,13 +5,11 @@
 include Dom
 
 external get_element_by_id : string -> Dom.element option = "getElementById"
-[@@mel.scope "document"] [@@mel.return.nullable]
+[@@mel.scope "document"] [@@mel.return nullable]
 (* TODO: Write docs on bindings *)
 
 external set_inner_html : Dom.element -> string -> unit = "innerHTML"
 [@@mel.set]
-
-let test = ""
 
 (*
  * You can use the above bindings like so:

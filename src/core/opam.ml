@@ -16,6 +16,42 @@ struct
   ;;
 end
 
+module Update : Process.S with type input = string and type output = string =
+struct
+  type input = string
+  type output = string
+
+  let name = "opam update"
+
+  let exec (project_directory : input) =
+    let options =
+      Node.Child_process.option ~cwd:project_directory ~encoding:"utf8" ()
+    in
+    Nodejs.Child_process.async_exec name options
+    |> Promise_result.of_js_promise
+    |> Promise_result.catch Promise_result.resolve_error
+    |> Promise_result.map_error (Fun.const "Failed to update opam")
+  ;;
+end
+
+module Install_dune :
+  Process.S with type input = string and type output = string = struct
+  type input = string
+  type output = string
+
+  let name = "opam install dune"
+
+  let exec (project_directory : input) =
+    let options =
+      Node.Child_process.option ~cwd:project_directory ~encoding:"utf8" ()
+    in
+    Nodejs.Child_process.async_exec name options
+    |> Promise_result.of_js_promise
+    |> Promise_result.catch Promise_result.resolve_error
+    |> Promise_result.map_error (Fun.const "Failed to install dune")
+  ;;
+end
+
 module Create_switch :
   Process.S with type input = string and type output = string = struct
   type input = string
@@ -48,7 +84,8 @@ module Install_dev_dependencies :
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const "Failed to install dev dependencies")
+    |> Promise_result.map_error
+         (Fun.const "Failed to install opam dev dependencies")
   ;;
 end
 
@@ -66,7 +103,8 @@ module Install_dependencies :
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const "Failed to install dev dependencies")
+    |> Promise_result.map_error
+         (Fun.const "Failed to install opam dependencies")
   ;;
 end
 
