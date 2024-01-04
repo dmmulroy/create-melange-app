@@ -9,24 +9,31 @@ open Core;
 // I just brute forced it to work w/ lots of copy/paste. I think a better way
 // to have done this would have been to create functor to create the steps
 type step =
+  // Section 1 - Create project directory
   | Create_dir
   | Copy_base_templates
+  // Setting 2 - Initialize bundler
   | Bundler_copy_files
   | Bundler_extend_package_json
+  // Section 3 - Initialize app files
   | App_copy_files
   | App_extend_package_json
   | App_extend_dune_project
+  // Section 4 - Compile templates
   | Compile_package_json
   | Compile_dune_project
   | Compile_root_dune_file
   | Compile_app_dune_file
   | Compile_app_module
+  // Section 5 - Optional - Initialize node package manager
   | Node_pkg_manager_install
-  | Git_copy_ignore_file
+  // Section 6 - optional - Initialize ocaml
   | Dune_install
   | Opam_create_switch
   | Opam_install_dev_deps
   | Dune_build
+  // Section 7 optional - Initialize git
+  | Git_copy_ignore_file
   | Git_init_and_stage
   | Finished;
 
@@ -45,11 +52,11 @@ let step_to_string = step =>
   | Compile_app_dune_file => "Compile_app_dune_file"
   | Compile_app_module => "Compile_app_module"
   | Node_pkg_manager_install => "Node_pkg_manager_install"
-  | Git_copy_ignore_file => "Git_copy_ignore_file"
   | Dune_install => "Dune_install"
   | Opam_create_switch => "Opam_create_switch"
   | Opam_install_dev_deps => "Opam_install_dev_deps"
   | Dune_build => "Dune_build"
+  | Git_copy_ignore_file => "Git_copy_ignore_file"
   | Git_init_and_stage => "Git_init_and_stage"
   | Finished => "Finished"
   };
@@ -69,11 +76,11 @@ let step_to_int = step =>
   | Compile_app_dune_file => 10
   | Compile_app_module => 11
   | Node_pkg_manager_install => 12
-  | Git_copy_ignore_file => 13
-  | Dune_install => 14
-  | Opam_create_switch => 15
-  | Opam_install_dev_deps => 16
-  | Dune_build => 17
+  | Dune_install => 13
+  | Opam_create_switch => 14
+  | Opam_install_dev_deps => 15
+  | Dune_build => 16
+  | Git_copy_ignore_file => 17
   | Git_init_and_stage => 18
   | Finished => 19
   };
@@ -90,18 +97,17 @@ type state = {
 };
 
 module Create_dir = {
-  open Ui;
   [@react.component]
   let make = (~state, ~onComplete, ~onError) => {
-    let (create_complete, set_create_complete) = React.useState(() => false);
+    // let (create_complete, set_create_complete) = React.useState(() => false);
 
     let handleOnComplete = () => {
-      set_create_complete(_ => true);
+      // set_create_complete(_ => true);
       onComplete();
     };
 
     let is_active = state.step == Create_dir;
-    let is_visible = step_to_int(state.step) >= step_to_int(Create_dir);
+    // let is_visible = step_to_int(state.step) >= step_to_int(Create_dir);
 
     React.useEffect1(
       () => {
@@ -123,22 +129,23 @@ module Create_dir = {
       [|is_active|],
     );
 
-    if (!is_visible) {
-      React.null;
-    } else {
-      switch (is_visible) {
-      | false => React.null
-      | true =>
-        <Box flexDirection=`column gap=1>
-          {create_complete
-             ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text> {React.string("Creating project directory")} </Text>
-               </Box>
-             : <Spinner label="Creating project directory" />}
-        </Box>
-      };
-    };
+    React.null;
+    /* if (!is_visible) {
+         React.null;
+       } else {
+         switch (is_visible) {
+         | false => React.null
+         | true =>
+           <Box flexDirection=`column gap=1>
+             {create_complete
+                ? <Box flexDirection=`row gap=1>
+                    <Badge color=`green> {React.string("Complete")} </Badge>
+                    <Text> {React.string("Creating project directory")} </Text>
+                  </Box>
+                : <Spinner label="Creating project directory" />}
+           </Box>
+         };
+       }; */
   };
 };
 
@@ -181,10 +188,11 @@ module Copy_base_templates = {
       <Box flexDirection=`column gap=1>
         {copy_complete
            ? <Box flexDirection=`row gap=1>
-               <Badge color=`green> {React.string("Complete")} </Badge>
-               <Text> {React.string("Copying base templates")} </Text>
+               <Text color="green">
+                 {React.string({j|✔ Successfully created base project!|j})}
+               </Text>
              </Box>
-           : <Spinner label="Copying base templates" />}
+           : <Spinner label="Creating base project..." />}
       </Box>;
     };
   };
@@ -192,19 +200,18 @@ module Copy_base_templates = {
 
 module Bundler = {
   module Copy_files = {
-    open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      let (copy_complete, set_copy_complete) = React.useState(() => false);
+      // let (copy_complete, set_copy_complete) = React.useState(() => false);
 
       let handleOnComplete = () => {
-        set_copy_complete(_ => true);
+        // set_copy_complete(_ => true);
         onComplete();
       };
 
       let is_active = state.step == Bundler_copy_files;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Bundler_copy_files);
+      /* let is_visible =
+         step_to_int(state.step) >= step_to_int(Bundler_copy_files); */
 
       React.useEffect1(
         () => {
@@ -227,25 +234,26 @@ module Bundler = {
         [|is_active|],
       );
 
-      let bundler_name =
-        state.configuration.bundler
-        |> Bundler.to_string
-        |> String.capitalize_ascii;
+      /* let bundler_name =
+         state.configuration.bundler
+         |> Bundler.to_string
+         |> String.capitalize_ascii; */
 
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {copy_complete
-             ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text>
-                   {React.string("Copying " ++ bundler_name ++ " files")}
-                 </Text>
-               </Box>
-             : <Spinner label={"Copying " ++ bundler_name ++ " files"} />}
-        </Box>;
-      };
+      /* if (!is_visible) {
+           React.null;
+         } else {
+           <Box flexDirection=`column gap=1>
+             {copy_complete
+                ? <Box flexDirection=`row gap=1>
+                    <Badge color=`green> {React.string("Complete")} </Badge>
+                    <Text>
+                      {React.string("Copying " ++ bundler_name ++ " files")}
+                    </Text>
+                  </Box>
+                : <Spinner label={"Copying " ++ bundler_name ++ " files"} />}
+           </Box>;
+         }; */
+      React.null;
     };
   };
 
@@ -287,17 +295,15 @@ module Bundler = {
         <Box flexDirection=`column gap=1>
           {complete
              ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text>
+                 <Text color="green">
                    {React.string(
-                      "Extending package.json with "
-                      ++ bundler_name
-                      ++ "scripts and dependencies",
+                      {j|✔ Successfully initalized bundler: |j}
+                      ++ bundler_name,
                     )}
                  </Text>
                </Box>
              : <Spinner
-                 label={"Extending package.json with " ++ bundler_name}
+                 label={"Initializing bundler: " ++ bundler_name ++ "..."}
                />}
         </Box>;
       };
@@ -307,19 +313,19 @@ module Bundler = {
 
 module App_files = {
   module Copy_files = {
-    open Ui;
+    // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      let (copy_complete, set_copy_complete) = React.useState(() => false);
+      // let (copy_complete, set_copy_complete) = React.useState(() => false);
 
       let handleOnComplete = () => {
-        set_copy_complete(_ => true);
+        // set_copy_complete(_ => true);
         onComplete();
       };
 
       let is_active = state.step == App_copy_files;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(App_copy_files);
+      /* let is_visible =
+         step_to_int(state.step) >= step_to_int(App_copy_files); */
 
       React.useEffect1(
         () => {
@@ -342,29 +348,30 @@ module App_files = {
         [|is_active|],
       );
 
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {copy_complete
-             ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text> {React.string("Copying application files")} </Text>
-               </Box>
-             : <Spinner label="Copying application files" />}
-        </Box>;
-      };
+      /* if (!is_visible) {
+           React.null;
+         } else {
+           <Box flexDirection=`column gap=1>
+             {copy_complete
+                ? <Box flexDirection=`row gap=1>
+                    <Badge color=`green> {React.string("Complete")} </Badge>
+                    <Text> {React.string("Copying application files")} </Text>
+                  </Box>
+                : <Spinner label="Copying application files" />}
+           </Box>;
+         }; */
+      React.null;
     };
   };
 
   module Extend_package_json = {
     [@react.component]
     let make = (~state, ~onComplete, ~onError as _) => {
-      let (complete, set_complete) = React.useState(() => false);
+      // let (complete, set_complete) = React.useState(() => false);
 
       let is_active = state.step == App_extend_package_json;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(App_extend_package_json);
+      /* let is_visible =
+         step_to_int(state.step) >= step_to_int(App_extend_package_json); */
 
       React.useEffect1(
         () => {
@@ -374,7 +381,7 @@ module App_files = {
               |> Engine.extend_package_json_with_app_settings(
                    ~is_react_app=state.configuration.is_react_app,
                  );
-            set_complete(_ => true);
+            // set_complete(_ => true);
             onComplete({...state, pkg_json: updated_pkg_json});
           };
 
@@ -383,22 +390,23 @@ module App_files = {
         [|is_active|],
       );
 
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {complete
-             ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text>
-                   {React.string(
-                      "Extending package.json with app dependencies",
-                    )}
-                 </Text>
-               </Box>
-             : <Spinner label="Extending package.json with app dependencies" />}
-        </Box>;
-      };
+      /* if (!is_visible) {
+           React.null;
+         } else {
+           <Box flexDirection=`column gap=1>
+             {complete
+                ? <Box flexDirection=`row gap=1>
+                    <Badge color=`green> {React.string("Complete")} </Badge>
+                    <Text>
+                      {React.string(
+                         "Extending package.json with app dependencies",
+                       )}
+                    </Text>
+                  </Box>
+                : <Spinner label="Extending package.json with app dependencies" />}
+           </Box>;
+         }; */
+      React.null;
     };
   };
 
@@ -434,14 +442,13 @@ module App_files = {
         <Box flexDirection=`column gap=1>
           {complete
              ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text>
+                 <Text color="green">
                    {React.string(
-                      "Extending dune_project with app dependencies",
+                      {j|✔ Successfully intialized application files|j},
                     )}
                  </Text>
                </Box>
-             : <Spinner label="Extending dune_project with app dependencies" />}
+             : <Spinner label="Initalizing application files..." />}
         </Box>;
       };
     };
@@ -450,14 +457,14 @@ module App_files = {
 
 module Compile = {
   module Compile_package_json = {
-    open Ui;
+    // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      let (copy_complete, set_copy_complete) = React.useState(() => false);
+      // let (copy_complete, set_copy_complete) = React.useState(() => false);
 
       let is_active = state.step == Compile_package_json;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_package_json);
+      /* let is_visible =
+         step_to_int(state.step) >= step_to_int(Compile_package_json); */
 
       React.useEffect1(
         () => {
@@ -467,8 +474,8 @@ module Compile = {
             |> Promise_result.perform(result =>
                  switch (result) {
                  | Ok(res) =>
-                   set_copy_complete(_ => true);
-                   onComplete({...state, pkg_json: res});
+                   // set_copy_complete(_ => true);
+                   onComplete({...state, pkg_json: res})
                  | Error(err) => onError(err)
                  }
                );
@@ -480,32 +487,33 @@ module Compile = {
         [|is_active|],
       );
 
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {copy_complete
-             ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text>
-                   {React.string("Compiling package.json template")}
-                 </Text>
-               </Box>
-             : <Spinner label="Copying package.json template" />}
-        </Box>;
-      };
+      /* if (!is_visible) {
+           React.null;
+         } else {
+           <Box flexDirection=`column gap=1>
+             {copy_complete
+                ? <Box flexDirection=`row gap=1>
+                    <Badge color=`green> {React.string("Complete")} </Badge>
+                    <Text>
+                      {React.string("Compiling package.json template")}
+                    </Text>
+                  </Box>
+                : <Spinner label="Copying package.json template" />}
+           </Box>;
+         }; */
+      React.null;
     };
   };
 
   module Compile_dune_project = {
-    open Ui;
+    // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      let (copy_complete, set_copy_complete) = React.useState(() => false);
+      // let (copy_complete, set_copy_complete) = React.useState(() => false);
 
       let is_active = state.step == Compile_dune_project;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_dune_project);
+      /* let is_visible =
+         step_to_int(state.step) >= step_to_int(Compile_dune_project); */
 
       React.useEffect1(
         () => {
@@ -515,8 +523,8 @@ module Compile = {
             |> Promise_result.perform(result =>
                  switch (result) {
                  | Ok(res) =>
-                   set_copy_complete(_ => true);
-                   onComplete({...state, dune_project: res});
+                   // set_copy_complete(_ => true);
+                   onComplete({...state, dune_project: res})
                  | Error(err) => onError(err)
                  }
                );
@@ -528,32 +536,33 @@ module Compile = {
         [|is_active|],
       );
 
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {copy_complete
-             ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text>
-                   {React.string("Compiling dune_project template")}
-                 </Text>
-               </Box>
-             : <Spinner label="Copying dune_project template" />}
-        </Box>;
-      };
+      /* if (!is_visible) {
+           React.null;
+         } else {
+           <Box flexDirection=`column gap=1>
+             {copy_complete
+                ? <Box flexDirection=`row gap=1>
+                    <Badge color=`green> {React.string("Complete")} </Badge>
+                    <Text>
+                      {React.string("Compiling dune_project template")}
+                    </Text>
+                  </Box>
+                : <Spinner label="Copying dune_project template" />}
+           </Box>;
+         }; */
+      React.null;
     };
   };
 
   module Compile_root_dune_file = {
-    open Ui;
+    // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      let (copy_complete, set_copy_complete) = React.useState(() => false);
+      // let (copy_complete, set_copy_complete) = React.useState(() => false);
 
       let is_active = state.step == Compile_root_dune_file;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_root_dune_file);
+      /* let is_visible =
+         step_to_int(state.step) >= step_to_int(Compile_root_dune_file); */
 
       React.useEffect1(
         () => {
@@ -563,8 +572,8 @@ module Compile = {
             |> Promise_result.perform(result =>
                  switch (result) {
                  | Ok(res) =>
-                   set_copy_complete(_ => true);
-                   onComplete({...state, root_dune_file: res});
+                   // set_copy_complete(_ => true);
+                   onComplete({...state, root_dune_file: res})
                  | Error(err) => onError(err)
                  }
                );
@@ -576,31 +585,32 @@ module Compile = {
         [|is_active|],
       );
 
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {copy_complete
-             ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text>
-                   {React.string("Compiling root dune file template")}
-                 </Text>
-               </Box>
-             : <Spinner label="Compiling root dune file template" />}
-        </Box>;
-      };
+      /* if (!is_visible) {
+           React.null;
+         } else {
+           <Box flexDirection=`column gap=1>
+             {copy_complete
+                ? <Box flexDirection=`row gap=1>
+                    <Badge color=`green> {React.string("Complete")} </Badge>
+                    <Text>
+                      {React.string("Compiling root dune file template")}
+                    </Text>
+                  </Box>
+                : <Spinner label="Compiling root dune file template" />}
+           </Box>;
+         }; */
+      React.null;
     };
   };
   module Compile_app_dune_file = {
-    open Ui;
+    // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      let (copy_complete, set_copy_complete) = React.useState(() => false);
+      // let (copy_complete, set_copy_complete) = React.useState(() => false);
 
       let is_active = state.step == Compile_app_dune_file;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_app_dune_file);
+      /* let is_visible =
+         step_to_int(state.step) >= step_to_int(Compile_app_dune_file); */
 
       React.useEffect1(
         () => {
@@ -610,8 +620,8 @@ module Compile = {
             |> Promise_result.perform(result =>
                  switch (result) {
                  | Ok(res) =>
-                   set_copy_complete(_ => true);
-                   onComplete({...state, app_dune_file: res});
+                   // set_copy_complete(_ => true);
+                   onComplete({...state, app_dune_file: res})
                  | Error(err) => onError(err)
                  }
                );
@@ -623,20 +633,21 @@ module Compile = {
         [|is_active|],
       );
 
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {copy_complete
-             ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text>
-                   {React.string("Compiling app dune file template")}
-                 </Text>
-               </Box>
-             : <Spinner label="Compiling app dune file template" />}
-        </Box>;
-      };
+      /* if (!is_visible) {
+           React.null;
+         } else {
+           <Box flexDirection=`column gap=1>
+             {copy_complete
+                ? <Box flexDirection=`row gap=1>
+                    <Badge color=`green> {React.string("Complete")} </Badge>
+                    <Text>
+                      {React.string("Compiling app dune file template")}
+                    </Text>
+                  </Box>
+                : <Spinner label="Compiling app dune file template" />}
+           </Box>;
+         }; */
+      React.null;
     };
   };
 
@@ -677,12 +688,13 @@ module Compile = {
         <Box flexDirection=`column gap=1>
           {copy_complete
              ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text>
-                   {React.string("Compiling app module template")}
-                 </Text>
-               </Box>
-             : <Spinner label="Compiling app module template" />}
+                 // <Badge color=`green> {React.string("Complete")} </Badge>
+
+                   <Text color="green">
+                     {React.string({j|✔ Successfully compiled templates!|j})}
+                   </Text>
+                 </Box>
+             : <Spinner label="Compiling templates..." />}
         </Box>;
       };
     };
@@ -733,15 +745,15 @@ module Node_pkg_manager_install = {
       <Box flexDirection=`column gap=1>
         {copy_complete
            ? <Box flexDirection=`row gap=1>
-               <Badge color=`green> {React.string("Complete")} </Badge>
-               <Text>
+               <Text color="green">
                  {React.string(
-                    "Installing npm dependncies with " ++ pkg_manger ++ "",
+                    {j|✔ Successfully installed npm dependencies with |j}
+                    ++ pkg_manger,
                   )}
                </Text>
              </Box>
            : <Spinner
-               label={"Installing npm dependncies with " ++ pkg_manger}
+               label={"Installing npm dependencies with " ++ pkg_manger}
              />}
       </Box>;
     };
@@ -750,17 +762,17 @@ module Node_pkg_manager_install = {
 
 module Git = {
   module Copy_ignore_file = {
-    open Ui;
+    // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      let (copy_complete, set_copy_complete) = React.useState(() => false);
+      // let (copy_complete, set_copy_complete) = React.useState(() => false);
 
       let is_active =
         state.step == Git_copy_ignore_file
         && state.configuration.initialize_git;
-      let is_visible =
-        state.configuration.initialize_git
-        && step_to_int(state.step) >= step_to_int(Git_copy_ignore_file);
+      /* let is_visible =
+         state.configuration.initialize_git
+         && step_to_int(state.step) >= step_to_int(Git_copy_ignore_file); */
 
       React.useEffect1(
         () => {
@@ -770,8 +782,8 @@ module Git = {
             |> Promise_result.perform(result =>
                  switch (result) {
                  | Ok(_) =>
-                   set_copy_complete(_ => true);
-                   onComplete();
+                   // set_copy_complete(_ => true);
+                   onComplete()
                  | Error(err) => onError(err)
                  }
                );
@@ -783,18 +795,20 @@ module Git = {
         [|is_active|],
       );
 
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {copy_complete
-             ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text> {React.string("Copying .gitignore file")} </Text>
-               </Box>
-             : <Spinner label="Copying .gitignore file" />}
-        </Box>;
-      };
+      /* if (!is_visible) {
+           React.null;
+         } else {
+           <Box flexDirection=`column gap=1>
+             {copy_complete
+                ? <Box flexDirection=`row gap=1>
+                    // <Badge color=`green> {React.string("Complete")} </Badge>
+
+                      <Text> {React.string("Copying .gitignore file")} </Text>
+                    </Box>
+                : <Spinner label="Copying .gitignore file" />}
+           </Box>;
+         }; */
+      React.null;
     };
   };
 
@@ -837,10 +851,11 @@ module Git = {
         <Box flexDirection=`column gap=1>
           {copy_complete
              ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text> {React.string("Initializing git repository")} </Text>
+                 <Text color="green">
+                   {React.string({j|✔ Successfully initalized git!|j})}
+                 </Text>
                </Box>
-             : <Spinner label="Initializing git repository" />}
+             : <Spinner label="Initializing git..." />}
         </Box>;
       };
     };
@@ -887,12 +902,9 @@ module Opam = {
       } else {
         <Box flexDirection=`column gap=1>
           {copy_complete
-             ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text> {React.string("Creating opam switch")} </Text>
-               </Box>
+             ? React.null
              : <Spinner
-                 label="Creating opam switch, this may take a few minutes"
+                 label="Initalizing OCaml toolchain, this may take a few minutes..."
                />}
         </Box>;
       };
@@ -938,14 +950,9 @@ module Opam = {
       } else {
         <Box flexDirection=`column gap=1>
           {copy_complete
-             ? <Box flexDirection=`row gap=1>
-                 <Badge color=`green> {React.string("Complete")} </Badge>
-                 <Text>
-                   {React.string("Installing OCaml dev dependencies")}
-                 </Text>
-               </Box>
+             ? React.null
              : <Spinner
-                 label="Installing OCaml dev dependencies, this may take a few minutes"
+                 label="Initalizing OCaml toolchain, this may take a few minutes..."
                />}
         </Box>;
       };
@@ -991,11 +998,10 @@ module Dune_install = {
     } else {
       <Box flexDirection=`column gap=1>
         {copy_complete
-           ? <Box flexDirection=`row gap=1>
-               <Badge color=`green> {React.string("Complete")} </Badge>
-               <Text> {React.string("Generating project opam file")} </Text>
-             </Box>
-           : <Spinner label="Generating project opam file" />}
+           ? React.null
+           : <Spinner
+               label="Initalizing OCaml toolchain, this may take a few minutes..."
+             />}
       </Box>;
     };
   };
@@ -1010,6 +1016,7 @@ module Dune_build = {
     let is_active =
       state.step == Dune_build
       && state.configuration.initialize_ocaml_toolchain;
+
     let is_visible =
       state.configuration.initialize_ocaml_toolchain
       && step_to_int(state.step) >= step_to_int(Dune_build);
@@ -1040,10 +1047,15 @@ module Dune_build = {
       <Box flexDirection=`column gap=1>
         {copy_complete
            ? <Box flexDirection=`row gap=1>
-               <Badge color=`green> {React.string("Complete")} </Badge>
-               <Text> {React.string("Building project with Dune")} </Text>
+               <Text color="green">
+                 {React.string(
+                    {j|✔ Successfully intialized the OCaml toolchain!|j},
+                  )}
+               </Text>
              </Box>
-           : <Spinner label="Building project with Dune" />}
+           : <Spinner
+               label="Initalizing OCaml toolchain, this may take a few minutes..."
+             />}
       </Box>;
     };
   };
@@ -1101,6 +1113,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
   | Some(err) => <Text> {React.string(err)} </Text>
   | None =>
     <Box flexDirection=`column gap=1>
+      <Text color="cyan"> {React.string("Scaffolding project...")} </Text>
       <Create_dir
         state
         onComplete={() => {
@@ -1207,29 +1220,12 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
               configuration.initialize_git,
               configuration.initialize_ocaml_toolchain,
             ) {
-            | (true, _) => Git_copy_ignore_file
-            | (_, true) => Opam_create_switch
+            | (_, true) => Dune_install
+            | (true, false) => Git_copy_ignore_file
             | _ => Finished
             };
 
           set_state(_ => {{...state, step: next_step}});
-        }}
-        onError
-      />
-      <Git.Copy_ignore_file
-        state
-        onComplete={() => {
-          let next_step =
-            switch (
-              configuration.initialize_ocaml_toolchain,
-              configuration.initialize_git,
-            ) {
-            | (true, _) => Dune_install
-            | (_, true) => Git_init_and_stage
-            | _ => Finished
-            };
-
-          set_state(_ => {...state, step: next_step});
         }}
         onError
       />
@@ -1257,7 +1253,16 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
         state
         onComplete={() => {
           let next_step =
-            configuration.initialize_git ? Git_init_and_stage : Finished;
+            configuration.initialize_git ? Git_copy_ignore_file : Finished;
+          set_state(_ => {...state, step: next_step});
+        }}
+        onError
+      />
+      <Git.Copy_ignore_file
+        state
+        onComplete={() => {
+          let next_step = Git_init_and_stage;
+
           set_state(_ => {...state, step: next_step});
         }}
         onError

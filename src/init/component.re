@@ -5,6 +5,8 @@ open Ink;
 open Common;
 module Scaffold = Scaffold;
 
+let items: array(unit) = [|()|];
+
 let next_steps = (configuration: Configuration.t) => {
   let node_pkg_manager_str =
     configuration.node_package_manager
@@ -59,7 +61,7 @@ module Next_steps = {
   let make = (~configuration: Configuration.t) => {
     let next_steps = configuration |> next_steps |> React.string;
 
-    <Box flexDirection=`column> <Text> next_steps </Text> </Box>;
+    <Box flexDirection=`column> <Text color="cyan"> next_steps </Text> </Box>;
   };
 };
 
@@ -94,7 +96,12 @@ let make = (~name as initial_name) => {
     React.useCallback0(result => {
       switch (result) {
       | `Pass(results) =>
-        set_env_check_result(_ => Some(`Pass));
+        Js.Global.setTimeout(
+          () => set_env_check_result(_ => Some(`Pass)),
+          850,
+        )
+        |> ignore;
+
         let should_prompt_git =
           List.exists(
             result => {
@@ -117,12 +124,20 @@ let make = (~name as initial_name) => {
 
   let on_complete_wizard =
     React.useCallback0(configuration => {
-      set_configuration(_ => Some(configuration))
+      Js.Global.setTimeout(
+        () => set_configuration(_ => Some(configuration)),
+        850,
+      )
+      |> ignore
     });
 
   let on_complete_scaffold =
     React.useCallback0(scaffold_result => {
-      set_scaffold_result(_ => Some(scaffold_result))
+      Js.Global.setTimeout(
+        () => set_scaffold_result(_ => Some(scaffold_result)),
+        850,
+      )
+      |> ignore
     });
 
   React.useEffect1(
@@ -154,46 +169,45 @@ let make = (~name as initial_name) => {
       [|parsed_name_and_dir|],
     );
 
-  <Box flexDirection=`column gap=1>
-    {switch (initial_name_is_valid) {
-     | Some(Error(`Msg(error))) =>
-       <Ui.Badge color=`red> {React.string(error)} </Ui.Badge>
-     | _ =>
-       <>
-         {Option.is_none(configuration) ? <Banner /> : React.null}
-         <Env_check.Component onEnvCheck=on_env_check />
-         {switch (env_check_result) {
-          | Some(result) when result == `Pass =>
-            <Wizard
-              initial_configuration
-              onComplete=on_complete_wizard
-              should_prompt_git
-            />
-          | _ => React.null
-          }}
-         {switch (configuration) {
-          | Some(configuration) =>
-            <Scaffold configuration onComplete=on_complete_scaffold />
-          | None => React.null
-          }}
-         {switch (scaffold_result, configuration) {
-          | (Some(Ok(_)), Some(configuration)) =>
-            <>
-              <Text>
-                {React.string(
-                   configuration.name ++ " scaffolded successfully!",
-                 )}
-              </Text>
-              <Next_steps configuration />
-              <Text> {React.string("Visit the Melange docs at: ")} </Text>
-              <Link url="https://melange.re">
-                {React.string("https://melange.re")}
-              </Link>
-            </>
-          | (None, _) => React.null
-          | _ => React.null
-          }}
-       </>
-     }}
-  </Box>;
+  <>
+    <Banner />
+    <Box flexDirection=`column gap=1>
+      {switch (initial_name_is_valid) {
+       | Some(Error(`Msg(error))) =>
+         <Ui.Badge color=`red> {React.string(error)} </Ui.Badge>
+       | _ =>
+         switch (env_check_result, configuration, scaffold_result) {
+         | (None, _, _) => <Env_check.Component onEnvCheck=on_env_check />
+         | (Some(`Pass), None, _) =>
+           <Wizard
+             initial_configuration
+             onComplete=on_complete_wizard
+             should_prompt_git
+           />
+         | (Some(`Pass), Some(configuration), None) =>
+           <Scaffold configuration onComplete=on_complete_scaffold />
+         | (Some(`Pass), Some(configuration), Some(Error(msg))) =>
+           <Ui.Badge color=`red> {React.string(msg)} </Ui.Badge>
+         | (Some(`Pass), Some(configuration), Some(Ok(_))) =>
+           <>
+             <Text color="green">
+               {React.string({j|✔ |j})}
+               <Text color="cyan" bold=true>
+                 {React.string(configuration.name)}
+               </Text>
+               {React.string(" scaffolded successfully!")}
+             </Text>
+             <Next_steps configuration />
+             <Text color="cyan">
+               {React.string("Visit the Melange docs at: ")}
+               <Link url="https://melange.re" fallback=false>
+                 <Text bold=true> {React.string("https://melange.re")} </Text>
+               </Link>
+             </Text>
+           </>
+         | _ => React.null
+         }
+       }}
+    </Box>
+  </>;
 };
