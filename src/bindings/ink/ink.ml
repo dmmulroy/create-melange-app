@@ -4,6 +4,7 @@ module Gradient = Gradient
 module Hooks = Hooks
 module Instance = Instance
 module Key = Key
+module Link = Link
 module Newline = Newline
 module Spacer = Spacer
 module Static = Static

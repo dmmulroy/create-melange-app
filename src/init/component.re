@@ -185,6 +185,10 @@ let make = (~name as initial_name) => {
                  )}
               </Text>
               <Next_steps configuration />
+              <Text> {React.string("Visit the Melange docs at: ")} </Text>
+              <Link url="https://melange.re">
+                {React.string("https://melange.re")}
+              </Link>
             </>
           | (None, _) => React.null
           | _ => React.null
