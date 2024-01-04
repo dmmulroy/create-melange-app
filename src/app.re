@@ -1,8 +1,7 @@
-[%%mel.raw "#! /usr/bin/env node"];
 open Bindings;
 open Commander;
 
-let main = () => {
+let run = () => {
   program
   |> Command.set_name("create-melange-app")
   |> Command.set_description("A CLI for creating applications with Melange")
@@ -21,4 +20,3 @@ let main = () => {
   |> Command.parse
   |> ignore;
 };
-let () = main();

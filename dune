@@ -7,6 +7,7 @@
  (alias create-melange-app)
  (libraries app)
  (runtime_deps
+  src/cli.mjs
   (source_tree src/templates))
  (promote (until-clean))
  (module_systems
