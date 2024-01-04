@@ -5,6 +5,7 @@ module Dependency = Dependency
 module Dune = Dune
 module Engine = Engine
 module Fs = Fs
+module Opam = Opam
 module Package_json = Package_json
 module Template = Template
 module Validation = Validation

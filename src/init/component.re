@@ -5,29 +5,61 @@ open Ink;
 open Common;
 module Scaffold = Scaffold;
 
-module Complete = {
+let next_steps = (configuration: Configuration.t) => {
+  let node_pkg_manager_str =
+    configuration.node_package_manager
+    |> Nodejs.Process.npm_user_agent_to_string;
+
+  let node_pkg_manager_install_str =
+    if (configuration.initialize_npm) {
+      "";
+    } else {
+      node_pkg_manager_str
+      |> (
+        pkg_manager =>
+          if (pkg_manager == "  yarn\n") {
+            pkg_manager;
+          } else {
+            "  " ++ pkg_manager ++ " install\n";
+          }
+      );
+    };
+
+  let directory =
+    switch (configuration.directory) {
+    | "." => ""
+    | directory => Format.sprintf("  cd %s\n", configuration.name)
+    };
+
+  let node_pkg_manager_install =
+    configuration.initialize_npm
+      ? "" : Format.sprintf("  %s\n", node_pkg_manager_install_str);
+
+  let ocaml_toolchain_init =
+    configuration.initialize_ocaml_toolchain
+      ? ""
+      : Format.sprintf(
+          "  %s\n  %s\n  %s\n",
+          Opam.Create_switch.name,
+          Opam.Install_dev_dependencies.name,
+          Dune.Build.name,
+        );
+
+  let git_init = configuration.initialize_git ? "" : "  git init\n";
+
+  let git_commit = "  git commit -m \"initial commit\"\n";
+
+  let run_app = Format.sprintf("  %s run dev", node_pkg_manager_str);
+
+  {j|Next steps:\n$directory$node_pkg_manager_install_str$ocaml_toolchain_init$git_init$git_commit$run_app\n|j};
+};
+
+module Next_steps = {
   [@react.component]
   let make = (~configuration: Configuration.t) => {
-    let config_str =
-      Configuration.to_json(configuration)
-      |> JavaScript.Json.stringify(~indent=2)
-      |> React.string;
+    let next_steps = configuration |> next_steps |> React.string;
 
-    React.useEffect0(() => {
-      switch (configuration.bundler) {
-      | Vite => Open.open_browser("localhost:5173")
-      | Webpack => Open.open_browser("localhost:8080")
-      | _ => ()
-      };
-
-      None;
-    });
-
-    <Box flexDirection=`column>
-      <Text> {React.string("Your project configuration:")} </Text>
-      <Spacer />
-      <Text> config_str </Text>
-    </Box>;
+    <Box flexDirection=`column> <Text> next_steps </Text> </Box>;
   };
 };
 
@@ -122,7 +154,7 @@ let make = (~name as initial_name) => {
       [|parsed_name_and_dir|],
     );
 
-  <Box flexDirection=`column>
+  <Box flexDirection=`column gap=1>
     {switch (initial_name_is_valid) {
      | Some(Error(`Msg(error))) =>
        <Ui.Badge color=`red> {React.string(error)} </Ui.Badge>
@@ -145,7 +177,15 @@ let make = (~name as initial_name) => {
           | None => React.null
           }}
          {switch (scaffold_result, configuration) {
-          | (Some(Ok(_)), Some(configuration)) => <Complete configuration />
+          | (Some(Ok(_)), Some(configuration)) =>
+            <>
+              <Text>
+                {React.string(
+                   configuration.name ++ " scaffolded successfully!",
+                 )}
+              </Text>
+              <Next_steps configuration />
+            </>
           | (None, _) => React.null
           | _ => React.null
           }}
