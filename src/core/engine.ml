@@ -39,7 +39,6 @@ let copy_base_project dir =
 let copy_bundler_files ~(bundler : Bundler.t) ~is_react_app project_directory =
   let open Promise_result.Syntax.Let in
   match bundler with
-  | None -> Promise_result.resolve_ok ()
   | Webpack ->
       let+ _ = Webpack.Copy_webpack_config_js.exec project_directory in
       let+ _ = Webpack.Copy_index_html.exec project_directory in
@@ -54,7 +53,6 @@ let extend_package_json_with_bundler ~(bundler : Bundler.t)
     (pkg_json_tmpl : Package_json.t Template.t) =
   let dependencies, scripts =
     match bundler with
-    | None -> ([], [])
     | Webpack -> (Webpack.dev_dependencies, Webpack.scripts)
     | Vite -> (Vite.dev_dependencies, Vite.scripts)
   in

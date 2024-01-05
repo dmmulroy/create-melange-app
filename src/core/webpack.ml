@@ -1,3 +1,5 @@
+[@@@ocaml.warning "-32"]
+
 open Bindings
 open Package_json
 module String_map = Map.Make (String)
@@ -32,7 +34,7 @@ module Copy_index_html :
 
   type output = unit
 
-  let name = "copy public/index.html"
+  let name = "copy index.html"
 
   let webpack_public_dir_path =
     Node.Path.join
@@ -42,12 +44,14 @@ module Copy_index_html :
         "templates";
         "extensions";
         "webpack";
-        "public";
+        "index.html";
       |]
   ;;
 
+  let name = "copy index.html"
+
   let exec (project_dir_name : input) =
-    let dest = Node.Path.join [| project_dir_name; "./public" |] in
+    let dest = Node.Path.join [| project_dir_name; "/"; "index.html" |] in
     Fs.copy_file ~dest webpack_public_dir_path
   ;;
 end

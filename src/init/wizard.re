@@ -102,7 +102,6 @@ module Bundler = {
   let bundler_select_options: array(Ui.Select.select_option) = [|
     to_select_option(Vite),
     to_select_option(Webpack),
-    to_select_option(None),
   |];
 
   [@react.component]

@@ -1,9 +1,9 @@
-type t = Vite | Webpack | None
+type t = Vite | Webpack
 
-let to_string = function
-  | Vite -> "vite"
-  | Webpack -> "webpack"
-  | None -> "none"
+let to_string = function Vite -> "vite" | Webpack -> "webpack"
+
+let of_string = function
+  | "vite" -> Vite
+  | "webpack" -> Webpack
+  | _ -> failwith "invalid bundler"
 ;;
-
-let of_string = function "vite" -> Vite | "webpack" -> Webpack | _ -> None

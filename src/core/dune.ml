@@ -368,10 +368,6 @@ module Dune_file = struct
     | Vite -> configuration.name |> vite_root |> add_melange_emit melange_emit
     | Webpack ->
         configuration.name |> webpack_root |> add_melange_emit melange_emit
-    | _ ->
-        empty
-        |> set_project_name configuration.name
-        |> add_melange_emit melange_emit
   ;;
 
   let app_library (configuration : Configuration.t) =
