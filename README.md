@@ -51,9 +51,9 @@ check out
 <a href="https://github.com/dmmulroy" target="_blank">Dillon Mulroy's</a>
 conference talk on Melange and how it can be a more type safe solution for your 
 apps than TypeScript.</p>
-<div align="center">
-<iframe width="560" height="315" src="https://www.youtube.com/embed/zG7JejHlQoM?si=xDt1mVExvF8zvkJt" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-</div>
+<center>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/zG7JejHlQoM?si=TN19o_JKV7EfS-Su" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</center>
 </div>
 
 <h2 id="getting-started">Getting Started</h2>
