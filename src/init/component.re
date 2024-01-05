@@ -36,9 +36,10 @@ let next_steps = (configuration: Configuration.t) => {
     configuration.initialize_ocaml_toolchain
       ? ""
       : Format.sprintf(
-          "  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n",
+          "  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n",
           Opam.Update.name,
           Opam.Create_switch.name,
+          Opam.eval_env,
           Opam.Install_dune.name,
           Dune.Install.name,
           Opam.Install_dev_dependencies.name,
