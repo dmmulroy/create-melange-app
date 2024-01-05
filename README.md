@@ -58,7 +58,7 @@ apps than TypeScript.</p>
   </p>
 </a>
 
-<a href="http://www.youtube.com/watch?v=PbjHxIuHduU" target="_blank">
+<a href="https://www.youtube.com/watch?v=zG7JejHlQoM" target="_blank">
   <p align="center">Watch on Youtube here</p>
 </a>
 </div>
