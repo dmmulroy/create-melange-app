@@ -67,7 +67,7 @@ apps than TypeScript.</p>
 
 <h2 id="getting-started">Getting Started</h2>
 
-To scaffold an app using `create-melange-app`, run any of the following four commands
+To scaffold an app using `create-melange-app`, run any of the following commands
 and answer the command prompt questions:
 
 ### npm
