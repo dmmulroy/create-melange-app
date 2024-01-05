@@ -1,4 +1,3 @@
-[@ocaml.warning "-27-26"];
 open Bindings;
 open Core;
 open Ink;
@@ -30,12 +29,8 @@ let next_steps = (configuration: Configuration.t) => {
   let directory =
     switch (configuration.directory) {
     | "." => ""
-    | directory => Format.sprintf("  cd %s\n", configuration.name)
+    | _ => Format.sprintf("  cd %s\n", configuration.name)
     };
-
-  let node_pkg_manager_install =
-    configuration.initialize_npm
-      ? "" : Format.sprintf("  %s\n", node_pkg_manager_install_str);
 
   let ocaml_toolchain_init =
     configuration.initialize_ocaml_toolchain
@@ -55,9 +50,9 @@ let next_steps = (configuration: Configuration.t) => {
 
   let git_commit = "  git commit -m \"initial commit\"\n";
 
-  let run_app = Format.sprintf("  %s run dev", node_pkg_manager_str);
+  let run_app = Format.sprintf("  %s run dev\n", node_pkg_manager_str);
 
-  {j|Next steps:\n$directory$node_pkg_manager_install_str$ocaml_toolchain_init$git_init$git_commit$run_app\n|j};
+  {j|Next steps:\n$directory$node_pkg_manager_install_str$ocaml_toolchain_init$git_init$git_commit$run_app|j};
 };
 
 module Next_steps = {
@@ -190,7 +185,7 @@ let make = (~name as initial_name) => {
            />
          | (Some(`Pass), Some(configuration), None) =>
            <Scaffold configuration onComplete=on_complete_scaffold />
-         | (Some(`Pass), Some(configuration), Some(Error(msg))) =>
+         | (Some(`Pass), Some(_), Some(Error(msg))) =>
            <Ui.Badge color=`red> {React.string(msg)} </Ui.Badge>
          | (Some(`Pass), Some(configuration), Some(Ok(_))) =>
            <>
@@ -202,6 +197,12 @@ let make = (~name as initial_name) => {
                {React.string(" scaffolded successfully!")}
              </Text>
              <Next_steps configuration />
+             <Text color="cyan">
+               {React.string(
+                  "For more information about your project, including where to find help, be sure to check out the ",
+                )}
+               <Text bold=true> {React.string("README!")} </Text>
+             </Text>
              <Text color="cyan">
                {React.string("Visit the Melange docs at: ")}
                <Link url="https://melange.re" fallback=false>

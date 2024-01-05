@@ -1,4 +1,4 @@
-# {{name}} created by ✨`create-melange-app`✨
+# `{{name}}` created by ✨`create-melange-app`✨
 
 ## Getting Started
 
@@ -113,12 +113,21 @@ and help for learning and getting started with `{{syntax_preference}}` and `Mela
 │   // tightly integrated as one tool.
 ├── first_try.opam
 │
-├── index.html
+├── {{#if is_webpack_app}}public/{{else}}index.html{{/if}}
 ├── package-lock.json
 ├── package.json
-├── vite.config.js
+├── {{#if is_webpack_app}}webpack{{else}}vite{{/if}}.config.js
 ├── README
 └── node_modules/
 ```
 
 ## Getting Help
+
+- [OCaml's official site](https://ocam.org)
+- [ReasonML's official site](https://reasonml.github.io/)
+- [Melange Docs](https://melange.re)
+- [OCaml Discuss Forums](https://discuss.ocaml.org/)
+- [The Caravan Discord Server](https://discord.gg/fNvVdsUWHE) - This is where
+  the maintainers of `create-melange-app` hang out!
+- [OCaml Discord Server](https://discord.gg/Qpzjmc4t)
+- [ReasonML Discord Server](https://discord.gg/jPEH58TU)
