@@ -177,6 +177,8 @@ let make = (~name as initial_name) => {
        | _ =>
          switch (env_check_result, configuration, scaffold_result) {
          | (None, _, _) => <Env_check.Component onEnvCheck=on_env_check />
+         | (Some(`Fail), _, _) =>
+           <Env_check.Component onEnvCheck=on_env_check />
          | (Some(`Pass), None, _) =>
            <Wizard
              initial_configuration
@@ -213,7 +215,6 @@ let make = (~name as initial_name) => {
                </Link>
              </Text>
            </>
-         | _ => React.null
          }
        }}
     </Box>

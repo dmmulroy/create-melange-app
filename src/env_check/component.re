@@ -131,7 +131,7 @@ let make = (~onEnvCheck=?) => {
               }
               : {
                 React.string(
-                  {js|Please fix the above issues before continuing. 🛠 |js},
+                  {js|Please install your missing depedencies and try again.|js},
                 );
               }}
          </Text>
