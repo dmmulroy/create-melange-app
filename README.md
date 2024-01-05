@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/dmmulroy/create-melange-app/assets/2755722/4270abef-9754-4d4f-9e33-3a9a53bec0ec">
-    <img src="https://github.com/dmmulroy/create-melange-app/assets/2755722/4270abef-9754-4d4f-9e33-3a9a53bec0ec" width="130" alt="create-melange-app">
+    <img src="https://github.com/dmmulroy/create-melange-app/assets/2755722/4270abef-9754-4d4f-9e33-3a9a53bec0ec" width="400" alt="create-melange-app">
 
 </picture>
 </p>
