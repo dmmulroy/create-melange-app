@@ -41,7 +41,7 @@
 <p><code>create-melange-app</code> is an opinionated CLI tool for quickly getting 
 started with <a href="https://melange.re" target="_blank">Melange</a>, a 
 compiler for compiling <a href="https://ocaml.org" target="_blank">OCaml</a>
-and <a href="https://reasonml.github.io" target="_blank">ReasonML</a> tool
+and <a href="https://reasonml.github.io" target="_blank">ReasonML</a> to
 JavaScript. It is geared at feeling familiar for developers coming from a 
 JavaScript or TypeScript background and focused on enabling them to be 
 productive as quickly as possible.</p>
@@ -91,7 +91,7 @@ pnpm create melange-app@latest
 ### bun
 
 ```bash
-bun create melange-app
+bun create melange-app@latest
 ```
 
 <h2 id="community">Community, Help, & Resources</h2>
