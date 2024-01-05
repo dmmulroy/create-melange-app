@@ -1,6 +1,25 @@
+/*
+ * In ReasonML, the `open` statement is used to bring modules into the current
+ * scope, similar to using `import` in JavaScript or TypeScript. However, unlike
+ * `import`, `open` makes all of the module's contents immediately available
+ * without the need to prefix them with the module name. This is akin to doing a
+ * wildcard import in JavaScript:
+ *
+ * `import * as Create_melange_app from 'Create_melange_app';`
+ */
 open Bindings;
 open Create_melange_app;
 
+/* 
+ * The `{j| |j}` syntax in Melange supports variable interpolation within 
+ * strings, similar to JavaScript's template literals. This allows for embedding 
+ * variables directly into strings. For example, `let name = "Paul Atreides"` 
+ * and `let greeting = {j|Hello, $name|j}` will interpolate the value of `name` 
+ * into the `greeting` string.
+ *
+ * This syntax is useful for constructing strings dynamically, especially when 
+ * dealing with templates or generating code that requires variable values. 
+ */
 let render_app_html = () => {j|
 <div class="h-[15%]"></div>
 <div class="flex flex-col items-center justify-center rounded-3xl bg-gradient-to-b from-[#24273a] to-[#181926] p-6 shadow outline outline-2 outline-[#f5bde6]">
@@ -58,16 +77,35 @@ let render_configuration_html = (configuration: Configuration.t) => {
 };
 
 let main = () => {
+ /*
+  * The `Create_melange_app.Configuration.make` function is a for creating 
+  * the Configuration.t type. It is a common convention in ReasonML to 
+  * name a module's corresponding type it operates on or represents, `t`.
+ 
+  * In ReasonML, named arguments are used extensively, which
+  * correspond to passing an object with named properties in JavaScript.
+  * Each `~` symbol represents a named argument, similar to an object's key 
+  * in JS/TS. The `~name`, `~directory`, `~node_package_manager`, and other 
+  * arguments are akin to specifying properties in a JavaScript object. The 
+  * placeholders inside the curly braces (e.g., `{{name}}`) will be replaced 
+  * with actual values, just like template literals or variables in JS/TS.
+  *
+  * The `()` at the end of the function call represents the `unit` type in 
+  * ReasonML, akin to `void` in other languages. It's used here to signify 
+  * the end of the function call with named arguments, a syntactic 
+  * requirement in ReasonML for functions ending with labelled arguments. 
+  * This ensures a clear end of the argument list.
+  */
   let configuration =
     Create_melange_app.Configuration.make(
-      ~name="foobaz",
-      ~directory="/Users/dillon/Code/cma-testing/foobar",
-      ~node_package_manager=Npm,
-      ~bundler=Webpack,
-      ~is_react_app=true,
-      ~initialize_git=true,
-      ~initialize_npm=true,
-      ~initialize_ocaml_toolchain=true,
+      ~name="{{name}}",
+      ~directory="{{directory}}",
+      ~node_package_manager={{node_package_manager}},
+      ~bundler={{bundler}},
+      ~is_react_app={{is_react_app}},
+      ~initialize_git={{initialize_git}},
+      ~initialize_npm={{initialize_npm}},
+      ~initialize_ocaml_toolchain={{initialize_ocaml_toolchain}},
       (),
     );
 

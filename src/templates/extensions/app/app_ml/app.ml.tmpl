@@ -1,7 +1,26 @@
-open Bindings;
-open Create_melange_app;
+(*
+ * In ReasonML, the `open` statement is used to bring modules into the current
+ * scope, similar to using `import` in JavaScript or TypeScript. However, unlike
+ * `import`, `open` makes all of the module's contents immediately available
+ * without the need to prefix them with the module name. This is akin to doing a
+ * wildcard import in JavaScript:
+ *
+ * `import * as Create_melange_app from 'Create_melange_app';`
+ *)
+open Bindings
+open Create_melange_app
 
-let render_app_html = () => {j|
+(* 
+ * The `{j| |j}` syntax in Melange supports variable interpolation within 
+ * strings, similar to JavaScript's template literals. This allows for embedding 
+ * variables directly into strings. For example, `let name = "Paul Atreides"` 
+ * and `let greeting = {j|Hello, $name|j}` will interpolate the value of `name` 
+ * into the `greeting` string.
+ *
+ * This syntax is useful for constructing strings dynamically, especially when 
+ * dealing with templates or generating code that requires variable values. 
+ *)
+let render_app_html () = {j|
 <div class="h-[15%]"></div>
 <div class="flex flex-col items-center justify-center rounded-3xl bg-gradient-to-b from-[#24273a] to-[#181926] p-6 shadow outline outline-2 outline-[#f5bde6]">
   <h1 class="mb-2 pb-1 bg-gradient-to-r from-[#f5bde6] to-[#c6a0f6] bg-clip-text text-7xl font-black text-transparent">
@@ -13,36 +32,31 @@ let render_app_html = () => {j|
   <div id="inner" class="text-[#b8c0e0] text-2xl">
   </div>
 </div>
-|j};
+|j}
 
-let render_configuration_html = (configuration: Configuration.t) => {
-  let name = configuration.name;
-
-  let directory = configuration.directory;
-
-  let bundler = configuration.bundler |> Bundler.to_string;
-
+let render_configuration_html (configuration : Configuration.t) =
+  let name = configuration.name in
+  let directory = configuration.directory in
+  let bundler = configuration.bundler |> Bundler.to_string in
   let node_package_manager_str =
-    configuration.node_package_manager |> Node_package_manager.to_string;
-
+    configuration.node_package_manager |> Node_package_manager.to_string
+  in
   let initialization =
-    switch (
-      configuration.initialize_git,
-      configuration.initialize_npm,
-      configuration.initialize_ocaml_toolchain,
-    ) {
-    | (true, false, false) => "Git"
-    | (true, true, false) => "Git and " ++ node_package_manager_str
-    | (true, true, true) =>
-      "Git, " ++ node_package_manager_str ++ " , and the OCaml toolchain"
-    | (false, true, false) => node_package_manager_str
-    | (false, true, true) =>
-      node_package_manager_str ++ " and the OCaml toolchain"
-    | (false, false, true) => "The OCaml toolchain"
-    | (true, false, true) => "Git and the OCaml toolchain"
-    | (false, false, false) => assert(false)
-    };
-
+    match
+      ( configuration.initialize_git,
+        configuration.initialize_npm,
+        configuration.initialize_ocaml_toolchain )
+    with
+    | true, false, false -> "Git"
+    | true, true, false -> "Git and " ^ node_package_manager_str
+    | true, true, true ->
+        "Git, " ^ node_package_manager_str ^ " , and the OCaml toolchain"
+    | false, true, false -> node_package_manager_str
+    | false, true, true -> node_package_manager_str ^ " and the OCaml toolchain"
+    | false, false, true -> "The OCaml toolchain"
+    | true, false, true -> "Git and the OCaml toolchain"
+    | false, false, false -> assert false
+  in
   {j|
     <h3 class="font-bold text-3xl mb-2">
     Your<span class="bg-gradient-to-r from-[#f5bde6] to-[#c6a0f6] bg-clip-text text-transparent"> create-melange-app </span>configuration:
@@ -54,45 +68,60 @@ let render_configuration_html = (configuration: Configuration.t) => {
     <li>Initialized with: <span class="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">$initialization</span></li>
     </ul>
     </div>
-  |j};
-};
+  |j}
 
-let main = () => {
+let main () =
+
+ (*
+  * The `Create_melange_app.Configuration.make` function is a for creating 
+  * the Configuration.t type. It is a common convention in OCaml to 
+  * name a module's corresponding type it operates on or represents, `t`.
+ 
+  * In OCaml, named arguments are used extensively, which
+  * correspond to passing an object with named properties in JavaScript.
+  * Each `~` symbol represents a named argument, similar to an object's key 
+  * in JS/TS. The `~name`, `~directory`, `~node_package_manager`, and other 
+  * arguments are akin to specifying properties in a JavaScript object. The 
+  * placeholders inside the curly braces (e.g., `{{name}}`) will be replaced 
+  * with actual values, just like template literals or variables in JS/TS.
+  *
+  * The `()` at the end of the function call represents the `unit` type in 
+  * OCaml, akin to `void` in other languages. It's used here to signify 
+  * the end of the function call with named arguments, a syntactic 
+  * requirement in OCaml for functions ending with labelled arguments. 
+  * This ensures a clear end of the argument list.
+  *)
   let configuration =
-    Create_melange_app.Configuration.make(
-      ~name="foobaz",
-      ~directory="/Users/dillon/Code/cma-testing/foobar",
-      ~node_package_manager=Npm,
-      ~bundler=Webpack,
-      ~is_react_app=true,
-      ~initialize_git=true,
-      ~initialize_npm=true,
-      ~initialize_ocaml_toolchain=true,
-      (),
-    );
+    Create_melange_app.Configuration.make 
+      ~name:"{{name}}"
+      ~directory:"{{directory}}"
+      ~node_package_manager:{{node_package_manager}}
+      ~bundler:{{bundler}}
+      ~is_react_app:{{is_react_app}}
+      ~initialize_git:{{initialize_git}}
+      ~initialize_npm:{{initialize_npm}}
+      ~initialize_ocaml_toolchain:{{initialize_ocaml_toolchain}}
+      ()
+  in
+  let html = render_app_html () in
+  let root = Browser.get_element_by_id "root" in
+  match root with
+  | None -> Js.log "Root element not found!"
+  | Some root -> (
+      Browser.set_inner_html root html;
+      let inner = Browser.get_element_by_id "inner" in
+      match inner with
+      | None -> Js.log "Inner element not found!"
+      | Some inner ->
+          let _ =
+            Js.Global.setTimeout
+              (fun () ->
+                let configuration_html =
+                  render_configuration_html configuration
+                in
+                Browser.set_inner_html inner configuration_html)
+              1000
+          in
+          ())
 
-  let html = render_app_html();
-  let root = Browser.get_element_by_id("root");
-
-  switch (root) {
-  | None => Js.log("Root element not found!")
-  | Some(root) =>
-    Browser.set_inner_html(root, html);
-    let inner = Browser.get_element_by_id("inner");
-    switch (inner) {
-    | None => Js.log("Inner element not found!")
-    | Some(inner) =>
-      let _ =
-        Js.Global.setTimeout(
-          () => {
-            let configuration_html = render_configuration_html(configuration);
-            Browser.set_inner_html(inner, configuration_html);
-          },
-          1000,
-        );
-      ();
-    };
-  };
-};
-
-let _ = main();
+let _ = main ()

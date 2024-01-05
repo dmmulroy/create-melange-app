@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+// #!/usr/bin/env node
 import * as Cma from "./app.mjs";
 
 Cma.run();

@@ -12,6 +12,5 @@ let template (configuration : Configuration.t) =
     | `OCaml, false -> "App.ml.tmpl"
     | `ReasonML, false -> "App.re.tmpl"
   in
-
   Template.make ~name ~value:configuration ~dir:template_directory ~to_json
 ;;

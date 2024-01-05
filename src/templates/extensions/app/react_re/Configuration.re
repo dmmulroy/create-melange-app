@@ -1,7 +1,6 @@
-// TODO: Writ comment explaing open Module;
 open Create_melange_app;
 open Configuration;
-// TODO: Write comment introducing React.string and why we need it
+
 [@react.component]
 let make = (~configuration: Configuration.t) => {
   let node_package_manager_str =
