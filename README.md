@@ -91,7 +91,7 @@ pnpm create melange-app@latest
 ### bun
 
 ```bash
-bun create melange-app@latest
+bun create melange-app
 ```
 
 <h2 id="community">Community, Help, & Resources</h2>
