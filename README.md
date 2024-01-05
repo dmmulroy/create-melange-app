@@ -76,11 +76,11 @@ and answer the command prompt questions:
 npm create melange-app@latest
 ```
 
-### yarn
+<!-- ### yarn
 
 ```bash
 yarn create melange-app
-```
+``` -->
 
 ### pnpm
 
