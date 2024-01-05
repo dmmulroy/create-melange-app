@@ -53,7 +53,7 @@ module Install_dune :
   type input = string
   type output = string
 
-  let name = "opam install dune"
+  let name = "eval $(opam env) && opam install dune"
 
   let error_message =
     {|
@@ -139,7 +139,10 @@ module Install_dev_dependencies :
   type input = string
   type output = string
 
-  let name = "opam install ocaml-lsp-server ocamlformat odoc utop --yes"
+  let name =
+    "eval $(opam env) && opam install ocaml-lsp-server ocamlformat odoc utop \
+     --yes"
+  ;;
 
   let error_message =
     {|
@@ -186,7 +189,7 @@ module Install_dependencies :
   type input = string
   type output = string
 
-  let name = "opam install . --deps-only --yes"
+  let name = "eval $(opam env) && opam install . --deps-only --yes"
 
   let error_message =
     {|
@@ -226,6 +229,7 @@ module Install_dependencies :
     |> Promise_result.map_error (Fun.const error_message)
   ;;
 end
+(* eval $(opam env) *)
 
 module Dependency = Dependency.Make (struct
   include Version

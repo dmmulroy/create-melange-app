@@ -7,7 +7,7 @@ struct
   type input = string
   type output = string
 
-  let name = "opam exec -- dune build"
+  let name = "eval $(opam env) && opam exec -- dune build"
 
   let error_message =
     {|
@@ -42,7 +42,7 @@ struct
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const "Failed to build project with dune")
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end
 
@@ -53,7 +53,7 @@ struct
   type input = string
   type output = string
 
-  let name = "dune build @install"
+  let name = "eval $(opam env) && dune build @install"
 
   let error_message =
     {|
@@ -80,7 +80,7 @@ struct
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const "Failed to 'dune build @install'")
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end
 
