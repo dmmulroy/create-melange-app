@@ -1,6 +1,6 @@
 {
   "name": "create-melange-app",
-  "version": "0.0.1-beta.11",
+  "version": "0.0.1-beta.12",
   "description": "create-melange-app",
   "repository": {
     "type": "git",
@@ -9,9 +9,9 @@
   "author": "Dillon Mulroy <dillon.mulroy@gmail.com>",
   "license": "MIT",
   "type": "module",
-  "exports": "./build/src/cli.mjs",
+  "exports": "./build/src/cli.js",
   "bin": {
-    "create-melange-app": "./build/src/cli.mjs"
+    "create-melange-app": "./build/src/cli.js"
   },
   "scripts": {},
   "dependencies": {
