@@ -51,9 +51,18 @@ check out
 <a href="https://github.com/dmmulroy" target="_blank">Dillon Mulroy's</a>
 conference talk on Melange and how it can be a more type safe solution for your 
 apps than TypeScript.</p>
-<center>
-<iframe width="560" height="315" src="https://www.youtube.com/embed/zG7JejHlQoM?si=TN19o_JKV7EfS-Su" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-</center>
+<div align="center">
+
+<a href="[http://www.youtube.com/watch?v=PbjHxIuHduU](https://www.youtube.com/watch?v=zG7JejHlQoM)" target="_blank">
+  <p align="center">
+    <img src="https://github.com/dmmulroy/create-melange-app/assets/2755722/e0926aed-011e-4a82-95bc-cea37703c4b1" alt="'Melange: The next frontier in type-safe web development' by Dillon Mulroy - RVAJS 2023" width="500" />
+  </p>
+</a>
+
+<a href="http://www.youtube.com/watch?v=PbjHxIuHduU" target="_blank">
+  <p align="center">Watch on Youtube here</p>
+</a>
+</div>
 </div>
 
 <h2 id="getting-started">Getting Started</h2>
