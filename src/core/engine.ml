@@ -30,11 +30,7 @@ let check_dependencies () =
 
 let directory_exists = Fs.exists
 let create_project_directory = Fs.create_project_directory
-
-let copy_base_project dir =
-  dir |> Fs.copy_base_project
-  |> Promise_result.catch Promise_result.resolve_error
-;;
+let copy_base_project dir = dir |> Fs.copy_base_project
 
 let copy_bundler_files ~(bundler : Bundler.t) ~is_react_app project_directory =
   let open Promise_result.Syntax.Let in

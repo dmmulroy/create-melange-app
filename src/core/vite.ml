@@ -45,9 +45,24 @@ module Copy_vite_config_js :
       |]
   ;;
 
+  let error_message =
+    {|
+    Failed to copy vite.config.js to project directory 
+
+    The scaffolding process failed while copying `vite.config.js`. Please try 
+    running `create-melange-app` again and choose to `Clear` the project 
+    directory created by this run.
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+  |}
+  ;;
+
   let exec (project_dir_name : input) =
     let dest = Node.Path.join [| project_dir_name; "/"; "vite.config.js" |] in
     Fs.copy_file ~dest vite_config_js_path
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end
 
@@ -72,8 +87,23 @@ module Copy_index_html :
       |]
   ;;
 
+  let error_message =
+    {|
+    Failed to copy vite's index.html to project directory 
+
+    The scaffolding process failed while copying `index.html`. Please try 
+    running `create-melange-app` again and choose to `Clear` the project 
+    directory created by this run.
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+  |}
+  ;;
+
   let exec (project_dir_name : input) =
     let dest = Node.Path.join [| project_dir_name; "/"; "index.html" |] in
     Fs.copy_file ~dest vite_config_js_path
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end

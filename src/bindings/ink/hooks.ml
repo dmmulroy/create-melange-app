@@ -43,6 +43,7 @@ external use_focus : ?options:use_focus_options -> unit -> use_focus_return
   = "useFocus"
 [@@mel.module "ink"]
 
+(* TODO: Experiment with, could this be why we need to rollback a version of ink? *)
 let _ = use_focus ~options:{ auto_focus = true; is_active = true; id = None } ()
 
 type use_focus_manager_return = {

@@ -14,9 +14,24 @@ let ensureFile path =
   |> Promise.catch (fun _ -> Promise.resolve false)
 ;;
 
+let exists_error =
+  {|
+    Failed checking if a project directory exists
+
+    The scaffolding process failed while checking if a project directory exists.
+    Please try running `create-melange-app` again and choose to `Clear` the 
+    project directory created by this run.
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+  |}
+;;
+
 let exists path =
   path |> Fs_extra.exists |> Promise_result.of_js_promise
   |> Promise_result.catch Promise_result.resolve_error
+  |> Promise_result.map_error (Fun.const exists_error)
 ;;
 
 let dir_is_empty dir = Fs_extra.readdirSync dir |> Array.length = 0
@@ -31,6 +46,20 @@ let base_template_dir =
     |]
 ;;
 
+let create_project_directory_error =
+  {|
+    Failed to create project directory
+
+    The scaffolding process failed while creating the project directory.
+    Please try running `create-melange-app` again and choose to `Clear` the 
+    project directory created by this run.
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+  |}
+;;
+
 let create_project_directory ?(overwrite : [< `Clear | `Overwrite ] option) dir
     =
   exists dir
@@ -43,15 +72,28 @@ let create_project_directory ?(overwrite : [< `Clear | `Overwrite ] option) dir
            | _ -> assert false
          else Fs_extra.mkdir dir |> Promise_result.of_js_promise)
   |> Promise_result.catch Promise_result.resolve_error
-  |> Promise_result.map_error (Fun.const "Failed to create project directory")
+  |> Promise_result.map_error (Fun.const create_project_directory_error)
+;;
+
+let copy_base_project_error =
+  {|
+    Failed to copy the base project files 
+
+    The scaffolding process failed while copying base project files.
+    Please try running `create-melange-app` again and choose to `Clear` the 
+    project directory created by this run.
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+  |}
 ;;
 
 let copy_base_project dir =
   Fs_extra.copy base_template_dir dir
   |> Promise_result.of_js_promise
   |> Promise_result.catch Promise_result.resolve_error
-  |> Promise_result.map_error
-       (Fun.const "Failed to copy base template directory")
+  |> Promise_result.map_error (Fun.const copy_base_project_error)
 ;;
 
 let copy_base_project_directory dir =

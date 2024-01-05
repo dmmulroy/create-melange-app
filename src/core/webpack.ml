@@ -50,9 +50,24 @@ module Copy_index_html :
 
   let name = "copy index.html"
 
+  let error_message =
+    {|
+    Failed to copy webpack's index.html to project directory 
+
+    The scaffolding process failed while copying `index.html`. Please try 
+    running `create-melange-app` again and choose to `Clear` the project 
+    directory created by this run.
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+  |}
+  ;;
+
   let exec (project_dir_name : input) =
     let dest = Node.Path.join [| project_dir_name; "/"; "index.html" |] in
     Fs.copy_file ~dest webpack_public_dir_path
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end
 
@@ -77,10 +92,25 @@ module Copy_webpack_config_js :
       |]
   ;;
 
+  let error_message =
+    {|
+    Failed to copy webpack.config.js to project directory 
+
+    The scaffolding process failed while copying `webpack.config.js`. Please try 
+    running `create-melange-app` again and choose to `Clear` the project 
+    directory created by this run.
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+  |}
+  ;;
+
   let exec (project_dir_name : input) =
     let dest =
       Node.Path.join [| project_dir_name; "/"; "webpack.config.js" |]
     in
     Fs.copy_file ~dest webpack_config_js_path
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end

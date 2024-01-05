@@ -23,6 +23,20 @@ struct
 
   let name = "opam update"
 
+  let error_message =
+    {|
+    Failed to update opam
+
+    The scaffolding process failed while running `opam update`. Opam is OCaml
+    and ReasonML's package manager. Please try running `create-melange-app` 
+    again and choose to `Clear` the project directory created by this run.
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+  |}
+  ;;
+
   let exec (project_directory : input) =
     let options =
       Node.Child_process.option ~cwd:project_directory ~encoding:"utf8" ()
@@ -30,7 +44,7 @@ struct
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const "Failed to update opam")
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end
 
@@ -41,6 +55,37 @@ module Install_dune :
 
   let name = "opam install dune"
 
+  let error_message =
+    {|
+    Failed to install dune to your local opam switch
+
+    The scaffolding process failed while running `opam install dune`. 
+    Opam is OCaml and ReasonML's package manager. Dune is Ocaml and ReasonML's 
+    build tool. 
+
+    Please try `cd`ing into the project directory created by 
+    `create-melange-app` and running the following commands:
+
+    eval $(opam env)
+    opam install dune
+    dune build @install
+    opam install ocaml-lsp-server ocamlformat odoc utop --yes
+    opam install . --deps-only --yes
+    dune build
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+
+    If you open an issue, please `cd` into the directory created by 
+    `create-melange-app` and include the output from the following commands: 
+
+    `opam switch list`,
+    `opam install ocaml-lsp-server ocamlformat odoc utop --yes`, 
+    `cat dune-project`, and `cat dune`
+  |}
+  ;;
+
   let exec (project_directory : input) =
     let options =
       Node.Child_process.option ~cwd:project_directory ~encoding:"utf8" ()
@@ -48,7 +93,7 @@ module Install_dune :
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const "Failed to install dune")
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end
 
@@ -59,6 +104,25 @@ module Create_switch :
 
   let name = "opam switch create . 5.1.1 --deps-only --yes"
 
+  let error_message =
+    {|
+    Failed to create a local opam switch using OCaml 5.1.1 
+
+    The scaffolding process failed while running 
+    `opam switch create . 5.1.1 --deps-only --yes`. Opam is OCaml and ReasonML's 
+    package manager. Please try running `create-melange-app` again and choose to 
+    `Clear` the project directory created by this run. If the problem persists,
+    please open an issue at github.com/dmmulroy/create-melange-app/issues, and 
+    or join our discord for help at https://discord.gg/fNvVdsUWHE.
+
+    If you open an issue, please `cd` into the directory created by 
+    `create-melange-app` and include the output from the following commands: 
+
+    `opam switch list`,`opam switch create . 5.1.1 --deps-only --yes`, 
+    `cat dune-project`, and `cat dune`
+  |}
+  ;;
+
   let exec (project_directory : input) =
     let options =
       Node.Child_process.option ~cwd:project_directory ~encoding:"utf8" ()
@@ -66,7 +130,7 @@ module Create_switch :
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const "Failed to create opam switch")
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end
 
@@ -77,6 +141,35 @@ module Install_dev_dependencies :
 
   let name = "opam install ocaml-lsp-server ocamlformat odoc utop --yes"
 
+  let error_message =
+    {|
+    Failed to install OCaml dev dependencies to your local opam switch
+
+    The scaffolding process failed while running 
+    `opam install ocaml-lsp-server ocamlformat odoc utop --yes`. Opam is OCaml 
+    and ReasonML's package manager. 
+
+    Please try `cd`ing into the project directory created by 
+    `create-melange-app` and running the following commands:
+
+    eval $(opam env)
+    opam install ocaml-lsp-server ocamlformat odoc utop --yes
+    opam install . --deps-only --yes
+    dune build
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+
+    If you open an issue, please `cd` into the directory created by 
+    `create-melange-app` and include the output from the following commands: 
+
+    `opam switch list`,
+    `opam install ocaml-lsp-server ocamlformat odoc utop --yes`, 
+    `cat dune-project`, and `cat dune`
+  |}
+  ;;
+
   let exec (project_directory : input) =
     let options =
       Node.Child_process.option ~cwd:project_directory ~encoding:"utf8" ()
@@ -84,8 +177,7 @@ module Install_dev_dependencies :
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error
-         (Fun.const "Failed to install opam dev dependencies")
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end
 
@@ -96,6 +188,34 @@ module Install_dependencies :
 
   let name = "opam install . --deps-only --yes"
 
+  let error_message =
+    {|
+    Failed to install OCaml dependencies to your local opam switch
+
+    The scaffolding process failed while running 
+    `opam install . --deps-only --yes`. Opam is OCaml and ReasonML's package 
+    manager. 
+
+    Please try `cd`ing into the project directory created by 
+    `create-melange-app` and running the following commands:
+
+    eval $(opam env)
+    opam install . --deps-only --yes
+    dune build
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+
+    If you open an issue, please `cd` into the directory created by 
+    `create-melange-app` and include the output from the following commands: 
+
+    `opam switch list`,
+    `opam install . --deps-only --yes`, 
+    `cat dune-project`, and `cat dune`
+  |}
+  ;;
+
   let exec (project_directory : input) =
     let options =
       Node.Child_process.option ~cwd:project_directory ~encoding:"utf8" ()
@@ -103,8 +223,7 @@ module Install_dependencies :
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error
-         (Fun.const "Failed to install opam dependencies")
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end
 

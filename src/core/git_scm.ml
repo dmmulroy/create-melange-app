@@ -7,6 +7,23 @@ module Init_and_stage :
 
   let name = "git init && git add -A"
 
+  let error_message =
+    {|
+    Failed to initialize git repository
+
+    The scaffolding process failed while running `git init && git add -A`. 
+    Your project is ready, but you will have to initialize git on your own.
+
+    You can `cd` into your project directory and run the following command:
+
+    npm run dev
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+  |}
+  ;;
+
   let exec (project_dir_name : input) =
     let options =
       Node.Child_process.option ~cwd:project_dir_name ~encoding:"utf8" ()
@@ -14,8 +31,7 @@ module Init_and_stage :
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error
-         (Fun.const "Failed to initialize git repository")
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end
 
@@ -38,9 +54,25 @@ module Copy_gitignore :
       |]
   ;;
 
+  let error_message =
+    {|
+    Failed to copy gitignore file to project directory
+
+    The scaffolding process failed while copying `.gitignore`. Please try 
+    running `create-melange-app` again and choose to `Clear` the project 
+    directory created by this run.
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+  |}
+  ;;
+
   let exec (project_dir_name : input) =
     let dest = Node.Path.join [| project_dir_name; "/"; ".gitignore" |] in
     Fs.copy_file ~dest gitignore_path
+    |> Promise_result.catch Promise_result.resolve_error
+    |> Promise_result.map_error (Fun.const error_message)
   ;;
 end
 

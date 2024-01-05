@@ -9,6 +9,32 @@ struct
 
   let name = "opam exec -- dune build"
 
+  let error_message =
+    {|
+    Failed attempting to build your project with Dune
+
+    The scaffolding process failed while running `opam exec -- dune build`. 
+    Dune is OCaml and ReasonML's build tool. 
+
+    Please try `cd`ing into the project directory created by 
+    `create-melange-app` and running the following commands:
+
+    eval $(opam env)
+    dune build
+
+    If the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+
+    If you open an issue, please `cd` into the directory created by 
+    `create-melange-app` and include the output from the following commands: 
+
+    `opam switch list`,
+    `dune build`, 
+    `cat dune-project`, and `cat dune`
+  |}
+  ;;
+
   let exec (project_directory : input) =
     let options =
       Node.Child_process.option ~cwd:project_directory ~encoding:"utf8" ()
@@ -28,6 +54,24 @@ struct
   type output = string
 
   let name = "dune build @install"
+
+  let error_message =
+    {|
+    Failed to generate your opam file while running `dune build @install`. 
+
+    The scaffolding process failed while running `dune build @install`. Dune is
+    Ocaml and ReasonML's  build tool. Please try running `create-melange-app` 
+    again and choose to `Clear` the project directory created by this run. If 
+    the problem persists, please open an issue at 
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    help at https://discord.gg/fNvVdsUWHE.
+
+    If you open an issue, please `cd` into the directory created by 
+    `create-melange-app` and include the out put from the following commands: 
+
+    `opam switch list`,`dune build @install`, `cat dune-project`, and `cat dune`
+  |}
+  ;;
 
   let exec (project_directory : input) =
     let options =

@@ -186,7 +186,10 @@ let make = (~name as initial_name) => {
          | (Some(`Pass), Some(configuration), None) =>
            <Scaffold configuration onComplete=on_complete_scaffold />
          | (Some(`Pass), Some(_), Some(Error(msg))) =>
-           <Ui.Badge color=`red> {React.string(msg)} </Ui.Badge>
+           <>
+             <Ui.Badge color=`red> {React.string("Error")} </Ui.Badge>
+             <Text> {React.string(msg)} </Text>
+           </>
          | (Some(`Pass), Some(configuration), Some(Ok(_))) =>
            <>
              <Text color="green">
