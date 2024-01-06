@@ -10,7 +10,7 @@
 </h1>
 
 <p align="center">
-The fastest, friendliest, and most delightful way to get started with OCaml, ReasonML, and Melange, geared towards JavaScript and TypeScript developers
+The blazingly fastest, friendliest, AI powered, and most delightful way to get started with OCaml, ReasonML, and Melange, geared towards JavaScript and TypeScript developers
 </p>
 
 <p align="center">
