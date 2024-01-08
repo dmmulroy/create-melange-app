@@ -6,6 +6,13 @@
     </span>
 </h1>
 
+### Table of Contents
+
+- [Getting Started](#getting-started)
+- [Your project layout](#your-project-layout)
+- [Installing {{syntax_preference}} packages](#installing-{{syntax_preference}}-packages)
+- [Getting Help](#getting-help)
+
 ## Getting Started
 
 Welcome to your `Melange` & `{{syntax_preference}}` app!
@@ -127,9 +134,31 @@ and help for learning and getting started with `{{syntax_preference}}` and `Mela
 └── node_modules/
 ```
 
+## Installing {{syntax_preference}} packages
+
+Installing {{syntax_preference}} packages is easy, but we have to use a separate
+CLI ([for the time being](https://github.com/dmmulroy/create-melange-app/issues/61)). To intsall dependencies, we are
+going to use `opam`, which is {{syntax_preference}}'s package manager. You can
+search for dependencies and packages on
+[OCaml.org](https://ocaml.org/packages/search?q=).
+
+There are [some requirements](https://discuss.ocaml.org/t/whats-possible-with-melange/13806/3?u=dmmulroy) to use a package with `Melange` you should read
+about. That being said, once you find a pakcage you want to install you can
+do the following steps:
+
+1. Add the library to your `dune-project`'s `depends` section
+2. Run the following commands
+
+```sh
+eval $(opam env) # This activates your local switch in your shell
+dune build {{name}}.opam # This will regenerate your `opam` file
+opam update # This will ensure `opam` can see the most recent versions of packages
+opam install . --deps-only --yes # This will install your new packages
+```
+
 ## Getting Help
 
-- [OCaml's official site](https://ocam.org)
+- [OCaml's official site](https://ocaml.org)
 - [ReasonML's official site](https://reasonml.github.io/)
 - [Melange Docs](https://melange.re)
 - [OCaml Discuss Forums](https://discuss.ocaml.org/)
