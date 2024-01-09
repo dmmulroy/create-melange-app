@@ -97,7 +97,7 @@ bun create melange-app
 
 - [The Caravan Discord Server](https://discord.gg/fNvVdsUWHE) - This is where
   the maintainers of `create-melange-app` hang out!
-- [OCaml's official site](https://ocam.org)
+- [OCaml's official site](https://ocaml.org)
 - [ReasonML's official site](https://reasonml.github.io/)
 - [Melange Docs](https://melange.re)
 - [OCaml Discuss Forums](https://discuss.ocaml.org/)
