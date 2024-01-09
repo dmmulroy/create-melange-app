@@ -1,6 +1,6 @@
 (library
- (name env_check)
- (synopsis "A library to check environment dependencies")
+ (name ocaml_install)
+ (synopsis "A library to add ocaml dependnacies to a project")
  (modes melange)
  (libraries reason-react melange.js melange.node bindings common core)
  (preprocess
