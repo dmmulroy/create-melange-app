@@ -1,0 +1,25 @@
+; This dune file configures the 'bindings' library in your Melange project.
+
+; (name bindings) specifies the name of the library, 'bindings' in this case.
+; This name is used when other parts of your project reference this library.
+
+; (modes melange) indicates that this library uses Melange for compiling. 
+
+; (libraries melange.js melange.node melange.dom) lists the dependencies of the
+; 'bindings' library. These are other libraries that 'bindings' requires, 
+; likely providing bindings to various JavaScript APIs.
+
+; (preprocess (pps melange.ppx)) sets up preprocessing with 'melange.ppx', a 
+; preprocessor used by Melange for code transformations necessary before 
+; compilation.
+
+; Overall, this configuration ensures that the 'bindings' library is correctly 
+; set up with the necessary tools and dependencies for development in a 
+; Melange environment.
+
+(library
+ (name bindings)
+ (modes melange)
+ (libraries melange.js melange.node melange.dom)
+ (preprocess
+  (pps melange.ppx)))

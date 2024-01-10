@@ -1,0 +1,55 @@
+; This dune file segment configures the build process for the project, 
+; focusing on web bundling.
+
+; This stanza excludes the 'node_modules' directory from being 
+; considered by dune, which is a standard practice to prevent Dune from scanning 
+; dependency files.
+(dirs :standard \ node_modules)
+
+; The 'alias' block named 'all' defines a high-level alias for building the 
+; entire project. It specifies that the 'all' alias depends on another alias, 
+; typically named after the bundler being used (e.g., 'vite', 'webpack'). This 
+; setup allows for easy switching between different bundlers without changing 
+; the overall build process.
+(alias 
+  (name all)
+  (deps
+     (alias_rec vite)))
+
+
+; The 'rule' block associated with the bundler alias (e.g., 'vite', 'webpack') 
+; defines the specific steps to build and bundle the web application. 
+;
+; - 'targets (dir dist)' indicates the output directory for the bundled files.
+;
+; - The 'deps' section lists dependencies like the project alias, bundler config 
+;   files, and entry HTML file. 
+;
+; - The 'action' specifies the system command to run the bundler, in this case a
+;   script from 'node_modules' to run a bundler.
+;
+; - 'promote (until-clean)' in 'mode' is used for artifact promotion, managing built files.
+(rule
+  (alias vite)
+   (targets (dir dist))
+   (deps
+     (alias_rec prtest) 
+     (:vite ./vite.config.js) 
+     (:index_html ./index.html))
+   (action
+    (system "../../node_modules/.bin/vite build"))
+   (mode
+     (promote (until-clean))))
+
+
+; The 'melange.emit' block is used to compile ReasonML/OCaml code to JavaScript.
+; - 'target output' specifies where the compiled JS files will be placed.
+; - It relies on the 'app' library and compiles using specified module systems 
+;   (here, es6 and mjs).
+  (melange.emit
+   (target output)
+   (alias prtest)
+   (libraries app)
+   (module_systems (es6 mjs)))
+
+

@@ -1,0 +1,7 @@
+(library
+ (name app)
+ (modes melange)
+ (libraries bindings create_melange_app reason-react)
+ (preprocess
+  (pps melange.ppx reason-react-ppx)))
+
