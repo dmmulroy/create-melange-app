@@ -1,0 +1,12 @@
+; This dune file is for configuring the 'cma_configuration' library in your 
+; Melange project.
+
+; (name cma_configuration) - This line sets the name of the library to 
+; 'cma_configuration'.It's the identifier used within your project to refer 
+; to this library.
+
+; (modes melange) - This specifies that the library is to be compiled using Melange.
+
+(library
+ (name cma_configuration)
+ (modes melange))

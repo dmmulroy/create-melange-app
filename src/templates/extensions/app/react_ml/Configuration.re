@@ -7,7 +7,7 @@
  *
  * `import * as Create_melange_app from 'Create_melange_app';`
  */
-open Create_melange_app;
+open Cma_configuration;
 open Configuration;
 
 [@react.component]

@@ -1,4 +1,4 @@
-open Create_melange_app;
+open Cma_configuration;
 open Configuration;
 
 [@react.component]

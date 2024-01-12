@@ -418,9 +418,9 @@ module Dune_file = struct
     let libraries, ppxs =
       match configuration.is_react_app with
       | true ->
-          ( [ "bindings"; "create_melange_app"; "reason-react" ],
+          ( [ "bindings"; "cma_configuration"; "reason-react" ],
             [ "melange.ppx"; "reason-react-ppx" ] )
-      | false -> ([ "bindings"; "create_melange_app" ], [ "melange.ppx" ])
+      | false -> ([ "bindings"; "cma_configuration" ], [ "melange.ppx" ])
     in
     empty
     |> add_library
