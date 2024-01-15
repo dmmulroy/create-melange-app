@@ -1,13 +1,4 @@
-/*
- * In ReasonML, the `open` statement is used to bring modules into the current
- * scope, similar to using `import` in JavaScript or TypeScript. However, unlike
- * `import`, `open` makes all of the module's contents immediately available
- * without the need to prefix them with the module name. This is akin to doing a
- * wildcard import in JavaScript:
- *
- * `import * as Create_melange_app from 'Create_melange_app';`
- */
-open Create_melange_app;
+open Cma_configuration;
 open Configuration;
 
 [@react.component]
@@ -97,3 +88,4 @@ let make = (~configuration: Configuration.t) => {
     </ul>
   </div>;
 };
+

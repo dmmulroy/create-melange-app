@@ -20,7 +20,7 @@
       React.useState(() => false);
 
     /*
-     * The `Create_melange_app.Configuration.make` function is a for creating 
+     * The `Cma_configuration.Configuration.make` function is a for creating 
      * the Configuration.t type. It is a common convention in ReasonML to 
      * name a module's corresponding type it operates on or represents, `t`.
 
@@ -39,7 +39,7 @@
      * This ensures a clear end of the argument list.
      */
     let configuration =
-      Create_melange_app.Configuration.make(
+      Cma_configuration.Configuration.make(
         ~name="{{name}}",
         ~directory="{{directory}}",
         ~node_package_manager={{node_package_manager}},
@@ -92,7 +92,7 @@
           className="mb-3 border-b-2 bg-gradient-to-r from-[#ee99a0] to-[#f5a97f] bg-clip-text text-4xl  font-black text-transparent pb-1">
           {React.string("Welcome to Melange & OCaml!")}
         </h2>
-        {show_configuration ? <Configuration configuration /> : React.null}
+        {show_configuration ? <Components.Configuration configuration /> : React.null}
       </div>
     </>;
   };
