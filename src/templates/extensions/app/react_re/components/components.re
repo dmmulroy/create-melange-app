@@ -1,1 +1,1 @@
-module Configuration = Configuration
+module Configuration = Configuration;
