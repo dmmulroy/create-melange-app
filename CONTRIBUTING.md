@@ -43,3 +43,9 @@ After every `dune build` you'll need to change the file perms of the built entry
 ``` shell
 chmod +x ./build/src/cli.mjs
 ```
+
+Then you can call CMA as if it's globally installed
+
+``` shell
+create-melange-app
+```
