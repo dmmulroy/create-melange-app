@@ -8,7 +8,7 @@
  * `import * as Create_melange_app from 'Create_melange_app';`
  */
 open Bindings;
-open Create_melange_app;
+open Cma_configuration;
 
 /* 
  * The `{j| |j}` syntax in Melange supports variable interpolation within 
@@ -78,7 +78,7 @@ let render_configuration_html = (configuration: Configuration.t) => {
 
 let main = () => {
  /*
-  * The `Create_melange_app.Configuration.make` function is a for creating 
+  * The `Cma_configuration.Configuration.make` function is a for creating 
   * the Configuration.t type. It is a common convention in ReasonML to 
   * name a module's corresponding type it operates on or represents, `t`.
  
@@ -97,7 +97,7 @@ let main = () => {
   * This ensures a clear end of the argument list.
   */
   let configuration =
-    Create_melange_app.Configuration.make(
+    Cma_configuration.Configuration.make(
       ~name="{{name}}",
       ~directory="{{directory}}",
       ~node_package_manager={{node_package_manager}},
