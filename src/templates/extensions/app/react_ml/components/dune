@@ -1,0 +1,15 @@
+; This dune file is for configuring the 'components' library in your 
+; Melange project.
+
+; (name components) - This line sets the name of the library to 
+; 'components'.It's the identifier used within your project to refer 
+; to this library.
+
+; (modes melange) - This specifies that the library is to be compiled using Melange.
+
+(library
+ (name components)
+ (modes melange)
+ (libraries cma_configuration reason-react)
+ (preprocess
+  (pps melange.ppx reason-react-ppx)))

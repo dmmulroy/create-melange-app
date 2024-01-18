@@ -7,8 +7,7 @@
  *
  * `import * as Create_melange_app from 'Create_melange_app';`
  */
-open Create_melange_app;
-open Configuration;
+open Cma_configuration;
 
 [@react.component]
 let make = (~configuration: Configuration.t) => {
