@@ -15,7 +15,8 @@ let syntax_preference_to_string = function
 ;;
 
 let syntax_preference_of_string str =
-  str |> String.lowercase_ascii |> function
+  str |> String.lowercase_ascii
+  |> function
   | "ocaml" -> `OCaml
   | "reasonml" -> `ReasonML
   | _ -> failwith "Invalid syntax preference"
