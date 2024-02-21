@@ -17,6 +17,7 @@ let run = () => {
        |> (exit_promise => `Promise_void(exit_promise))
      })
   |> Command.add_command(Env_check.command)
+  |> Command.add_command(Ocaml_install.command)
   |> Command.parse
   |> ignore;
 };
