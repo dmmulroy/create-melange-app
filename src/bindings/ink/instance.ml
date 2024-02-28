@@ -9,7 +9,7 @@ external wait_until_exit : unit Js.Promise.t = "waitUntilExit"
 
 (* TODO: Hide via mli *)
 external unmount' :
-  ([ `Error of Error.t | `Int of int | `Null of 'null Js.null_undefined ]
+  ([ `Error of Error.t | `Int of int | `Null of 'null Js.nullable ]
   [@mel.unwrap]) ->
   unit = "unmount"
 [@@mel.send.pipe: t]

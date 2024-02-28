@@ -97,7 +97,7 @@ let make = (~name as initial_name) => {
       switch (result) {
       | `Pass(results) =>
         Js.Global.setTimeout(
-          () => set_env_check_result(_ => Some(`Pass)),
+          ~f=() => set_env_check_result(_ => Some(`Pass)),
           850,
         )
         |> ignore;
@@ -125,7 +125,7 @@ let make = (~name as initial_name) => {
   let on_complete_wizard =
     React.useCallback0(configuration => {
       Js.Global.setTimeout(
-        () => set_configuration(_ => Some(configuration)),
+        ~f=() => set_configuration(_ => Some(configuration)),
         850,
       )
       |> ignore
@@ -134,7 +134,7 @@ let make = (~name as initial_name) => {
   let on_complete_scaffold =
     React.useCallback0(scaffold_result => {
       Js.Global.setTimeout(
-        () => set_scaffold_result(_ => Some(scaffold_result)),
+        ~f=() => set_scaffold_result(_ => Some(scaffold_result)),
         850,
       )
       |> ignore

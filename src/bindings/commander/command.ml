@@ -1,9 +1,9 @@
 type dynamic = Dynamic : 'a -> dynamic [@@unboxed]
 
 type command_option = {
-  hidden : bool option; [@optional]
-  is_default : bool option; [@optional] [@mel.as "isDefault"]
-  executable_file : string option; [@optional] [@mel.as "executableFile"]
+  hidden : bool option; [@mel.optional]
+  is_default : bool option; [@mel.optional] [@mel.as "isDefault"]
+  executable_file : string option; [@mel.optional] [@mel.as "executableFile"]
 }
 [@@deriving abstract]
 

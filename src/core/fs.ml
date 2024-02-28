@@ -1,5 +1,3 @@
-[@@@ocaml.warning "-32"]
-
 open Bindings
 
 let ensureDir path =
@@ -159,7 +157,7 @@ let create_dir ?(overwrite : [> `Clear | `Overwrite ] option) dir =
 let get_template_file_names dir =
   Fs_extra.readdirSync dir |> Array.to_list
   |> List.filter_map (fun file_name ->
-         if Js.String.endsWith ".tmpl" file_name then
+         if Js.String.endsWith ~suffix:".tmpl" file_name then
            Some (Node.Path.join [| dir; file_name |])
          else None)
 ;;
