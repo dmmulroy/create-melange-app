@@ -5,7 +5,7 @@ let run = () => {
   program
   |> Command.set_name("create-melange-app")
   |> Command.set_description("A CLI for creating applications with Melange")
-  |> Command.set_version("1.0.8", ~flags="-v")
+  |> Command.set_version("1.1.0", ~flags="-v")
   |> Command.argument(
        ~name="[dir]",
        ~description=
@@ -17,6 +17,8 @@ let run = () => {
        |> (exit_promise => `Promise_void(exit_promise))
      })
   |> Command.add_command(Env_check.command)
+  // We'll uncomment this when caml-install is ready
+  // |> Command.add_command(Ocaml_install.command)
   |> Command.parse
   |> ignore;
 };

@@ -16,7 +16,11 @@
   "bin": {
     "create-melange-app": "./build/src/cli.mjs"
   },
-  "scripts": {},
+  "scripts": {
+    "publish-patch": "npm version patch && npm publish",
+    "publish-minor": "npm version minor && npm publish",
+    "publish-major": "npm version major && npm publish"
+  },
   "dependencies": {
     "@inkjs/ui": "^1.0.0",
     "commander": "^11.1.0",

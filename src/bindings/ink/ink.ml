@@ -15,12 +15,12 @@ module Transform = Transform
 module Ui = Ui
 
 type render_options = {
-  stdout : Stream.write option; [@optional]
-  stdin : Stream.read option; [@optional]
-  stderr : Stream.write option; [@optional]
-  debug : bool option; [@optional]
-  exit_on_ctrl_c : bool option; [@optional]
-  patch_console : bool option; [@optional]
+  stdout : Stream.write option; [@mel.optional]
+  stdin : Stream.read option; [@mel.optional]
+  stderr : Stream.write option; [@mel.optional]
+  debug : bool option; [@mel.optional]
+  exit_on_ctrl_c : bool option; [@mel.optional]
+  patch_console : bool option; [@mel.optional]
 }
 [@@deriving abstract]
 

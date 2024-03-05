@@ -1,4 +1,4 @@
-(lang dune 3.11)
+(lang dune 3.14)
 
 (using melange 0.1)
 
@@ -26,16 +26,16 @@
  (allow_empty)
  (depends
   (ocaml
-   (>= 5.1.0))
+   (>= 5.1.1))
   (dune
-   (>= 3.11))
+   (>= 3.14))
   (melange
-   (>= 2.1.0))
+   (= 3.0.0-51))
   opam-check-npm-deps
   (reason
-   (>= 3.10.0))
+   (>= 3.11.0))
   (reason-react
-   (>= 0.13.0))
+   (>= 0.14.0))
   reason-react-ppx
   ppx_deriving)
  (tags

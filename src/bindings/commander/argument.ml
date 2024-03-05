@@ -6,7 +6,7 @@ type t = {
   variadic : bool;
   default_value : value option; [@mel.as "defaultValue"]
   default_value_description : string option; [@mel.as "defaultValueDescription"]
-  arg_choices : string array option; [@optional] [@mel.as "argChoices"]
+  arg_choices : string array option; [@mel.optional] [@mel.as "argChoices"]
 }
 [@@deriving abstract]
 

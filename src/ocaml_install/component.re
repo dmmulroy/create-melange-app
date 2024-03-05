@@ -1,4 +1,4 @@
 [@react.component]
-let make = () => {
+let make = (~_package: String.t) => {
   <> </>;
 };
