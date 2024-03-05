@@ -16,9 +16,9 @@ module Project_name : S with type input = string = struct
                  ^ Name must be lowercase and only contain letters, numbers, or _
   *)
   let validate name =
-    let test = Js.Re.test_ [%re "/^[a-z_0-9.]+$/"] in
+    let test = Js.Re.test [%re "/^[a-z_0-9.]+$/"] in
     if is_empty name then Error (`Msg "Name cannot be empty")
-    else if test name == false then
+    else if test ~str:name == false then
       Error
         (`Msg
           (Format.sprintf

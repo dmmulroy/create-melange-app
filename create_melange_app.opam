@@ -10,12 +10,12 @@ homepage: "https://github.com/dmmulroy/create-melange-app"
 doc: "https://github.com/dmmulroy/create-melange-app"
 bug-reports: "https://github.com/dmmulroy/create-melange-app/issues"
 depends: [
-  "ocaml" {>= "5.1.0"}
-  "dune" {>= "3.11" & >= "3.11"}
-  "melange" {>= "2.1.0"}
+  "ocaml" {>= "5.1.1"}
+  "dune" {>= "3.14" & >= "3.14"}
+  "melange" {= "3.0.0-51"}
   "opam-check-npm-deps"
-  "reason" {>= "3.10.0"}
-  "reason-react" {>= "0.13.0"}
+  "reason" {>= "3.11.0"}
+  "reason-react" {>= "0.14.0"}
   "reason-react-ppx"
   "ppx_deriving"
   "odoc" {with-doc}

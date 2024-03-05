@@ -1,5 +1,5 @@
 type use_input_options = {
-  is_active : bool option; [@optional] [@mel.as "isActive"]
+  is_active : bool option; [@mel.optional] [@mel.as "isActive"]
 }
 [@@deriving abstract]
 
@@ -33,7 +33,7 @@ external use_stderr : unit -> use_stderr_return = "useStderr"
 type use_focus_options = {
   auto_focus : bool; [@mel.as "autoFocus"]
   is_active : bool; [@mel.as "isActive"]
-  id : string option; [@optional]
+  id : string option; [@mel.optional]
 }
 [@@deriving abstract]
 

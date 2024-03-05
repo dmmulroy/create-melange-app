@@ -15,15 +15,15 @@ type custom_helpers = bool Js.Dict.t
 type known_helpers = Builtin of builtin_helpers | Custom of custom_helpers
 
 type t = {
-  data : bool option; [@optional]
-  compat : bool option; [@optional]
-  known_helpers : known_helpers option; [@optional]
-  known_helpers_only : bool option; [@optional]
-  no_escape : bool option; [@optional]
-  strict : bool option; [@optional]
-  assume_objects : bool option; [@optional]
-  prevent_indent : bool option; [@optional]
-  ignore_standalone : bool option; [@optional]
-  explicit_partial_context : bool option; [@optional]
+  data : bool option; [@mel.optional]
+  compat : bool option; [@mel.optional]
+  known_helpers : known_helpers option; [@mel.optional]
+  known_helpers_only : bool option; [@mel.optional]
+  no_escape : bool option; [@mel.optional]
+  strict : bool option; [@mel.optional]
+  assume_objects : bool option; [@mel.optional]
+  prevent_indent : bool option; [@mel.optional]
+  ignore_standalone : bool option; [@mel.optional]
+  explicit_partial_context : bool option; [@mel.optional]
 }
 [@@deriving abstract]

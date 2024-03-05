@@ -11,7 +11,7 @@ external exec :
 let async_exec string child_process_option =
   Js.Promise.make (fun ~resolve ~reject ->
       exec string child_process_option (fun ~error ~stdout ~stderr:_ ->
-          match Js.Null_undefined.toOption error with
+          match Js.Nullable.toOption error with
           | Some e -> reject e [@u]
           | None -> resolve stdout [@u]))
 ;;
