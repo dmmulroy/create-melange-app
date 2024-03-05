@@ -26,7 +26,7 @@
  (allow_empty)
  (depends
   (ocaml
-   (>= 5.1.0))
+   (>= 5.1.1))
   (dune
    (>= 3.14))
   (melange

@@ -1,4 +1,4 @@
-[@@@ocaml.warning "-32"]
+[@@@warning "-32"]
 
 open Bindings
 
@@ -100,7 +100,7 @@ module Dune_project = struct
 
   let default_dependencies =
     [
-      Dependency.make ~version:">= 5.1.2" "ocaml";
+      Dependency.make ~version:">= 5.1.1" "ocaml";
       Dependency.make ~version:">= 3.14" "dune";
       Dependency.make ~version:">= 3.0.0-51" "melange";
       Dependency.make ~version:">= 3.11.0" "reason";

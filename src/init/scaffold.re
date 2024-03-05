@@ -195,16 +195,12 @@ module Bundler = {
   module Copy_files = {
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      // let (copy_complete, set_copy_complete) = React.useState(() => false);
 
       let handleOnComplete = () => {
-        // set_copy_complete(_ => true);
         onComplete();
       };
 
       let is_active = state.step == Bundler_copy_files;
-      /* let is_visible =
-         step_to_int(state.step) >= step_to_int(Bundler_copy_files); */
 
       React.useEffect1(
         () => {
@@ -227,25 +223,6 @@ module Bundler = {
         [|is_active|],
       );
 
-      /* let bundler_name =
-         state.configuration.bundler
-         |> Bundler.to_string
-         |> String.capitalize_ascii; */
-
-      /* if (!is_visible) {
-           React.null;
-         } else {
-           <Box flexDirection=`column gap=1>
-             {copy_complete
-                ? <Box flexDirection=`row gap=1>
-                    <Badge color=`green> {React.string("Complete")} </Badge>
-                    <Text>
-                      {React.string("Copying " ++ bundler_name ++ " files")}
-                    </Text>
-                  </Box>
-                : <Spinner label={"Copying " ++ bundler_name ++ " files"} />}
-           </Box>;
-         }; */
       React.null;
     };
   };
@@ -309,16 +286,12 @@ module App_files = {
     // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      // let (copy_complete, set_copy_complete) = React.useState(() => false);
 
       let handleOnComplete = () => {
-        // set_copy_complete(_ => true);
         onComplete();
       };
 
       let is_active = state.step == App_copy_files;
-      /* let is_visible =
-         step_to_int(state.step) >= step_to_int(App_copy_files); */
 
       React.useEffect1(
         () => {
@@ -341,18 +314,6 @@ module App_files = {
         [|is_active|],
       );
 
-      /* if (!is_visible) {
-           React.null;
-         } else {
-           <Box flexDirection=`column gap=1>
-             {copy_complete
-                ? <Box flexDirection=`row gap=1>
-                    <Badge color=`green> {React.string("Complete")} </Badge>
-                    <Text> {React.string("Copying application files")} </Text>
-                  </Box>
-                : <Spinner label="Copying application files" />}
-           </Box>;
-         }; */
       React.null;
     };
   };
@@ -374,7 +335,6 @@ module App_files = {
               |> Engine.extend_package_json_with_app_settings(
                    ~is_react_app=state.configuration.is_react_app,
                  );
-            // set_complete(_ => true);
             onComplete({...state, pkg_json: updated_pkg_json});
           };
 
@@ -383,22 +343,6 @@ module App_files = {
         [|is_active|],
       );
 
-      /* if (!is_visible) {
-           React.null;
-         } else {
-           <Box flexDirection=`column gap=1>
-             {complete
-                ? <Box flexDirection=`row gap=1>
-                    <Badge color=`green> {React.string("Complete")} </Badge>
-                    <Text>
-                      {React.string(
-                         "Extending package.json with app dependencies",
-                       )}
-                    </Text>
-                  </Box>
-                : <Spinner label="Extending package.json with app dependencies" />}
-           </Box>;
-         }; */
       React.null;
     };
   };
@@ -678,7 +622,6 @@ module Compile = {
       React.useEffect1(
         () => {
           if (is_active) {
-            // TODO
             state.readme
             |> Engine.compile
             |> Promise_result.perform(result =>
@@ -778,14 +721,10 @@ module Git = {
     // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      // let (copy_complete, set_copy_complete) = React.useState(() => false);
 
       let is_active =
         state.step == Git_copy_ignore_file
         && state.configuration.initialize_git;
-      /* let is_visible =
-         state.configuration.initialize_git
-         && step_to_int(state.step) >= step_to_int(Git_copy_ignore_file); */
 
       React.useEffect1(
         () => {
@@ -795,7 +734,6 @@ module Git = {
             |> Promise_result.perform(result =>
                  switch (result) {
                  | Ok(_) =>
-                   // set_copy_complete(_ => true);
                    onComplete()
                  | Error(err) => onError(err)
                  }
@@ -807,20 +745,6 @@ module Git = {
         },
         [|is_active|],
       );
-
-      /* if (!is_visible) {
-           React.null;
-         } else {
-           <Box flexDirection=`column gap=1>
-             {copy_complete
-                ? <Box flexDirection=`row gap=1>
-                    // <Badge color=`green> {React.string("Complete")} </Badge>
-
-                      <Text> {React.string("Copying .gitignore file")} </Text>
-                    </Box>
-                : <Spinner label="Copying .gitignore file" />}
-           </Box>;
-         }; */
       React.null;
     };
   };

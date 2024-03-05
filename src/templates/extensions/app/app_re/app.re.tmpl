@@ -122,7 +122,7 @@ let main = () => {
     | Some(inner) =>
       let _ =
         Js.Global.setTimeout(
-          () => {
+          ~f=() => {
             let configuration_html = render_configuration_html(configuration);
             Browser.set_inner_html(inner, configuration_html);
           },

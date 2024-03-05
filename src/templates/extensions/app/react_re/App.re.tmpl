@@ -64,7 +64,7 @@
      */
     React.useEffect0(() => {
       let timeout_id =
-        Js.Global.setTimeout(() => setShow_configuration(_ => true), 1000);
+        Js.Global.setTimeout(~f=() => setShow_configuration(_ => true), 1000);
 
       // Return a cleanup function to cancel the timeout
       // If we didn't need a cleanup function, we would return `None` instead of
@@ -101,7 +101,10 @@
 ReactDOM.querySelector("#root")
 ->(
     fun
-    | Some(root) => ReactDOM.render(<App />, root)
+    | Some(root_elem) => {
+        let root = ReactDOM.Client.createRoot(root_elem);
+        ReactDOM.Client.render(root, <App />);
+      }
     | None =>
       Js.Console.error(
         "Failed to start React: couldn't find the #root element",
