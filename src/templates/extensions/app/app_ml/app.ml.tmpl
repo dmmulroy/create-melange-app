@@ -115,7 +115,7 @@ let main () =
       | Some inner ->
           let _ =
             Js.Global.setTimeout
-              ~f=(fun () ->
+              ~f:(fun () ->
                 let configuration_html =
                   render_configuration_html configuration
                 in
