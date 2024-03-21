@@ -5,7 +5,7 @@ let run = () => {
   program
   |> Command.set_name("create-melange-app")
   |> Command.set_description("A CLI for creating applications with Melange")
-  |> Command.set_version("1.1.1", ~flags="-v")
+  |> Command.set_version("1.1.2", ~flags="-v")
   |> Command.argument(
        ~name="[dir]",
        ~description=
