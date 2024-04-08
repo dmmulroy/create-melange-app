@@ -68,7 +68,7 @@ let create_project_directory ?(overwrite : [< `Clear | `Overwrite ] option) dir
                Fs_extra.emptyDir dir |> Promise_result.of_js_promise
            | Some `Overwrite -> Promise_result.resolve_ok ()
            | _ -> assert false
-         else Fs_extra.mkdir dir |> Promise_result.of_js_promise)
+         else Fs_extra.ensureDir dir |> Promise_result.of_js_promise)
   |> Promise_result.catch Promise_result.resolve_error
   |> Promise_result.map_error (Fun.const create_project_directory_error)
 ;;
