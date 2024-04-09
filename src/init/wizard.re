@@ -37,9 +37,12 @@ module Name = {
 
     let handleOnSubmit =
       React.useCallback(name => {
-        let (name, directory) = Core.Fs.parse_project_name_and_dir(name);
-        switch (Core.Validation.Project_name.validate(name)) {
-        | Ok(name) => onSubmit((name, directory))
+        switch (Core.Fs.parse_project_name_and_dir(name)) {
+        | Ok((parsed_name, directory)) =>
+          switch (Core.Validation.Project_name.validate(parsed_name)) {
+          | Ok(validated_name) => onSubmit((validated_name, directory))
+          | Error(`Msg(error)) => set_error(_ => Some(error))
+          }
         | Error(`Msg(error)) => set_error(_ => Some(error))
         };
       });

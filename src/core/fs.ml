@@ -68,7 +68,7 @@ let create_project_directory ?(overwrite : [< `Clear | `Overwrite ] option) dir
                Fs_extra.emptyDir dir |> Promise_result.of_js_promise
            | Some `Overwrite -> Promise_result.resolve_ok ()
            | _ -> assert false
-         else Fs_extra.mkdir dir |> Promise_result.of_js_promise)
+         else Fs_extra.ensureDir dir |> Promise_result.of_js_promise)
   |> Promise_result.catch Promise_result.resolve_error
   |> Promise_result.map_error (Fun.const create_project_directory_error)
 ;;
@@ -205,15 +205,21 @@ let trim_trailing_slash str =
 ;;
 
 let parse_project_name_and_dir (str : string) =
-  let trimmed = trim_trailing_slash str in
-  if String.equal trimmed "." then
-    let name = [| trimmed |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
+  if String.equal str "." then
+    let name = [| str |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
     let directory = [| Nodejs.Process.cwd () |] |> Nodejs.Path.resolve in
-    (name, directory)
+    Ok (name, directory)
+  else if String.contains str '/' then
+    Error
+      (`Msg
+        (Format.sprintf
+           "%s is an invalid name. Your project name must be lowercase and \
+            only contain letters, numbers, or _"
+           str))
   else
-    let name = [| trimmed |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
+    let name = [| str |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
     let directory =
-      [| trimmed; name |] |> Nodejs.Path.resolve |> Nodejs.Path.dirname
+      [| str; name |] |> Nodejs.Path.resolve |> Nodejs.Path.dirname
     in
-    (name, directory)
+    Ok (name, directory)
 ;;
