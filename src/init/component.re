@@ -79,16 +79,26 @@ let make = (~name as initial_name) => {
 
   let parsed_name_and_dir =
     React.useMemo1(
-      () => Option.map(Core.Fs.parse_project_name_and_dir, initial_name),
+      () =>
+        switch (initial_name) {
+        | Some(name) =>
+          switch (Core.Fs.parse_project_name_and_dir(name)) {
+          | Ok(name_and_dir) => Some(name_and_dir)
+          | Error(_) => None
+          }
+        | None => None
+        },
       [|initial_name|],
     );
 
   let initial_name_is_valid =
     React.useMemo1(
-      () =>
-        parsed_name_and_dir
-        |> Option.map(fst)
-        |> Option.map(Core.Validation.Project_name.validate),
+      () => Option.map(name =>
+      switch (Core.Fs.parse_project_name_and_dir(name)) {
+        | Ok((parsed_name, _)) =>
+          Core.Validation.Project_name.validate(parsed_name)
+        | Error(error) => Error(error)
+      }, initial_name),
       [|parsed_name_and_dir|],
     );
 

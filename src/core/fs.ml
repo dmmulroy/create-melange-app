@@ -209,11 +209,18 @@ let parse_project_name_and_dir (str : string) =
   if String.equal trimmed "." then
     let name = [| trimmed |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
     let directory = [| Nodejs.Process.cwd () |] |> Nodejs.Path.resolve in
-    (name, directory)
+    Ok (name, directory)
+  else if String.contains trimmed '/' then
+    Error
+      (`Msg
+        (Format.sprintf
+           "%s is an invalid name. Your project name must be lowercase and \
+            only contain letters, numbers, or _"
+           trimmed))
   else
     let name = [| trimmed |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
     let directory =
       [| trimmed; name |] |> Nodejs.Path.resolve |> Nodejs.Path.dirname
     in
-    (name, directory)
+    Ok (name, directory)
 ;;
