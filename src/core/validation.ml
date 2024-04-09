@@ -8,7 +8,7 @@ module Project_name : S with type input = string = struct
   type input = string
 
   let is_empty name = String.length name == 0
-  let is_linux_root name = String.equal "?" name
+  let is_linux_root name = String.equal "/" name
 
   (* TODO: Consider a ux like the following:
      [create-melange-app] What will your project be called? foo-bar
