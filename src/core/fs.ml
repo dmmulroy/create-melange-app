@@ -205,22 +205,21 @@ let trim_trailing_slash str =
 ;;
 
 let parse_project_name_and_dir (str : string) =
-  let trimmed = trim_trailing_slash str in
-  if String.equal trimmed "." then
-    let name = [| trimmed |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
+  if String.equal str "." then
+    let name = [| str |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
     let directory = [| Nodejs.Process.cwd () |] |> Nodejs.Path.resolve in
     Ok (name, directory)
-  else if String.contains trimmed '/' then
+  else if String.contains str '/' then
     Error
       (`Msg
         (Format.sprintf
            "%s is an invalid name. Your project name must be lowercase and \
             only contain letters, numbers, or _"
-           trimmed))
+           str))
   else
-    let name = [| trimmed |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
+    let name = [| str |] |> Nodejs.Path.resolve |> Nodejs.Path.basename in
     let directory =
-      [| trimmed; name |] |> Nodejs.Path.resolve |> Nodejs.Path.dirname
+      [| str; name |] |> Nodejs.Path.resolve |> Nodejs.Path.dirname
     in
     Ok (name, directory)
 ;;
