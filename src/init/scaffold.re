@@ -267,7 +267,7 @@ module Bundler = {
              ? <Box flexDirection=`row gap=1>
                  <Text color="green">
                    {React.string(
-                      {j|✔ Successfully initalized bundler: |j}
+                      {j|✔ Successfully initialized bundler: |j}
                       ++ bundler_name,
                     )}
                  </Text>
@@ -381,11 +381,11 @@ module App_files = {
              ? <Box flexDirection=`row gap=1>
                  <Text color="green">
                    {React.string(
-                      {j|✔ Successfully intialized application files|j},
+                      {j|✔ Successfully initialized application files|j},
                     )}
                  </Text>
                </Box>
-             : <Spinner label="Initalizing application files..." />}
+             : <Spinner label="Initializing application files..." />}
         </Box>;
       };
     };
@@ -789,7 +789,7 @@ module Git = {
           {copy_complete
              ? <Box flexDirection=`row gap=1>
                  <Text color="green">
-                   {React.string({j|✔ Successfully initalized git!|j})}
+                   {React.string({j|✔ Successfully initialized git!|j})}
                  </Text>
                </Box>
              : <Spinner label="Initializing git..." />}
@@ -841,7 +841,7 @@ module Opam = {
           ? React.null
           : <Box flexDirection=`column gap=1>
               <Spinner
-                label="Initalizing OCaml toolchain, this may take a few minutes..."
+                label="Initializing OCaml toolchain, this may take a few minutes..."
               />
             </Box>;
       };
@@ -889,7 +889,7 @@ module Opam = {
           ? React.null
           : <Box flexDirection=`column gap=1>
               <Spinner
-                label="Initalizing OCaml toolchain, this may take a few minutes..."
+                label="Initializing OCaml toolchain, this may take a few minutes..."
               />
             </Box>;
       };
@@ -938,7 +938,7 @@ module Opam = {
           ? React.null
           : <Box flexDirection=`column gap=1>
               <Spinner
-                label="Initalizing OCaml toolchain, this may take a few minutes..."
+                label="Initializing OCaml toolchain, this may take a few minutes..."
               />
             </Box>;
       };
@@ -986,7 +986,7 @@ module Opam = {
           ? React.null
           : <Box flexDirection=`column gap=1>
               <Spinner
-                label="Initalizing OCaml toolchain, this may take a few minutes..."
+                label="Initializing OCaml toolchain, this may take a few minutes..."
               />
             </Box>;
       };
@@ -1034,7 +1034,7 @@ module Opam = {
           ? React.null
           : <Box flexDirection=`column gap=1>
               <Spinner
-                label="Initalizing OCaml toolchain, this may take a few minutes..."
+                label="Initializing OCaml toolchain, this may take a few minutes..."
               />
             </Box>;
       };
@@ -1082,7 +1082,7 @@ module Dune_install = {
         ? React.null
         : <Box flexDirection=`column gap=1>
             <Spinner
-              label="Initalizing OCaml toolchain, this may take a few minutes..."
+              label="Initializing OCaml toolchain, this may take a few minutes..."
             />
           </Box>;
     };
@@ -1136,7 +1136,7 @@ module Dune_build = {
                </Text>
              </Box>
            : <Spinner
-               label="Initalizing OCaml toolchain, this may take a few minutes..."
+               label="Initializing OCaml toolchain, this may take a few minutes..."
              />}
       </Box>;
     };
