@@ -400,6 +400,22 @@ module Dune_file = struct
          |> Alias.add_dep "alias_rec webpack")
   ;;
 
+  let esbuild_root project_name =
+    empty
+    |> add_rule
+         (Rule.empty |> Rule.set_alias "esbuild" |> Rule.add_target "dir dist"
+         |> Rule.add_deps
+              [
+                "alias_rec " ^ project_name;
+                ":esbuild ./esbuild.mjs";
+                ":index_html ./index.html";
+              ]
+         |> Rule.set_action {|run node %{esbuild}|})
+    |> add_alias
+         (Alias.empty |> Alias.set_name "all"
+         |> Alias.add_dep "alias_rec esbuild")
+  ;;
+
   let root (configuration : Configuration.t) =
     let melange_emit =
       Melange_emit.empty
@@ -412,6 +428,8 @@ module Dune_file = struct
     | Vite -> configuration.name |> vite_root |> add_melange_emit melange_emit
     | Webpack ->
         configuration.name |> webpack_root |> add_melange_emit melange_emit
+    | Esbuild ->
+        configuration.name |> esbuild_root |> add_melange_emit melange_emit
   ;;
 
   let app_library (configuration : Configuration.t) =

@@ -195,7 +195,6 @@ module Bundler = {
   module Copy_files = {
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-
       let handleOnComplete = () => {
         onComplete();
       };
@@ -243,6 +242,7 @@ module Bundler = {
               state.pkg_json
               |> Engine.extend_package_json_with_bundler(
                    ~bundler=state.configuration.bundler,
+                   ~project_name=state.configuration.name,
                  );
 
             set_complete(_ => true);
@@ -286,7 +286,6 @@ module App_files = {
     // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-
       let handleOnComplete = () => {
         onComplete();
       };
@@ -363,6 +362,7 @@ module App_files = {
               state.dune_project
               |> Engine.extend_dune_project_with_app_settings(
                    ~is_react_app=state.configuration.is_react_app,
+                   ~project_name=state.configuration.name,
                  );
             set_complete(_ => true);
             onComplete({...state, dune_project: updated_dune_project});
@@ -721,7 +721,6 @@ module Git = {
     // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-
       let is_active =
         state.step == Git_copy_ignore_file
         && state.configuration.initialize_git;
@@ -733,8 +732,7 @@ module Git = {
             |> Engine.copy_git_ignore
             |> Promise_result.perform(result =>
                  switch (result) {
-                 | Ok(_) =>
-                   onComplete()
+                 | Ok(_) => onComplete()
                  | Error(err) => onError(err)
                  }
                );
