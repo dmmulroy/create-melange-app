@@ -11,6 +11,7 @@
 <body>
   <div id="root" class="flex h-screen w-screen flex-col items-center bg-gradient-to-b from-[#24273a] to-[#181926]" />
   <script type="module" src="App.mjs"></script>
+  <script>new EventSource('/esbuild').addEventListener('change', () => location.reload())</script>
 </body>
 
 </html>
