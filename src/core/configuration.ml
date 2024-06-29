@@ -85,9 +85,6 @@ let to_json (configuration : t) =
     (Js.Json.string
        (Bundler.to_string configuration.bundler |> String.capitalize_ascii));
   Js.Dict.set dict "is_react_app" (Js.Json.boolean configuration.is_react_app);
-  (* We add a derived field to feed into our template for convenience *)
-  Js.Dict.set dict "is_webpack_app"
-    (Js.Json.boolean (configuration.bundler == Webpack));
   Js.Dict.set dict "initialize_git"
     (Js.Json.boolean configuration.initialize_git);
   Js.Dict.set dict "initialize_npm"
