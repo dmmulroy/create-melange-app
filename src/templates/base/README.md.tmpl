@@ -126,10 +126,10 @@ and help for learning and getting started with `{{syntax_preference}}` and `Mela
 │   // tightly integrated as one tool.
 ├── first_try.opam
 │
-├── {{#if is_webpack_app}}public/{{else}}index.html{{/if}}
+├── {{public_or_index}}
 ├── package-lock.json
 ├── package.json
-├── {{#if is_webpack_app}}webpack{{else}}vite{{/if}}.config.js
+├── {{config_file_name}}
 ├── README
 └── node_modules/
 ```

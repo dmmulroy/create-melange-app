@@ -15,9 +15,17 @@ let to_json (readme : Configuration.t) =
   Js.Dict.set dict "bundler"
     (Js.Json.string
        (Bundler.to_string readme.bundler |> String.capitalize_ascii));
-  (* We add a derived field to feed into our template for convenience *)
-  Js.Dict.set dict "is_webpack_app"
-    (Js.Json.boolean (readme.bundler == Webpack));
+  Js.Dict.set dict "public_or_index"
+    (Js.Json.string
+       (match readme.bundler with
+       | Webpack -> "public/"
+       | Vite | Esbuild -> "index.html"));
+  Js.Dict.set dict "config_file_name"
+    (Js.Json.string
+       (match readme.bundler with
+       | Webpack -> "webpack.config.js"
+       | Vite -> "vite.config.js"
+       | Esbuild -> "esbuild.mjs"));
   Js.Json.object_ dict
 ;;
 
