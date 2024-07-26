@@ -26,16 +26,15 @@
  (allow_empty)
  (depends
   (ocaml
-   (>= 5.1.1))
+   (>= 5.2))
   (dune
    (>= 3.14))
-  (melange
-   (= 3.0.0-51))
+  (melange (= 4.0.1-52))
   opam-check-npm-deps
   (reason
    (>= 3.11.0))
   (reason-react
-   (>= 0.14.0))
+   (>= 0.14.1))
   reason-react-ppx
   ppx_deriving)
  (tags
