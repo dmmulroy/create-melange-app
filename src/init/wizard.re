@@ -13,7 +13,7 @@ module Step = {
       } else {
         `none;
       };
-    <> <Box display> children </Box> <Spacer /> </>;
+    <> <Box display key="Box"> children </Box> <Spacer key="spaced" /> </>;
   };
 };
 
