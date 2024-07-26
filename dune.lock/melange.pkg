@@ -1,0 +1,17 @@
+(version 4.0.1-52)
+
+(build
+ (progn
+  (when
+   %{pkg-self:dev}
+   (run dune subst))
+  (run dune build -p %{pkg-self:name} -j %{jobs} @install)))
+
+(depends dune ocaml cmdliner dune-build-info cppo ppxlib menhir)
+
+(source
+ (fetch
+  (url
+   https://github.com/melange-re/melange/releases/download/4.0.1-52/melange-4.0.1-52.tbz)
+  (checksum
+   sha256=91494286a42d2d7ef387dd062b6de26ccab223f308a74b0c60b8e43d7f6f7537)))

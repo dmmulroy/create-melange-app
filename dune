@@ -11,4 +11,4 @@
   (source_tree src/templates))
  (promote (until-clean))
  (module_systems
-  (es6 mjs)))
+  (esm mjs)))

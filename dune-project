@@ -30,11 +30,10 @@
   (dune
    (>= 3.14))
   (melange (= 4.0.1-52))
-  opam-check-npm-deps
   (reason
-   (>= 3.11.0))
+   (>= 3.12.0))
   (reason-react
-   (>= 0.14.1))
+   (>= 0.15.0))
   reason-react-ppx
   ppx_deriving)
  (tags

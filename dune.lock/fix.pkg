@@ -1,0 +1,12 @@
+(version 20230505)
+
+(build
+ (run dune build -p %{pkg-self:name} -j %{jobs}))
+
+(depends ocaml dune)
+
+(source
+ (fetch
+  (url
+   https://gitlab.inria.fr/fpottier/fix/-/archive/20230505/archive.tar.gz)
+  (checksum md5=2a4afa633128c5010677222f7b3c9451)))

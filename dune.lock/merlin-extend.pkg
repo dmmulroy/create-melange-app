@@ -1,0 +1,17 @@
+(version 0.6.1)
+
+(build
+ (progn
+  (when
+   %{pkg-self:dev}
+   (run dune subst))
+  (run dune build -p %{pkg-self:name} -j %{jobs})))
+
+(depends dune cppo ocaml)
+
+(source
+ (fetch
+  (url
+   https://github.com/let-def/merlin-extend/releases/download/v0.6.1/merlin-extend-0.6.1.tbz)
+  (checksum
+   sha256=5ec84b355ddb2d129a5948b132bfacc93adcbde2158c7de695f7bfc3650bead7)))
