@@ -43,14 +43,19 @@ let copy_bundler_files ~(bundler : Bundler.t) ~is_react_app project_directory =
       let+ _ = Vite.Copy_vite_config_js.exec project_directory in
       let+ _ = Vite.Copy_index_html.exec project_directory in
       Promise_result.resolve_ok ()
+  | Esbuild ->
+      let+ _ = Esbuild.Copy_esbuild_config_js.exec project_directory in
+      let+ _ = Esbuild.Copy_index_html.exec project_directory in
+      Promise_result.resolve_ok ()
 ;;
 
 let extend_package_json_with_bundler ~(bundler : Bundler.t)
-    (pkg_json_tmpl : Package_json.t Template.t) =
+    ~(project_name : string) (pkg_json_tmpl : Package_json.t Template.t) =
   let dependencies, scripts =
     match bundler with
     | Webpack -> (Webpack.dev_dependencies, Webpack.scripts)
     | Vite -> (Vite.dev_dependencies, Vite.scripts)
+    | Esbuild -> (Esbuild.dev_dependencies, Esbuild.scripts ~project_name)
   in
   pkg_json_tmpl
   |> Template.map (Package_json.add_scripts scripts)
@@ -72,6 +77,7 @@ let extend_package_json_with_app_settings ~(is_react_app : bool)
 ;;
 
 let extend_dune_project_with_app_settings ~(is_react_app : bool)
+    ~(project_name : string)
     (dune_project_tmpl : Dune.Dune_project.t Template.t) =
   if is_react_app then
     dune_project_tmpl

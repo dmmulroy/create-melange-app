@@ -195,7 +195,6 @@ module Bundler = {
   module Copy_files = {
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-
       let handleOnComplete = () => {
         onComplete();
       };
@@ -243,6 +242,7 @@ module Bundler = {
               state.pkg_json
               |> Engine.extend_package_json_with_bundler(
                    ~bundler=state.configuration.bundler,
+                   ~project_name=state.configuration.name,
                  );
 
             set_complete(_ => true);
@@ -267,7 +267,7 @@ module Bundler = {
              ? <Box flexDirection=`row gap=1>
                  <Text color="green">
                    {React.string(
-                      {j|✔ Successfully initalized bundler: |j}
+                      {j|✔ Successfully initialized bundler: |j}
                       ++ bundler_name,
                     )}
                  </Text>
@@ -286,7 +286,6 @@ module App_files = {
     // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-
       let handleOnComplete = () => {
         onComplete();
       };
@@ -363,6 +362,7 @@ module App_files = {
               state.dune_project
               |> Engine.extend_dune_project_with_app_settings(
                    ~is_react_app=state.configuration.is_react_app,
+                   ~project_name=state.configuration.name,
                  );
             set_complete(_ => true);
             onComplete({...state, dune_project: updated_dune_project});
@@ -381,11 +381,11 @@ module App_files = {
              ? <Box flexDirection=`row gap=1>
                  <Text color="green">
                    {React.string(
-                      {j|✔ Successfully intialized application files|j},
+                      {j|✔ Successfully initialized application files|j},
                     )}
                  </Text>
                </Box>
-             : <Spinner label="Initalizing application files..." />}
+             : <Spinner label="Initializing application files..." />}
         </Box>;
       };
     };
@@ -721,7 +721,6 @@ module Git = {
     // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-
       let is_active =
         state.step == Git_copy_ignore_file
         && state.configuration.initialize_git;
@@ -733,8 +732,7 @@ module Git = {
             |> Engine.copy_git_ignore
             |> Promise_result.perform(result =>
                  switch (result) {
-                 | Ok(_) =>
-                   onComplete()
+                 | Ok(_) => onComplete()
                  | Error(err) => onError(err)
                  }
                );
@@ -789,7 +787,7 @@ module Git = {
           {copy_complete
              ? <Box flexDirection=`row gap=1>
                  <Text color="green">
-                   {React.string({j|✔ Successfully initalized git!|j})}
+                   {React.string({j|✔ Successfully initialized git!|j})}
                  </Text>
                </Box>
              : <Spinner label="Initializing git..." />}
@@ -841,7 +839,7 @@ module Opam = {
           ? React.null
           : <Box flexDirection=`column gap=1>
               <Spinner
-                label="Initalizing OCaml toolchain, this may take a few minutes..."
+                label="Initializing OCaml toolchain, this may take a few minutes..."
               />
             </Box>;
       };
@@ -889,7 +887,7 @@ module Opam = {
           ? React.null
           : <Box flexDirection=`column gap=1>
               <Spinner
-                label="Initalizing OCaml toolchain, this may take a few minutes..."
+                label="Initializing OCaml toolchain, this may take a few minutes..."
               />
             </Box>;
       };
@@ -938,7 +936,7 @@ module Opam = {
           ? React.null
           : <Box flexDirection=`column gap=1>
               <Spinner
-                label="Initalizing OCaml toolchain, this may take a few minutes..."
+                label="Initializing OCaml toolchain, this may take a few minutes..."
               />
             </Box>;
       };
@@ -986,7 +984,7 @@ module Opam = {
           ? React.null
           : <Box flexDirection=`column gap=1>
               <Spinner
-                label="Initalizing OCaml toolchain, this may take a few minutes..."
+                label="Initializing OCaml toolchain, this may take a few minutes..."
               />
             </Box>;
       };
@@ -1034,7 +1032,7 @@ module Opam = {
           ? React.null
           : <Box flexDirection=`column gap=1>
               <Spinner
-                label="Initalizing OCaml toolchain, this may take a few minutes..."
+                label="Initializing OCaml toolchain, this may take a few minutes..."
               />
             </Box>;
       };
@@ -1082,7 +1080,7 @@ module Dune_install = {
         ? React.null
         : <Box flexDirection=`column gap=1>
             <Spinner
-              label="Initalizing OCaml toolchain, this may take a few minutes..."
+              label="Initializing OCaml toolchain, this may take a few minutes..."
             />
           </Box>;
     };
@@ -1136,7 +1134,7 @@ module Dune_build = {
                </Text>
              </Box>
            : <Spinner
-               label="Initalizing OCaml toolchain, this may take a few minutes..."
+               label="Initializing OCaml toolchain, this may take a few minutes..."
              />}
       </Box>;
     };
