@@ -9,11 +9,9 @@ let banner = {|
                                                                 /____/                /_/   /_/
 |};
 
-let items: array(unit) = [|()|];
-
 [@react.component]
 let make = () => {
-  <Gradient key="key" name=`Retro>
+  <Gradient key="gradient" name=`Retro>
     <Big_text font=`Tiny text="create-melange-app" />
   </Gradient>;
 };

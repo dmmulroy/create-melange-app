@@ -4,8 +4,6 @@ open Ink;
 open Common;
 module Scaffold = Scaffold;
 
-let items: array(unit) = [|()|];
-
 let next_steps = (configuration: Configuration.t) => {
   let node_pkg_manager_str =
     configuration.node_package_manager
@@ -170,8 +168,8 @@ let make = (~name as initial_name) => {
     );
 
   <>
-    <Banner />
-    <Box flexDirection=`column gap=1>
+    <Banner key="banner" />
+    <Box key="box" flexDirection=`column gap=1>
       {switch (initial_name_is_valid) {
        | Some(Error(`Msg(error))) =>
          <Ui.Badge color=`red> {React.string(error)} </Ui.Badge>

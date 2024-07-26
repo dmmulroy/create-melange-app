@@ -39,20 +39,28 @@ module Dependency_results = {
               {switch (dependency_check_result) {
                | `Pass(module Dep: Core.Dependency.S) =>
                  <Box flexDirection=`row gap=1>
-                   <Badge color=`green> {React.string("PASS")} </Badge>
-                   <Text> {React.string("Dependency: " ++ Dep.name)} </Text>
+                   <Badge key="badge" color=`green>
+                     {React.string("PASS")}
+                   </Badge>
+                   <Text key="text">
+                     {React.string("Dependency: " ++ Dep.name)}
+                   </Text>
                  </Box>
                | `Fail(module Dep: Core.Dependency.S) =>
                  <Box flexDirection=`column>
                    <Box flexDirection=`row gap=1>
                      {Dep.required
-                        ? <Badge color=`red> {React.string("FAIL")} </Badge>
-                        : <Badge color=`yellow>
+                        ? <Badge key="red" color=`red>
+                            {React.string("FAIL")}
+                          </Badge>
+                        : <Badge key="yellow" color=`yellow>
                             {React.string("WARNING")}
                           </Badge>}
-                     <Text> {React.string("Dependency: " ++ Dep.name)} </Text>
+                     <Text key="text">
+                       {React.string("Dependency: " ++ Dep.name)}
+                     </Text>
                    </Box>
-                   <Text> {React.string(Dep.help)} </Text>
+                   <Text key="help"> {React.string(Dep.help)} </Text>
                  </Box>
                }}
             </Box>
@@ -118,11 +126,11 @@ let make = (~onEnvCheck=?) => {
        <Spinner label={js|Checking environment dependencies 🔎 |js} />
      | (false, Some(results)) =>
        <>
-         <Text>
+         <Text key="1">
            {React.string({js|Checking environment dependencies 🔎 |js})}
          </Text>
-         <Dependency_results results />
-         <Text>
+         <Dependency_results key="2" results />
+         <Text key="3">
            {is_successful
               ? {
                 React.string(
