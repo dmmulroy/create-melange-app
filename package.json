@@ -13,6 +13,10 @@
   "typings": "lib/main/index.d.ts",
   "module": "lib/module/index.js",
   "exports": "./build/src/cli.mjs",
+  "files": [
+    "./build/src",
+    "./build/node_modules"
+  ],
   "bin": {
     "create-melange-app": "./build/src/cli.mjs"
   },

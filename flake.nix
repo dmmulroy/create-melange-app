@@ -35,7 +35,7 @@
     in {
       devShells = {
         default = pkgs.mkShell {
-          nativeBuildInputs = [pkgs.ocamlPackages.dune_3];
+          nativeBuildInputs = [pkgs.ocamlPackages.dune_3 pkgs.nodejs_22];
         };
       };
 
