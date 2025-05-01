@@ -15,7 +15,7 @@ struct
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const "Failed to get opam version")
+    |> Promise_result.log_and_map_error (Fun.const "Failed to get opam version")
   ;;
 end
 
@@ -47,7 +47,7 @@ struct
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const error_message)
+    |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end
 
@@ -96,7 +96,7 @@ module Install_dune :
     Nodejs.Child_process.async_exec (with_eval_env name) options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const error_message)
+    |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end
 
@@ -133,7 +133,7 @@ module Create_switch :
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const error_message)
+    |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end
 
@@ -180,7 +180,7 @@ module Install_dev_dependencies :
     Nodejs.Child_process.async_exec (with_eval_env name) options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const error_message)
+    |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end
 
@@ -226,7 +226,7 @@ module Install_dependencies :
     Nodejs.Child_process.async_exec (with_eval_env name) options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const error_message)
+    |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end
 (* eval $(opam env) *)

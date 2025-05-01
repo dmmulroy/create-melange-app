@@ -29,7 +29,7 @@ let exists_error =
 let exists path =
   path |> Fs_extra.exists |> Promise_result.of_js_promise
   |> Promise_result.catch Promise_result.resolve_error
-  |> Promise_result.map_error (Fun.const exists_error)
+  |> Promise_result.log_and_map_error (Fun.const exists_error)
 ;;
 
 let dir_is_empty dir = Fs_extra.readdirSync dir |> Array.length = 0
@@ -70,7 +70,7 @@ let create_project_directory ?(overwrite : [< `Clear | `Overwrite ] option) dir
            | _ -> assert false
          else Fs_extra.ensureDir dir |> Promise_result.of_js_promise)
   |> Promise_result.catch Promise_result.resolve_error
-  |> Promise_result.map_error (Fun.const create_project_directory_error)
+  |> Promise_result.log_and_map_error (Fun.const create_project_directory_error)
 ;;
 
 let copy_base_project_error =
@@ -91,7 +91,7 @@ let copy_base_project dir =
   Fs_extra.copy base_template_dir dir
   |> Promise_result.of_js_promise
   |> Promise_result.catch Promise_result.resolve_error
-  |> Promise_result.map_error (Fun.const copy_base_project_error)
+  |> Promise_result.log_and_map_error (Fun.const copy_base_project_error)
 ;;
 
 let copy_base_project_directory dir =
