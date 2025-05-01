@@ -1,1 +1,0 @@
-module Configuration = Configuration

@@ -1,0 +1,74 @@
+open Cma_configuration
+
+let[@react.component] make ~(configuration: Cma_configuration.Configuration.t) =
+  let node_package_manager_str =
+    Node_package_manager.to_string configuration.node_package_manager in
+
+  <div className="text-[#b8c0e0] text-2xl">
+    <h3 className="font-bold text-3xl mb-2">
+      <React.Fragment>
+        (React.string "Your")
+        <span className="bg-gradient-to-r from-[#f5bde6] to-[#c6a0f6] bg-clip-text text-transparent">
+          (React.string " create-melange-app ")
+        </span>
+        (React.string "configuration:")
+      </React.Fragment>
+    </h3>
+    <ul>
+      <li>
+        <React.Fragment>
+          (React.string "Project name: ")
+          <span className="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">
+            (React.string configuration.name)
+          </span>
+        </React.Fragment>
+      </li>
+      <li>
+        <React.Fragment>
+          (React.string "Project directory: ")
+          <span className="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">
+            (React.string configuration.directory)
+          </span>
+        </React.Fragment>
+      </li>
+      <li>
+        <React.Fragment>
+          (React.string "Bundler: ")
+          <span className="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">
+            (configuration.bundler 
+              |> Bundler.to_string 
+              |> String.capitalize_ascii 
+              |> React.string)
+          </span>
+        </React.Fragment>
+      </li>
+      (if configuration.initialize_git
+          || configuration.initialize_npm
+          || configuration.initialize_ocaml_toolchain then
+        <li>
+          <React.Fragment>
+            (React.string "Initialized with: ")
+            <span className="font-bold bg-gradient-to-r from-[#8bd5ca] to-[#91d7e3] bg-clip-text text-transparent">
+              (match configuration.initialize_git,
+                      configuration.initialize_npm,
+                      configuration.initialize_ocaml_toolchain with
+              | true, false, false -> React.string "Git"
+              | true, true, false -> 
+                  React.string ("Git and " ^ node_package_manager_str)
+              | true, true, true -> 
+                  React.string ("Git, " ^ node_package_manager_str ^ " , and the OCaml toolchain")
+              | false, true, false -> 
+                  React.string node_package_manager_str
+              | false, true, true -> 
+                  React.string (node_package_manager_str ^ " and the OCaml toolchain")
+              | false, false, true -> 
+                  React.string "The OCaml toolchain"
+              | true, false, true -> 
+                  React.string "Git and the OCaml toolchain"
+              | false, false, false -> assert false)
+            </span>
+          </React.Fragment>
+        </li>
+        else React.null)
+    </ul>
+  </div>
