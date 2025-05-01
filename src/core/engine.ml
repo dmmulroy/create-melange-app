@@ -77,13 +77,20 @@ let extend_package_json_with_app_settings ~(is_react_app : bool)
 ;;
 
 let extend_dune_project_with_app_settings ~(is_react_app : bool)
+    ~(syntax_preference : Configuration.syntax_preference)
     ~(project_name : string)
     (dune_project_tmpl : Dune.Dune_project.t Template.t) =
-  if is_react_app then
+  match (is_react_app, syntax_preference) with
+  | false, _ -> dune_project_tmpl
+  | true, `OCaml ->
     dune_project_tmpl
     |> Template.map
-         (Dune.Dune_project.add_dependencies React.Dune_project.dependencies)
-  else dune_project_tmpl
+    (Dune.Dune_project.add_dependencies
+    React.Dune_project.(dependencies @ mlx_dependencies))
+  | true, _ ->
+      dune_project_tmpl
+      |> Template.map
+            (Dune.Dune_project.add_dependencies React.Dune_project.dependencies)
 ;;
 
 let compile = Template.compile
