@@ -29,7 +29,8 @@
    (>= 5.2))
   (dune
    (>= 3.14))
-  (melange (= 4.0.1-52))
+  (melange
+   (= 4.0.1-52))
   (reason
    (>= 3.12.0))
   (reason-react

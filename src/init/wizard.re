@@ -44,7 +44,7 @@ module Name = {
           | Error(`Msg(error)) => set_error(_ => Some(error))
           }
         | Error(`Msg(error)) => set_error(_ => Some(error))
-        };
+        }
       });
 
     <Box flexDirection=`column gap=1>
@@ -76,7 +76,10 @@ module Syntax = {
       value: "reasonml",
       label: "ReasonML (recommended if you're new to OCaml/ReasonML)",
     },
-    Ui.Select.{value: "ocaml", label: "OCaml"},
+    Ui.Select.{
+      value: "ocaml",
+      label: "OCaml",
+    },
   |];
 
   [@react.component]
@@ -127,8 +130,14 @@ module Bundler = {
 
 module React_app = {
   let options: array(Ui.Select.select_option) = [|
-    Ui.Select.{value: "yes", label: "Yes"},
-    Ui.Select.{value: "no", label: "No"},
+    Ui.Select.{
+      value: "yes",
+      label: "Yes",
+    },
+    Ui.Select.{
+      value: "no",
+      label: "No",
+    },
   |];
 
   [@react.component]
@@ -152,8 +161,14 @@ module React_app = {
 
 module Git = {
   let git_select_options: array(Ui.Select.select_option) = [|
-    Ui.Select.{value: "yes", label: "Yes"},
-    Ui.Select.{value: "no", label: "No"},
+    Ui.Select.{
+      value: "yes",
+      label: "Yes",
+    },
+    Ui.Select.{
+      value: "no",
+      label: "No",
+    },
   |];
 
   [@react.component]
@@ -181,8 +196,14 @@ module Git = {
 
 module Npm = {
   let git_select_options: array(Ui.Select.select_option) = [|
-    Ui.Select.{value: "yes", label: "Yes"},
-    Ui.Select.{value: "no", label: "No"},
+    Ui.Select.{
+      value: "yes",
+      label: "Yes",
+    },
+    Ui.Select.{
+      value: "no",
+      label: "No",
+    },
   |];
 
   [@react.component]
@@ -215,8 +236,14 @@ module Npm = {
 
 module OCaml_toolchain = {
   let options: array(Ui.Select.select_option) = [|
-    Ui.Select.{value: "yes", label: "Yes"},
-    Ui.Select.{value: "no", label: "No"},
+    Ui.Select.{
+      value: "yes",
+      label: "Yes",
+    },
+    Ui.Select.{
+      value: "no",
+      label: "No",
+    },
   |];
 
   [@react.component]
@@ -245,8 +272,14 @@ module Overwrite_preference = {
   open Ui;
 
   let options: array(Select.select_option) = [|
-    {value: "abort", label: "Abort installation"},
-    {value: "clear", label: "Clear the directory and continue installation"},
+    {
+      value: "abort",
+      label: "Abort installation",
+    },
+    {
+      value: "clear",
+      label: "Clear the directory and continue installation",
+    },
     {
       value: "overwrite",
       label: "Continue installation and overwrite conflicting files",
@@ -320,19 +353,25 @@ let make =
   let (directory, set_directory) =
     React.useState(() => initial_configuration.directory);
   let (syntax_preference, set_syntax_preference) =
-    React.useState(() => (None: option(Configuration.syntax_preference)));
+    React.useState((): option(Configuration.syntax_preference) => None);
   let (is_react_app, set_is_react_app) =
-    React.useState(() => (None: option(bool)));
+    React.useState((): option(bool) => None);
   let (bundler, set_bundler) =
-    React.useState(() => (None: option(Core.Bundler.t)));
+    React.useState((): option(Core.Bundler.t) => None);
   let (initialize_git, set_initialize_git) =
-    React.useState(() => (None: option(bool)));
+    React.useState((): option(bool) => None);
   let (initialize_npm, set_initialize_npm) =
-    React.useState(() => (None: option(bool)));
+    React.useState((): option(bool) => None);
   let (initialize_ocaml_toolchain, set_initialize_ocaml_toolchain) =
-    React.useState(() => (None: option(bool)));
+    React.useState((): option(bool) => None);
   let (overwrite_preference, set_overwrite_preference) =
-    React.useState(() => (None: option([ | `Clear | `Overwrite])));
+    React.useState(
+      (): option(
+            [
+              | `Clear
+              | `Overwrite
+            ],
+          ) => None);
   let (error, set_error) = React.useState(() => None);
 
   let onSubmitName =
