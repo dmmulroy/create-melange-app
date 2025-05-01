@@ -24,6 +24,21 @@ Install JavaScr*pt assets
 bun install
 ```
 
+### Configuring Editor
+
+Activate OCaml-LSP for project
+
+``` shell
+opam install ocaml-lsp-server
+```
+
+Activate OCaml format (version must match the one specified in .ocamlformat at root of project)
+
+``` shell
+opam install ocamlformat.0.26.1
+```
+
+
 ### Running the project
 
 There are two options. You can run
