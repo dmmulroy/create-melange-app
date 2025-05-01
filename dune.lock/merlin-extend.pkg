@@ -1,4 +1,4 @@
-(version 0.6.1)
+(version 0.6.2)
 
 (build
  (progn
@@ -12,6 +12,6 @@
 (source
  (fetch
   (url
-   https://github.com/let-def/merlin-extend/releases/download/v0.6.1/merlin-extend-0.6.1.tbz)
+   https://github.com/let-def/merlin-extend/releases/download/v0.6.2/merlin-extend-0.6.2.tbz)
   (checksum
-   sha256=5ec84b355ddb2d129a5948b132bfacc93adcbde2158c7de695f7bfc3650bead7)))
+   sha256=47558e7f30b64462f2b9c82fb7f787133acfa0d5132452b6ad7848e0b0f4d779)))

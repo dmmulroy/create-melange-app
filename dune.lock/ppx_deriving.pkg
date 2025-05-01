@@ -1,4 +1,4 @@
-(version 6.0.2)
+(version 6.0.3)
 
 (build
  (progn
@@ -12,6 +12,6 @@
 (source
  (fetch
   (url
-   https://github.com/ocaml-ppx/ppx_deriving/releases/download/v6.0.2/ppx_deriving-6.0.2.tbz)
+   https://github.com/ocaml-ppx/ppx_deriving/releases/download/v6.0.3/ppx_deriving-6.0.3.tbz)
   (checksum
-   sha256=7abacfc5934a1442047e110dc9128c0b0c6cd1fef19ee3429ac8b26ed3632b94)))
+   sha256=374aa97b32c5e01c09a97810a48bfa218c213b5b649e4452101455ac19c94a6d)))
