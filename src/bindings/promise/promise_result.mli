@@ -37,7 +37,7 @@ val map_error :
 (** [map_error fn promise_result] applies [fn] to the Error part of [promise_result]. *)
 
 val log_and_map_error : ('a -> 'b) -> ('c, 'a) t -> ('c, 'b) t
-(** [map_and_log_error fn promise_result] applies [fn] to the result of [promise_result] and logs the error beforehand. *)
+(** [log_and_map_error fn promise_result] applies [fn] to the result of [promise_result] and logs the error beforehand. *)
 
 val tap :
   (('value, 'error) result -> unit) -> ('value, 'error) t -> ('value, 'error) t
