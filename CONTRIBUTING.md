@@ -43,11 +43,18 @@ opam install ocamlformat.0.26.1
 
 There are two options. You can run
 
+Not recommended:
+
+Start the previously built CLI script directly
+
 ``` shell
 bun build/src/cli.mjs
 ```
+This will start the CLI but generated projects configuration will interfeer inside CMA project creating many glitches 
 
-or you can link the project so it can be run as if installed globally
+Recommended:
+
+Link the project so it can be run as if installed globally
 
 ```shell
 bun link
