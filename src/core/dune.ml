@@ -113,10 +113,10 @@ module Dune_project = struct
          String_map.empty
   ;;
 
-  type t = { name : string; depends : Dependency.t String_map.t }
+  type t = { name : string; is_mlx : bool; depends : Dependency.t String_map.t }
 
-  let empty = { name = ""; depends = default_dependencies }
-  let make ~name ~depends = { name; depends }
+  let empty = { name = ""; depends = default_dependencies; is_mlx = false }
+  let make ~name ~depends = { name; depends; is_mlx = false }
   let set_name name dune_project = { dune_project with name }
 
   let add_dependency (dependency : Dependency.t) dune_project =
@@ -133,6 +133,7 @@ module Dune_project = struct
   let to_json dune_project =
     let dict = Js.Dict.empty () in
     Js.Dict.set dict "name" (Js.Json.string dune_project.name);
+    Js.Dict.set dict "is_mlx" (Js.Json.boolean dune_project.is_mlx);
     let depends =
       String_map.to_list dune_project.depends
       |> List.map (fun (key, (dependency : Dependency.t)) ->
@@ -148,10 +149,10 @@ module Dune_project = struct
     Js.Json.object_ dict
   ;;
 
-  let template ~project_name ~project_directory =
+  let template ~project_name ~project_directory ~is_mlx =
     let template_directory = Node.Path.join [| project_directory; "./" |] in
     Template.make ~name:"dune-project.tmpl"
-      ~value:{ empty with name = project_name }
+      ~value:{ empty with name = project_name; is_mlx }
       ~dir:template_directory ~to_json
   ;;
 end

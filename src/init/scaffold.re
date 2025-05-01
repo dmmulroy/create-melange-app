@@ -1184,6 +1184,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
           Dune.Dune_project.template(
             ~project_name=configuration.name,
             ~project_directory=configuration.directory,
+            ~is_mlx={configuration.syntax_preference == `OCaml && configuration.is_react_app},
           ),
         root_dune_file:
           Dune.Dune_file.template(
