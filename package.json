@@ -16,10 +16,6 @@
   "bin": {
     "create-melange-app": "./build/src/cli.mjs"
   },
-  "files": [
-    "./build/src",
-    "./build/node_modules"
-  ],
   "scripts": {
     "publish-patch": "npm version patch && npm publish",
     "publish-minor": "npm version minor && npm publish",
