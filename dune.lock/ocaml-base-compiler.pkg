@@ -1,4 +1,4 @@
-(version 5.2.0)
+(version 5.2.1)
 
 (install
  (run %{make} install))
@@ -16,9 +16,10 @@
 
 (source
  (fetch
-  (url https://github.com/ocaml/ocaml/archive/5.2.0.tar.gz)
+  (url
+   https://github.com/ocaml/ocaml/releases/download/5.2.1/ocaml-5.2.1.tar.gz)
   (checksum
-   sha256=48554abfd530fcdaa08f23f801b699e4f74c320ddf7d0bd56b0e8c24e55fc911)))
+   sha256=2d0f8090951a97a2c0e5b8a11e90096c0e1791d2e471e4a67f87e3b974044cd0)))
 
 (exported_env
  (= CAML_LD_LIBRARY_PATH "\%{lib}%/stublibs"))

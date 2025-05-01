@@ -246,7 +246,10 @@ module Bundler = {
                  );
 
             set_complete(_ => true);
-            onComplete({...state, pkg_json: updated_pkg_json});
+            onComplete({
+              ...state,
+              pkg_json: updated_pkg_json,
+            });
           };
 
           None;
@@ -334,7 +337,10 @@ module App_files = {
               |> Engine.extend_package_json_with_app_settings(
                    ~is_react_app=state.configuration.is_react_app,
                  );
-            onComplete({...state, pkg_json: updated_pkg_json});
+            onComplete({
+              ...state,
+              pkg_json: updated_pkg_json,
+            });
           };
 
           None;
@@ -365,7 +371,10 @@ module App_files = {
                    ~project_name=state.configuration.name,
                  );
             set_complete(_ => true);
-            onComplete({...state, dune_project: updated_dune_project});
+            onComplete({
+              ...state,
+              dune_project: updated_dune_project,
+            });
           };
 
           None;
@@ -412,7 +421,10 @@ module Compile = {
                  switch (result) {
                  | Ok(res) =>
                    set_complete(_ => true);
-                   onComplete({...state, pkg_json: res});
+                   onComplete({
+                     ...state,
+                     pkg_json: res,
+                   });
                  | Error(err) => onError(err)
                  }
                );
@@ -455,7 +467,10 @@ module Compile = {
                  switch (result) {
                  | Ok(res) =>
                    set_complete(_ => true);
-                   onComplete({...state, dune_project: res});
+                   onComplete({
+                     ...state,
+                     dune_project: res,
+                   });
                  | Error(err) => onError(err)
                  }
                );
@@ -498,7 +513,10 @@ module Compile = {
                  switch (result) {
                  | Ok(res) =>
                    set_complete(_ => true);
-                   onComplete({...state, root_dune_file: res});
+                   onComplete({
+                     ...state,
+                     root_dune_file: res,
+                   });
                  | Error(err) => onError(err)
                  }
                );
@@ -541,7 +559,10 @@ module Compile = {
                  switch (result) {
                  | Ok(res) =>
                    set_complete(_ => true);
-                   onComplete({...state, app_dune_file: res});
+                   onComplete({
+                     ...state,
+                     app_dune_file: res,
+                   });
                  | Error(err) => onError(err)
                  }
                );
@@ -585,7 +606,10 @@ module Compile = {
                  switch (result) {
                  | Ok(res) =>
                    set_complete(_ => true);
-                   onComplete({...state, app_module: res});
+                   onComplete({
+                     ...state,
+                     app_module: res,
+                   });
                  | Error(err) => onError(err)
                  }
                );
@@ -628,7 +652,10 @@ module Compile = {
                  switch (result) {
                  | Ok(res) =>
                    set_complete(_ => true);
-                   onComplete({...state, app_module: res});
+                   onComplete({
+                     ...state,
+                     app_module: res,
+                   });
                  | Error(err) => onError(err)
                  }
                );
@@ -1200,56 +1227,96 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     <Create_dir
       state
       onComplete={() => {
-        set_state(_ => {...state, step: Copy_base_templates})
+        set_state(_ =>
+          {
+            ...state,
+            step: Copy_base_templates,
+          }
+        )
       }}
       onError
     />
     <Copy_base_templates
       state
       onComplete={() => {
-        set_state(state => {...state, step: Bundler_copy_files})
+        set_state(state =>
+          {
+            ...state,
+            step: Bundler_copy_files,
+          }
+        )
       }}
       onError
     />
     <Bundler.Copy_files
       state
       onComplete={() => {
-        set_state(state => {...state, step: Bundler_extend_package_json})
+        set_state(state =>
+          {
+            ...state,
+            step: Bundler_extend_package_json,
+          }
+        )
       }}
       onError
     />
     <Bundler.Extend_package_json
       state
       onComplete={(updated_state: state) => {
-        set_state(_ => {...updated_state, step: App_copy_files})
+        set_state(_ =>
+          {
+            ...updated_state,
+            step: App_copy_files,
+          }
+        )
       }}
       onError
     />
     <App_files.Copy_files
       state
       onComplete={() => {
-        set_state(_ => {...state, step: App_extend_package_json})
+        set_state(_ =>
+          {
+            ...state,
+            step: App_extend_package_json,
+          }
+        )
       }}
       onError
     />
     <App_files.Extend_package_json
       state
       onComplete={updated_state => {
-        set_state(_ => {...updated_state, step: App_extend_dune_project})
+        set_state(_ =>
+          {
+            ...updated_state,
+            step: App_extend_dune_project,
+          }
+        )
       }}
       onError
     />
     <App_files.Extend_dune_project
       state
       onComplete={updated_state => {
-        set_state(_ => {...updated_state, step: Compile_package_json})
+        set_state(_ =>
+          {
+            ...updated_state,
+            step: Compile_package_json,
+          }
+        )
       }}
       onError
     />
     <Compile.Compile_package_json
       state
       onComplete={updated_state => {
-        set_state(_ => {...updated_state, step: Compile_dune_project})
+        set_state(_ =>
+          {
+            ...updated_state,
+            step: Compile_dune_project,
+          }
+        )
       }}
       onError
     />
@@ -1257,7 +1324,12 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       state
       onComplete={updated_state => {
         let next_step = Compile_root_dune_file;
-        set_state(_ => {{...updated_state, step: next_step}});
+        set_state(_ => {
+          {
+            ...updated_state,
+            step: next_step,
+          }
+        });
       }}
       onError
     />
@@ -1265,7 +1337,12 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       state
       onComplete={updated_state => {
         let next_step = Compile_app_dune_file;
-        set_state(_ => {{...updated_state, step: next_step}});
+        set_state(_ => {
+          {
+            ...updated_state,
+            step: next_step,
+          }
+        });
       }}
       onError
     />
@@ -1273,7 +1350,12 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       state
       onComplete={updated_state => {
         let next_step = Compile_app_module;
-        set_state(_ => {{...updated_state, step: next_step}});
+        set_state(_ => {
+          {
+            ...updated_state,
+            step: next_step,
+          }
+        });
       }}
       onError
     />
@@ -1281,7 +1363,12 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       state
       onComplete={updated_state => {
         let next_step = Compile_readme;
-        set_state(_ => {{...updated_state, step: next_step}});
+        set_state(_ => {
+          {
+            ...updated_state,
+            step: next_step,
+          }
+        });
       }}
       onError
     />
@@ -1299,7 +1386,12 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
           | (_, _, true) => Opam_update
           | _ => Finished
           };
-        set_state(_ => {{...updated_state, step: next_step}});
+        set_state(_ => {
+          {
+            ...updated_state,
+            step: next_step,
+          }
+        });
       }}
       onError
     />
@@ -1316,43 +1408,86 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
           | _ => Finished
           };
 
-        set_state(_ => {{...state, step: next_step}});
+        set_state(_ => {
+          {
+            ...state,
+            step: next_step,
+          }
+        });
       }}
       onError
     />
     <Opam.Update
       state
       onComplete={() => {
-        set_state(_ => {...state, step: Opam_create_switch})
+        set_state(_ =>
+          {
+            ...state,
+            step: Opam_create_switch,
+          }
+        )
       }}
       onError
     />
     <Opam.Create_switch
       state
-      onComplete={() => {set_state(_ => {...state, step: Opam_install_dune})}}
+      onComplete={() => {
+        set_state(_ =>
+          {
+            ...state,
+            step: Opam_install_dune,
+          }
+        )
+      }}
       onError
     />
     <Opam.Install_dune
       state
-      onComplete={() => {set_state(_ => {...state, step: Dune_install})}}
+      onComplete={() => {
+        set_state(_ =>
+          {
+            ...state,
+            step: Dune_install,
+          }
+        )
+      }}
       onError
     />
     <Dune_install
       state
       onComplete={() => {
         let next_step = Opam_install_dev_deps;
-        set_state(_ => {...state, step: next_step});
+        set_state(_ =>
+          {
+            ...state,
+            step: next_step,
+          }
+        );
       }}
       onError
     />
     <Opam.Install_dev_deps
       state
-      onComplete={() => {set_state(_ => {...state, step: Opam_install_deps})}}
+      onComplete={() => {
+        set_state(_ =>
+          {
+            ...state,
+            step: Opam_install_deps,
+          }
+        )
+      }}
       onError
     />
     <Opam.Install_deps
       state
-      onComplete={() => {set_state(_ => {...state, step: Dune_build})}}
+      onComplete={() => {
+        set_state(_ =>
+          {
+            ...state,
+            step: Dune_build,
+          }
+        )
+      }}
       onError
     />
     <Dune_build
@@ -1360,7 +1495,12 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onComplete={() => {
         let next_step =
           configuration.initialize_git ? Git_copy_ignore_file : Finished;
-        set_state(_ => {...state, step: next_step});
+        set_state(_ =>
+          {
+            ...state,
+            step: next_step,
+          }
+        );
       }}
       onError
     />
@@ -1369,13 +1509,25 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onComplete={() => {
         let next_step = Git_init_and_stage;
 
-        set_state(_ => {...state, step: next_step});
+        set_state(_ =>
+          {
+            ...state,
+            step: next_step,
+          }
+        );
       }}
       onError
     />
     <Git.Init_and_stage
       state
-      onComplete={() => {set_state(_ => {...state, step: Finished})}}
+      onComplete={() => {
+        set_state(_ =>
+          {
+            ...state,
+            step: Finished,
+          }
+        )
+      }}
       onError
     />
   </Box>;

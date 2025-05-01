@@ -66,14 +66,23 @@ module Next_steps = {
 [@react.component]
 let make = (~name as initial_name) => {
   let (is_active, set_is_active) = React.useState(() => Some(true));
-  let (env_check_result: option([ | `Pass | `Fail]), set_env_check_result) =
+  let (
+    env_check_result:
+      option(
+        [
+          | `Pass
+          | `Fail
+        ],
+      ),
+    set_env_check_result,
+  ) =
     React.useState(() => None);
   let (should_prompt_git, set_should_prompt_git) =
     React.useState(() => false);
   let (configuration, set_configuration) =
-    React.useState(() => (None: option(Core.Configuration.t)));
+    React.useState((): option(Core.Configuration.t) => None);
   let (scaffold_result, set_scaffold_result) =
-    React.useState(() => (None: option(result(unit, string))));
+    React.useState((): option(result(unit, string)) => None);
 
   let parsed_name_and_dir =
     React.useMemo1(
@@ -91,12 +100,16 @@ let make = (~name as initial_name) => {
 
   let initial_name_is_valid =
     React.useMemo1(
-      () => Option.map(name =>
-      switch (Core.Fs.parse_project_name_and_dir(name)) {
-        | Ok((parsed_name, _)) =>
-          Core.Validation.Project_name.validate(parsed_name)
-        | Error(error) => Error(error)
-      }, initial_name),
+      () =>
+        Option.map(
+          name =>
+            switch (Core.Fs.parse_project_name_and_dir(name)) {
+            | Ok((parsed_name, _)) =>
+              Core.Validation.Project_name.validate(parsed_name)
+            | Error(error) => Error(error)
+            },
+          initial_name,
+        ),
       [|parsed_name_and_dir|],
     );
 
