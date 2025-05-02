@@ -12,7 +12,7 @@ struct
     Nodejs.Child_process.async_exec name options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const "Failed to get node version")
+    |> Promise_result.log_and_map_error (Fun.const "Failed to get node version")
   ;;
 end
 

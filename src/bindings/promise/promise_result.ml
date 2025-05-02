@@ -73,6 +73,14 @@ let map_error (fn : 'error -> 'next_error) (promise_result : ('value, 'error) t)
   | Error error -> resolve_error (fn error)
 ;;
 
+let log_error (promise_result : ('value, 'error) t) =
+  promise_result
+  |> tap (fun result ->
+         match result with Ok _ -> () | Error error -> Js.log error)
+;;
+
+let log_and_map_error fn p = p |> log_error |> map_error fn
+
 module Syntax = struct
   module Infix = struct
     let ( >|= ) promise fn = map fn promise

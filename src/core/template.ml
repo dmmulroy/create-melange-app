@@ -71,5 +71,6 @@ let compile template =
     Fs.write_template ~dir template.name compiled_contents
     |> Promise_result.resolve
     |> Promise_result.map (Fun.const { template with state = `Compiled })
-    |> Promise_result.map_error (Fun.const @@ compiled_error_message template)
+    |> Promise_result.log_and_map_error
+         (Fun.const @@ compiled_error_message template)
 ;;

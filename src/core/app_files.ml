@@ -51,6 +51,6 @@ struct
     | `OCaml, true -> copy react_ml_path
     | `ReasonML, false -> copy app_re_path
     | `ReasonML, true -> copy react_re_path)
-    |> Promise_result.map_error (Fun.const error_message)
+    |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end

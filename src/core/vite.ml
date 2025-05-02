@@ -62,7 +62,7 @@ module Copy_vite_config_js :
   let exec (project_dir_name : input) =
     let dest = Node.Path.join [| project_dir_name; "/"; "vite.config.js" |] in
     Fs.copy_file ~dest vite_config_js_path
-    |> Promise_result.map_error (Fun.const error_message)
+    |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end
 
@@ -104,6 +104,6 @@ module Copy_index_html :
   let exec (project_dir_name : input) =
     let dest = Node.Path.join [| project_dir_name; "/"; "index.html" |] in
     Fs.copy_file ~dest vite_config_js_path
-    |> Promise_result.map_error (Fun.const error_message)
+    |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end

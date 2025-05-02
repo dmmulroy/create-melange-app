@@ -42,7 +42,7 @@ struct
     Nodejs.Child_process.async_exec (Opam.with_eval_env name) options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const error_message)
+    |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end
 
@@ -80,7 +80,7 @@ struct
     Nodejs.Child_process.async_exec (Opam.with_eval_env name) options
     |> Promise_result.of_js_promise
     |> Promise_result.catch Promise_result.resolve_error
-    |> Promise_result.map_error (Fun.const error_message)
+    |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end
 

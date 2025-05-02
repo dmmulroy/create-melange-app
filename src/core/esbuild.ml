@@ -16,7 +16,8 @@ let scripts ~project_name =
     Script.make ~name:"build" ~script:"dune build";
     Script.make ~name:"dune-watch"
       ~script:("dune build @" ^ project_name ^ " -w");
-    Script.make ~name:"esbuild-dev" ~script:"NODE_ENV=\\\"development\\\" node esbuild.mjs";
+    Script.make ~name:"esbuild-dev"
+      ~script:"NODE_ENV=\\\"development\\\" node esbuild.mjs";
   ]
 ;;
 
@@ -58,7 +59,7 @@ module Copy_esbuild_config_js :
   let exec (project_dir_name : input) =
     let dest = Node.Path.join [| project_dir_name; "/"; "esbuild.mjs" |] in
     Fs.copy_file ~dest esbuild_mjs_path
-    |> Promise_result.map_error (Fun.const error_message)
+    |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end
 
@@ -100,6 +101,6 @@ module Copy_index_html :
   let exec (project_dir_name : input) =
     let dest = Node.Path.join [| project_dir_name; "/"; "index.html" |] in
     Fs.copy_file ~dest esbuild_config_html_path
-    |> Promise_result.map_error (Fun.const error_message)
+    |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end
