@@ -24,15 +24,31 @@ Install JavaScr*pt assets
 bun install
 ```
 
-### Running the project
+### Configuring Editor
 
-There are two options. You can run
+Activate OCaml-LSP for project
 
 ``` shell
-bun build/src/cli.mjs
+opam install ocaml-lsp-server
 ```
 
-or you can link the project so it can be run as if installed globally
+Activate OCaml format (version must match the one specified in .ocamlformat at root of project)
+
+``` shell
+opam install ocamlformat.0.26.1
+```
+
+
+### Running the project
+
+There are two options. You can run the previously built CLI script directly.
+Important: you should not run script from inside CMA directory or else generated project config files will interfeer with CMA project.
+
+``` shell
+bun <path_starting_outside_cma_dir>/build/src/cli.mjs
+```
+
+Or you can link the project so it can be run as if installed globally
 
 ```shell
 bun link
@@ -44,7 +60,8 @@ After every `dune build` you'll need to change the file perms of the built entry
 chmod +x ./build/src/cli.mjs
 ```
 
-Then you can call CMA as if it's globally installed
+Then you can call CMA as if it's globally installed. 
+Note: make sure to run command outside of CMA project directory.
 
 ``` shell
 create-melange-app
