@@ -18,4 +18,12 @@ module Dune_project = struct
       Dependency.make "reason-react-ppx";
     ]
   ;;
+  
+  let mlx_dependencies =
+    [
+      Dependency.make "mlx";
+      Dependency.make "ocamlmerlin-mlx";
+      Dependency.make "ocamlformat-mlx";
+    ]
+  ;;
 end

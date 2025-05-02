@@ -368,6 +368,7 @@ module App_files = {
               state.dune_project
               |> Engine.extend_dune_project_with_app_settings(
                    ~is_react_app=state.configuration.is_react_app,
+                   ~syntax_preference=state.configuration.syntax_preference,
                    ~project_name=state.configuration.name,
                  );
             set_complete(_ => true);
@@ -1184,6 +1185,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
           Dune.Dune_project.template(
             ~project_name=configuration.name,
             ~project_directory=configuration.directory,
+            ~is_mlx={configuration.syntax_preference == `OCaml && configuration.is_react_app},
           ),
         root_dune_file:
           Dune.Dune_file.template(

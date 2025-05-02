@@ -1,4 +1,4 @@
-(lang dune 3.14)
+(lang dune 3.16)
 ; The above stanza specifies the Dune language version being used.
 
 
@@ -50,3 +50,15 @@
 ; Tags to categorize or label the package, useful for searches and indexing.
  (tags
   (reasonml, ocaml, melange)))
+
+{{#if is_mlx}}
+(dialect
+ (name mlx)
+ (implementation
+  (extension mlx)
+  (merlin_reader mlx)
+  (format
+   (run ocamlformat-mlx %{input-file}))
+  (preprocess
+   (run mlx-pp %{input-file}))))
+{{/if}}
