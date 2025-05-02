@@ -44,6 +44,7 @@ module Copy_index_html :
         "templates";
         "extensions";
         "webpack";
+        "public";
         "index.html";
       |]
   ;;
@@ -65,7 +66,7 @@ module Copy_index_html :
   ;;
 
   let exec (project_dir_name : input) =
-    let dest = Node.Path.join [| project_dir_name; "/"; "index.html" |] in
+    let dest = Node.Path.join [| project_dir_name; "/"; "public"; "/"; "index.html" |] in
     Fs.copy_file ~dest webpack_public_dir_path
     |> Promise_result.map_error (Fun.const error_message)
   ;;
