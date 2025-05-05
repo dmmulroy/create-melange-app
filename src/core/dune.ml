@@ -448,4 +448,24 @@ module Dune_file = struct
          |> Library.add_libraries libraries
          |> Library.add_ppxs ppxs)
   ;;
+
+  let test_library (configuration : Configuration.t) =
+    let libraries, ppxs =
+      match configuration.is_react_app with
+      | true ->
+          ( [
+              "melange-fest";
+              "melange-fest.dom";
+              "melange-testing-library.dom";
+              "melange-testing-library.react";
+            ],
+            [ "melange.ppx"; "reason-react-ppx" ] )
+      | false -> ([ "melange-fest" ], [ "melange.ppx" ])
+    in
+    empty
+    |> add_library
+         (Library.empty
+         |> Library.add_libraries libraries
+         |> Library.add_ppxs ppxs)
+  ;;
 end

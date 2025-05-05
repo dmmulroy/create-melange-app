@@ -83,14 +83,39 @@ let extend_dune_project_with_app_settings ~(is_react_app : bool)
   match (is_react_app, syntax_preference) with
   | false, _ -> dune_project_tmpl
   | true, `OCaml ->
-    dune_project_tmpl
-    |> Template.map
-    (Dune.Dune_project.add_dependencies
-    React.Dune_project.(dependencies @ mlx_dependencies))
+      dune_project_tmpl
+      |> Template.map
+           (Dune.Dune_project.add_dependencies
+              React.Dune_project.(dependencies @ mlx_dependencies))
   | true, _ ->
       dune_project_tmpl
       |> Template.map
-            (Dune.Dune_project.add_dependencies React.Dune_project.dependencies)
+           (Dune.Dune_project.add_dependencies React.Dune_project.dependencies)
+;;
+
+let copy_test_files ~syntax_preference ~is_react_app project_directory =
+  let open Test_files in
+  Copy.exec { project_directory; syntax_preference; is_react_app }
+;;
+
+let extend_package_json_with_tests ~(is_react_app : bool)
+    ~(project_name : string) (pkg_json_tmpl : Package_json.t Template.t) =
+  pkg_json_tmpl
+  |> Template.map (Package_json.add_scripts Fest.scripts)
+  |> Template.map
+       (Package_json.add_dependencies
+          (if is_react_app then Fest.react_dependencies else []))
+;;
+
+let extend_dune_project_with_tests ~(is_react_app : bool)
+    ~(project_name : string)
+    (dune_project_tmpl : Dune.Dune_project.t Template.t) =
+  dune_project_tmpl
+  |> Template.map
+       (Dune.Dune_project.add_dependencies Fest.Dune_project.dependencies)
+  |> Template.map
+       (Dune.Dune_project.add_dependencies
+          (if is_react_app then Fest.Dune_project.react_dependencies else []))
 ;;
 
 let compile = Template.compile

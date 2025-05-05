@@ -268,6 +268,39 @@ module OCaml_toolchain = {
   };
 };
 
+module Tests = {
+  let options: array(Ui.Select.select_option) = [|
+    Ui.Select.{
+      value: "yes",
+      label: "Yes",
+    },
+    Ui.Select.{
+      value: "no",
+      label: "No",
+    },
+  |];
+
+  [@react.component]
+  let make = (~onSubmit, ~isDisabled) => {
+    let onChange =
+      React.useCallback1(
+        (value: string) => {
+          switch (value) {
+          | "yes" => onSubmit(true)
+          | _ => onSubmit(false)
+          }
+        },
+        [|onSubmit|],
+      );
+    <Box flexDirection=`column>
+      <Text>
+        {React.string("Do you want to add tests with melange-fest?")}
+      </Text>
+      <Ui.Select options onChange isDisabled />
+    </Box>;
+  };
+};
+
 module Overwrite_preference = {
   open Ui;
 
@@ -315,6 +348,7 @@ type step =
   | Name
   | Syntax_preference
   | React_app
+  | Add_tests
   | Bundler
   | Git
   | Npm
@@ -327,6 +361,7 @@ let step_to_string =
   | Name => "Name"
   | Syntax_preference => "Syntax_preference"
   | React_app => "React_app"
+  | Add_tests => "Add tests"
   | Bundler => "Bundler"
   | Git => "Git"
   | Npm => "Npm"
@@ -338,7 +373,7 @@ let step_to_string =
 let make =
     (
       ~initial_configuration: Configuration.partial,
-      ~onComplete,
+      ~onComplete: Configuration.t => unit,
       ~should_prompt_git,
     ) => {
   let (active_step, set_active_step) =
@@ -356,6 +391,7 @@ let make =
     React.useState((): option(Configuration.syntax_preference) => None);
   let (is_react_app, set_is_react_app) =
     React.useState((): option(bool) => None);
+  let (has_tests, set_has_tests) = React.useState((): option(bool) => None);
   let (bundler, set_bundler) =
     React.useState((): option(Core.Bundler.t) => None);
   let (initialize_git, set_initialize_git) =
@@ -401,6 +437,16 @@ let make =
         if (active_step == React_app) {
           set_is_react_app(_ => Some(is_react_app));
 
+          set_active_step(_ => Add_tests);
+        },
+      [|active_step|],
+    );
+
+  let onSubnitHasTests =
+    React.useCallback1(
+      (should_add_tests: bool) =>
+        if (active_step == Add_tests) {
+          set_has_tests(_ => Some(should_add_tests));
           set_active_step(_ => Bundler);
         },
       [|active_step|],
@@ -487,6 +533,7 @@ let make =
             ~is_react_app={
               Option.value(~default=false, is_react_app);
             },
+            ~has_tests=Option.value(~default=false, has_tests),
             ~initialize_git={
               Option.value(~default=false, initialize_git);
             },
@@ -511,7 +558,8 @@ let make =
   let show_name_step = Option.is_none(initial_configuration.name);
   let show_syntax_preference_step = Option.is_some(name);
   let show_react_step = Option.is_some(syntax_preference);
-  let show_bundler_step = Option.is_some(is_react_app);
+  let show_add_tests_step = Option.is_some(is_react_app);
+  let show_bundler_step = Option.is_some(has_tests);
   let show_git_step = Option.is_some(bundler) && should_prompt_git;
   let show_npm_step =
     Option.is_some(initialize_git)
@@ -541,6 +589,9 @@ let make =
         onSubmit=onSubmitReact
         isDisabled={active_step != React_app}
       />
+    </Step>
+    <Step visible=show_add_tests_step>
+      <Tests onSubmit=onSubnitHasTests isDisabled={active_step != Add_tests} />
     </Step>
     <Step visible=show_bundler_step>
       <Bundler onSubmit=onSubmitBundler isDisabled={active_step != Bundler} />
