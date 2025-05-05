@@ -24,7 +24,6 @@ struct
   let test_re_path = Node.Path.join [| base_path; "app_re" |]
   let test_react_ml_path = Node.Path.join [| base_path; "react_re" |]
   let test_react_re_path = Node.Path.join [| base_path; "react_re" |]
-
   let test_dune_file_template_path = Node.Path.join [| base_path; "dune.tmpl" |]
 
   let error_message =
@@ -44,13 +43,17 @@ struct
   let exec (input : input) =
     let dest = Node.Path.join [| input.project_directory; "/"; "test" |] in
     let test_files_path =
-       (match (input.syntax_preference, input.is_react_app) with
-    | `OCaml, false -> test_ml_path
-    | `OCaml, true -> test_react_ml_path
-    | `ReasonML, false -> test_re_path
-    | `ReasonML, true -> test_react_re_path) in
+      match (input.syntax_preference, input.is_react_app) with
+      | `OCaml, false -> test_ml_path
+      | `OCaml, true -> test_react_ml_path
+      | `ReasonML, false -> test_re_path
+      | `ReasonML, true -> test_react_re_path
+    in
 
-    (fun _ -> Fs.copy_file ~dest:(Node.Path.join[|dest;"dune.tmpl"|]) test_dune_file_template_path)
+    (fun _ ->
+      Fs.copy_file
+        ~dest:(Node.Path.join [| dest; "dune.tmpl" |])
+        test_dune_file_template_path)
     |> Promise.bind (Fs.copy_file ~dest test_files_path)
     |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
