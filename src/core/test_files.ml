@@ -22,7 +22,7 @@ struct
 
   let test_ml_path = Node.Path.join [| base_path; "app_ml" |]
   let test_re_path = Node.Path.join [| base_path; "app_re" |]
-  let test_react_ml_path = Node.Path.join [| base_path; "react_re" |]
+  let test_react_ml_path = Node.Path.join [| base_path; "react_ml" |]
   let test_react_re_path = Node.Path.join [| base_path; "react_re" |]
   let test_dune_file_template_path = Node.Path.join [| base_path; "dune.tmpl" |]
 
