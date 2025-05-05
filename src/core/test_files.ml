@@ -24,7 +24,11 @@ struct
   let test_re_path = Node.Path.join [| base_path; "app_re" |]
   let test_react_ml_path = Node.Path.join [| base_path; "react_ml" |]
   let test_react_re_path = Node.Path.join [| base_path; "react_re" |]
-  let test_dune_file_template_path = Node.Path.join [| base_path; "dune.tmpl" |]
+  let dune_tmpl_file_name = "dune.tmpl"
+
+  let test_dune_file_template_path =
+    Node.Path.join [| base_path; dune_tmpl_file_name |]
+  ;;
 
   let error_message =
     {|
@@ -51,10 +55,13 @@ struct
     in
 
     (fun _ ->
+      (* copy dunefile template file into dest *)
       Fs.copy_file
-        ~dest:(Node.Path.join [| dest; "dune.tmpl" |])
+        ~dest:(Node.Path.join [| dest; dune_tmpl_file_name |])
         test_dune_file_template_path)
-    |> Promise.bind (Fs.copy_file ~dest test_files_path)
+    |> Promise_result.bind
+         ((* copy files contained in test_files_path into dest *)
+          Fs.copy_file ~dest test_files_path)
     |> Promise_result.log_and_map_error (Fun.const error_message)
   ;;
 end
