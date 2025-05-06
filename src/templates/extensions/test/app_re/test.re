@@ -1,14 +1,16 @@
 open Fest;
 
-let () = test("equal", () =>
-           expect |> equal(4 - 3, 1)
-         );
-let () = test("equal 2", () =>
-           expect |> equal("f" ++ "oo", "foo")
-         );
-let () = test("ok", () =>
-           expect |> ok(true || false)
-         );
+test("equal", () =>
+  expect |> equal(4 - 3, 1)
+);
+
+test("equal 2", () =>
+  expect |> equal("f" ++ "oo", "foo")
+);
+
+test("ok", () =>
+  expect |> ok(true || false)
+);
 
 module Deep_strict_equal = {
   type foo =
@@ -46,6 +48,6 @@ module Deep_strict_equal = {
          },
        );
 
-  let () = test("deep_equal", assertion(~f=deep_equal));
-  let () = test("deepEqual", assertion(~f=deepEqual));
+  test("deep_equal", assertion(~f=deep_equal));
+  test("deepEqual", assertion(~f=deepEqual));
 };
