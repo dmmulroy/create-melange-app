@@ -1,0 +1,19 @@
+open Fest
+
+module RTL = ReactTestingLibrary
+
+external textContent : Dom.element -> string = "textContent" [@@mel.get]
+
+let () = Domloader.init ()
+
+module Hello = struct
+  let[@react.component] make ~(text : string) =
+    <div> (React.string ("Hello " ^ text)) </div>
+end
+
+let () =
+  test "component" (fun () ->
+    let result = RTL.render (<Hello text="Nila" />) in
+    (* Check that Hello component renders the name properly. *)
+    let el = RTL.getByText ~matcher:(`Str "Hello Nila") result in
+    expect |> (equal (textContent el) "Hello Nila"))

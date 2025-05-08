@@ -1,0 +1,19 @@
+{{#each libraries}}
+(melange.emit
+ (target node)
+ (alias main)
+
+ (libraries {{#each this.libraries}}{{this}}{{#unless @last}} {{/unless}}{{#if @last}}){{/if}}{{/each}}
+ (preprocess
+  (pps {{#each this.ppxs}}{{this}}{{#unless @last}} {{/unless}}{{#if @last}}){{/if}}{{/each}})
+
+ (module_systems
+  (es6 mjs)) 
+  )
+(rule
+ (alias runtest)
+ (deps
+  (alias_rec main))
+ (action
+  (run npx node --test ./node/test/**/*.mjs)))
+{{/each}}

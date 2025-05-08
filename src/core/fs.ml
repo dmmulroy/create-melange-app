@@ -136,7 +136,7 @@ let copy_file ~dest file_path =
   Fs_extra.copy file_path dest
   |> Promise_result.of_js_promise
   |> Promise_result.catch Promise_result.resolve_error
-  |> Promise_result.map_error
+  |> Promise_result.log_and_map_error
        (Fun.const
           (Printf.sprintf {js|Failed to copy file %s to %s|js} file_path dest))
 ;;

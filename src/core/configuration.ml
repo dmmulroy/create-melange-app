@@ -29,13 +29,14 @@ type t = {
   syntax_preference : syntax_preference;
   bundler : Bundler.t;
   is_react_app : bool;
+  has_tests : bool;
   initialize_git : bool;
   initialize_npm : bool;
   initialize_ocaml_toolchain : bool;
   overwrite : overwrite_preference option;
 }
 
-let make ~name ~directory ~syntax_preference ~bundler ~is_react_app
+let make ~name ~directory ~syntax_preference ~bundler ~is_react_app ~has_tests
     ~initialize_git ~initialize_npm ~initialize_ocaml_toolchain ~overwrite =
   {
     name;
@@ -44,6 +45,7 @@ let make ~name ~directory ~syntax_preference ~bundler ~is_react_app
     syntax_preference;
     bundler;
     is_react_app;
+    has_tests;
     initialize_git;
     initialize_npm;
     initialize_ocaml_toolchain;
@@ -106,19 +108,21 @@ type partial = {
   syntax_preference : syntax_preference option;
   bundler : Bundler.t option;
   is_react_app : bool option;
+  has_tests : bool option;
   initialize_git : bool option;
   initialize_npm : bool option;
   initialize_ocaml_toolchain : bool option;
 }
 
 let make_partial ?name ?directory ?syntax_preference ?bundler ?is_react_app
-    ?initialize_git ?initialize_npm ?initialize_ocaml_toolchain () =
+    ?has_tests ?initialize_git ?initialize_npm ?initialize_ocaml_toolchain () =
   {
     name;
     directory;
     syntax_preference;
     bundler;
     is_react_app;
+    has_tests;
     initialize_git;
     initialize_npm;
     initialize_ocaml_toolchain;

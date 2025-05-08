@@ -19,16 +19,21 @@ type step =
   | App_copy_files
   | App_extend_package_json
   | App_extend_dune_project
-  // Section 4 - Compile templates
+  // Section 4 - Initialize test files
+  | Tests_copy_files
+  | Tests_extend_package_json
+  | Tests_extend_dune_project
+  // Section 5 - Compile templates
   | Compile_package_json
   | Compile_dune_project
   | Compile_root_dune_file
   | Compile_app_dune_file
+  | Compile_test_dune_file
   | Compile_app_module
   | Compile_readme
-  // Section 5 - Optional - Initialize node package manager
+  // Section 6 - Optional - Initialize node package manager
   | Node_pkg_manager_install
-  // Section 6 - optional - Initialize ocaml
+  // Section 7 - optional - Initialize ocaml toolchain
   | Opam_update
   | Opam_create_switch
   | Opam_install_dune
@@ -36,7 +41,7 @@ type step =
   | Opam_install_dev_deps
   | Opam_install_deps
   | Dune_build
-  // Section 7 optional - Initialize git
+  // Section 8 - optional - Initialize git
   | Git_copy_ignore_file
   | Git_init_and_stage
   | Finished;
@@ -50,10 +55,14 @@ let step_to_string = step =>
   | App_copy_files => "App_copy_files"
   | App_extend_package_json => "App_extend_package_json"
   | App_extend_dune_project => "App_extend_dune_project"
+  | Tests_copy_files => "Tests_copy_files"
+  | Tests_extend_package_json => "Tests_extend_package_json"
+  | Tests_extend_dune_project => "Tests_extend_dune_project"
   | Compile_package_json => "Compile_package_json"
   | Compile_dune_project => "Compile_dune_project"
   | Compile_root_dune_file => "Compile_root_dune_file"
   | Compile_app_dune_file => "Compile_app_dune_file"
+  | Compile_test_dune_file => "Compile_test_dune_file"
   | Compile_app_module => "Compile_app_module"
   | Compile_readme => "Compile_readme"
   | Node_pkg_manager_install => "Node_pkg_manager_install"
@@ -78,23 +87,27 @@ let step_to_int = step =>
   | App_copy_files => 4
   | App_extend_package_json => 5
   | App_extend_dune_project => 6
-  | Compile_package_json => 7
-  | Compile_dune_project => 8
-  | Compile_root_dune_file => 9
-  | Compile_app_dune_file => 10
-  | Compile_app_module => 11
-  | Compile_readme => 12
-  | Node_pkg_manager_install => 13
-  | Opam_update => 14
-  | Opam_create_switch => 15
-  | Opam_install_dune => 16
-  | Dune_install => 17
-  | Opam_install_dev_deps => 18
-  | Opam_install_deps => 19
-  | Dune_build => 20
-  | Git_copy_ignore_file => 21
-  | Git_init_and_stage => 22
-  | Finished => 23
+  | Tests_copy_files => 7
+  | Tests_extend_package_json => 8
+  | Tests_extend_dune_project => 9
+  | Compile_package_json => 10
+  | Compile_dune_project => 11
+  | Compile_root_dune_file => 12
+  | Compile_app_dune_file => 13
+  | Compile_test_dune_file => 14
+  | Compile_app_module => 15
+  | Compile_readme => 16
+  | Node_pkg_manager_install => 17
+  | Opam_update => 18
+  | Opam_create_switch => 19
+  | Opam_install_dune => 20
+  | Dune_install => 21
+  | Opam_install_dev_deps => 22
+  | Opam_install_deps => 23
+  | Dune_build => 24
+  | Git_copy_ignore_file => 25
+  | Git_init_and_stage => 26
+  | Finished => 27
   };
 
 type state = {
@@ -103,6 +116,7 @@ type state = {
   dune_project: Template.t(Dune.Dune_project.t),
   root_dune_file: Template.t(Dune.Dune_file.t),
   app_dune_file: Template.t(Dune.Dune_file.t),
+  test_dune_file: Template.t(Dune.Dune_file.t),
   app_module: Template.t(App_module.t),
   readme: Template.t(Readme.t),
   step,
@@ -402,6 +416,114 @@ module App_files = {
   };
 };
 
+module Test_files = {
+  module Copy_files = {
+    // open Ui;
+    [@react.component]
+    let make = (~state, ~onComplete, ~onError) => {
+      let handleOnComplete = () => {
+        onComplete();
+      };
+      let is_active = state.step == Tests_copy_files;
+      React.useEffect1(
+        () => {
+          if (is_active) {
+            state.configuration.directory
+            |> Engine.copy_test_files(
+                 ~syntax_preference=state.configuration.syntax_preference,
+                 ~is_react_app=state.configuration.is_react_app,
+               )
+            |> Promise_result.perform(result =>
+                 switch (result) {
+                 | Ok(res) => handleOnComplete(res)
+                 | Error(err) => onError(err)
+                 }
+               );
+          };
+          None;
+        },
+        [|is_active|],
+      );
+      React.null;
+    };
+  };
+
+  module Extend_package_json = {
+    [@react.component]
+    let make = (~state, ~onComplete, ~onError as _) => {
+      let is_active = state.step == Tests_extend_package_json;
+
+      React.useEffect1(
+        () => {
+          if (is_active) {
+            let updated_pkg_json =
+              state.pkg_json
+              |> Engine.extend_package_json_with_tests(
+                   ~is_react_app=state.configuration.is_react_app,
+                   ~project_name=state.configuration.name,
+                 );
+            onComplete({
+              ...state,
+              pkg_json: updated_pkg_json,
+            });
+          };
+
+          None;
+        },
+        [|is_active|],
+      );
+
+      React.null;
+    };
+  };
+
+  module Extend_dune_project = {
+    [@react.component]
+    let make = (~state, ~onComplete, ~onError as _) => {
+      let (complete, set_complete) = React.useState(() => false);
+      let is_active = state.step == Tests_extend_dune_project;
+      let is_visible =
+        step_to_int(state.step) >= step_to_int(Tests_extend_dune_project);
+
+      React.useEffect1(
+        () => {
+          if (is_active) {
+            let updated_dune_project =
+              state.dune_project
+              |> Engine.extend_dune_project_with_tests(
+                   ~is_react_app=state.configuration.is_react_app,
+                   ~project_name=state.configuration.name,
+                 );
+            set_complete(_ => true);
+            onComplete({
+              ...state,
+              dune_project: updated_dune_project,
+            });
+          };
+          None;
+        },
+        [|is_active|],
+      );
+
+      if (!is_visible) {
+        React.null;
+      } else {
+        <Box flexDirection=`column gap=1>
+          {complete
+             ? <Box flexDirection=`row gap=1>
+                 <Text color="green">
+                   {React.string(
+                      {j|✔ Successfully initialized test files|j},
+                    )}
+                 </Text>
+               </Box>
+             : <Spinner label="Initializing test files..." />}
+        </Box>;
+      };
+    };
+  };
+};
+
 module Compile = {
   module Compile_package_json = {
     [@react.component]
@@ -563,6 +685,52 @@ module Compile = {
                    onComplete({
                      ...state,
                      app_dune_file: res,
+                   });
+                 | Error(err) => onError(err)
+                 }
+               );
+            ();
+          };
+
+          None;
+        },
+        [|is_active|],
+      );
+
+      if (!is_visible) {
+        React.null;
+      } else {
+        complete
+          ? React.null
+          : <Box flexDirection=`column gap=1>
+              <Spinner label="Compiling templates..." />
+            </Box>;
+      };
+    };
+  };
+
+  module Compile_test_dune_file = {
+    [@react.component]
+    let make = (~state, ~onComplete, ~onError) => {
+      let (complete, set_complete) = React.useState(() => false);
+
+      let is_active = state.step == Compile_test_dune_file;
+
+      let is_visible =
+        step_to_int(state.step) >= step_to_int(Compile_test_dune_file);
+
+      React.useEffect1(
+        () => {
+          if (is_active) {
+            state.test_dune_file
+            |> Engine.compile
+            |> Promise_result.perform(result =>
+                 switch (result) {
+                 | Ok(res) =>
+                   set_complete(_ => true);
+                   onComplete({
+                     ...state,
+                     test_dune_file: res,
                    });
                  | Error(err) => onError(err)
                  }
@@ -1185,7 +1353,10 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
           Dune.Dune_project.template(
             ~project_name=configuration.name,
             ~project_directory=configuration.directory,
-            ~is_mlx={configuration.syntax_preference == `OCaml && configuration.is_react_app},
+            ~is_mlx={
+              configuration.syntax_preference == `OCaml
+              && configuration.is_react_app;
+            },
           ),
         root_dune_file:
           Dune.Dune_file.template(
@@ -1198,6 +1369,12 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
             ~project_directory=configuration.directory,
             ~template_directory="./src",
             Dune.Dune_file.app_library(configuration),
+          ),
+        test_dune_file:
+          Dune.Dune_file.template(
+            ~project_directory=configuration.directory,
+            ~template_directory="./test",
+            Dune.Dune_file.test_library(configuration),
           ),
         app_module: App_module.template(configuration),
         readme: Readme.template(configuration),
@@ -1304,12 +1481,54 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
         set_state(_ =>
           {
             ...updated_state,
-            step: Compile_package_json,
+            step:
+              configuration.has_tests
+                ? Tests_copy_files : Compile_package_json,
           }
         )
       }}
       onError
     />
+    {state.configuration.has_tests
+       ? <>
+           <Test_files.Copy_files
+             state
+             onComplete={() => {
+               set_state(_ =>
+                 {
+                   ...state,
+                   step: Tests_extend_package_json,
+                 }
+               )
+             }}
+             onError
+           />
+           <Test_files.Extend_package_json
+             state
+             onComplete={updated_state => {
+               set_state(_ =>
+                 {
+                   ...updated_state,
+                   step: Tests_extend_dune_project,
+                 }
+               )
+             }}
+             onError
+           />
+           <Test_files.Extend_dune_project
+             state
+             onComplete={updated_state => {
+               set_state(_ =>
+                 {
+                   ...updated_state,
+                   step: Compile_package_json,
+                 }
+               )
+             }}
+             onError
+           />
+         </>
+       : React.null}
     <Compile.Compile_package_json
       state
       onComplete={updated_state => {
@@ -1351,7 +1570,9 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     <Compile.Compile_app_dune_file
       state
       onComplete={updated_state => {
-        let next_step = Compile_app_module;
+        let next_step =
+          configuration.has_tests
+            ? Compile_test_dune_file : Compile_app_module;
         set_state(_ => {
           {
             ...updated_state,
@@ -1361,6 +1582,23 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       }}
       onError
     />
+    {state.configuration.has_tests
+       ? <>
+           <Compile.Compile_test_dune_file
+             state
+             onComplete={updated_state => {
+               let next_step = Compile_app_module;
+               set_state(_ => {
+                 {
+                   ...updated_state,
+                   step: next_step,
+                 }
+               });
+             }}
+             onError
+           />
+         </>
+       : React.null}
     <Compile.Compile_app_module
       state
       onComplete={updated_state => {
