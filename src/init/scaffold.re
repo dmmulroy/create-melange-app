@@ -183,7 +183,7 @@ let useStep =
 
 module Create_dir = {
   [@react.component]
-  let make = (~state, ~onComplete, ~onError) => {
+  let make = (~state, ~onComplete, ~onError) =>
     useStep(
       ~state,
       ~activeStep=Create_dir,
@@ -199,7 +199,6 @@ module Create_dir = {
       ~onError,
       (),
     );
-  };
 };
 
 module Copy_base_templates = {
@@ -224,7 +223,7 @@ module Copy_base_templates = {
 module Bundler = {
   module Copy_files = {
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
+    let make = (~state, ~onComplete, ~onError) =>
       useStep(
         ~state,
         ~activeStep=Bundler_copy_files,
@@ -241,7 +240,6 @@ module Bundler = {
         ~onError,
         (),
       );
-    };
   };
 
   module Extend_package_json = {
@@ -283,7 +281,7 @@ module App_files = {
   module Copy_files = {
     // open Ui;
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
+    let make = (~state, ~onComplete, ~onError) =>
       useStep(
         ~state,
         ~activeStep=App_copy_files,
@@ -300,12 +298,11 @@ module App_files = {
           ),
         (),
       );
-    };
   };
 
   module Extend_package_json = {
     [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) => {
+    let make = (~state, ~onComplete, ~onError as _) =>
       useStep(
         ~state,
         ~activeStep=App_extend_package_json,
@@ -327,12 +324,11 @@ module App_files = {
         ~onComplete,
         (),
       );
-    };
   };
 
   module Extend_dune_project = {
     [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) => {
+    let make = (~state, ~onComplete, ~onError as _) =>
       useStep(
         ~state,
         ~activeStep=App_extend_dune_project,
@@ -357,14 +353,13 @@ module App_files = {
           ),
         (),
       );
-    };
   };
 };
 
 module Test_files = {
   module Copy_files = {
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
+    let make = (~state, ~onComplete, ~onError) =>
       useStep(
         ~state,
         ~activeStep=Tests_copy_files,
@@ -381,7 +376,6 @@ module Test_files = {
         ~onError,
         (),
       );
-    };
   };
 
   module Extend_package_json = {
