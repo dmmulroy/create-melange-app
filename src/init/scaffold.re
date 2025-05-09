@@ -279,7 +279,6 @@ module Bundler = {
 
 module App_files = {
   module Copy_files = {
-    // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) =>
       useStep(
