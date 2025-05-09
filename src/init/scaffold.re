@@ -627,8 +627,7 @@ module Git = {
       let is_active =
         state.step == Git_init_and_stage && state.configuration.initialize_git;
       let is_visible =
-        state.configuration.initialize_git
-        && step_to_int(state.step) >= step_to_int(Git_init_and_stage);
+        step_to_int(state.step) >= step_to_int(Git_init_and_stage);
 
       React.useEffect1(
         () => {
@@ -674,13 +673,9 @@ module Opam = {
     let make = (~state, ~onComplete, ~onError) => {
       let (complete, set_complete) = React.useState(() => false);
 
-      let is_active =
-        state.step == Opam_update
-        && state.configuration.initialize_ocaml_toolchain;
+      let is_active = state.step == Opam_update;
 
-      let is_visible =
-        state.configuration.initialize_ocaml_toolchain
-        && step_to_int(state.step) >= step_to_int(Opam_update);
+      let is_visible = step_to_int(state.step) >= step_to_int(Opam_update);
 
       React.useEffect1(
         () => {
@@ -722,13 +717,10 @@ module Opam = {
     let make = (~state, ~onComplete, ~onError) => {
       let (complete, set_complete) = React.useState(() => false);
 
-      let is_active =
-        state.step == Opam_install_dune
-        && state.configuration.initialize_ocaml_toolchain;
+      let is_active = state.step == Opam_install_dune;
 
       let is_visible =
-        state.configuration.initialize_ocaml_toolchain
-        && step_to_int(state.step) >= step_to_int(Opam_install_dune);
+        step_to_int(state.step) >= step_to_int(Opam_install_dune);
 
       React.useEffect1(
         () => {
@@ -771,13 +763,10 @@ module Opam = {
     let make = (~state, ~onComplete, ~onError) => {
       let (complete, set_complete) = React.useState(() => false);
 
-      let is_active =
-        state.step == Opam_create_switch
-        && state.configuration.initialize_ocaml_toolchain;
+      let is_active = state.step == Opam_create_switch;
 
       let is_visible =
-        state.configuration.initialize_ocaml_toolchain
-        && step_to_int(state.step) >= step_to_int(Opam_create_switch);
+        step_to_int(state.step) >= step_to_int(Opam_create_switch);
 
       React.useEffect1(
         () => {
@@ -820,12 +809,9 @@ module Opam = {
     let make = (~state, ~onComplete, ~onError) => {
       let (complete, set_complete) = React.useState(() => false);
 
-      let is_active =
-        state.step == Opam_install_dev_deps
-        && state.configuration.initialize_ocaml_toolchain;
+      let is_active = state.step == Opam_install_dev_deps;
       let is_visible =
-        state.configuration.initialize_ocaml_toolchain
-        && step_to_int(state.step) >= step_to_int(Opam_install_dev_deps);
+        step_to_int(state.step) >= step_to_int(Opam_install_dev_deps);
 
       React.useEffect1(
         () => {
@@ -868,12 +854,9 @@ module Opam = {
     let make = (~state, ~onComplete, ~onError) => {
       let (complete, set_complete) = React.useState(() => false);
 
-      let is_active =
-        state.step == Opam_install_deps
-        && state.configuration.initialize_ocaml_toolchain;
+      let is_active = state.step == Opam_install_deps;
       let is_visible =
-        state.configuration.initialize_ocaml_toolchain
-        && step_to_int(state.step) >= step_to_int(Opam_install_deps);
+        step_to_int(state.step) >= step_to_int(Opam_install_deps);
 
       React.useEffect1(
         () => {
@@ -917,12 +900,8 @@ module Dune_install = {
   let make = (~state, ~onComplete, ~onError) => {
     let (complete, set_complete) = React.useState(() => false);
 
-    let is_active =
-      state.step == Dune_install
-      && state.configuration.initialize_ocaml_toolchain;
-    let is_visible =
-      state.configuration.initialize_ocaml_toolchain
-      && step_to_int(state.step) >= step_to_int(Dune_install);
+    let is_active = state.step == Dune_install;
+    let is_visible = step_to_int(state.step) >= step_to_int(Dune_install);
 
     React.useEffect1(
       () => {
@@ -964,13 +943,9 @@ module Dune_build = {
   let make = (~state, ~onComplete, ~onError) => {
     let (copy_complete, set_copy_complete) = React.useState(() => false);
 
-    let is_active =
-      state.step == Dune_build
-      && state.configuration.initialize_ocaml_toolchain;
+    let is_active = state.step == Dune_build;
 
-    let is_visible =
-      state.configuration.initialize_ocaml_toolchain
-      && step_to_int(state.step) >= step_to_int(Dune_build);
+    let is_visible = state.configuration.initialize_ocaml_toolchain;
 
     React.useEffect1(
       () => {
