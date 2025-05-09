@@ -459,46 +459,21 @@ module Compile = {
   module Compile_dune_project = {
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_dune_project;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_dune_project);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.dune_project
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     dune_project: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+      useStep(
+        ~state,
+        ~action=Async(() => state.dune_project |> Engine.compile),
+        ~loadingLabel="Compiling templates...",
+        ~activeStep=Compile_dune_project,
+        ~onError,
+        ~onComplete=
+          updated_dune_project => {
+            onComplete({
+              ...state,
+              dune_project: updated_dune_project,
+            })
+          },
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner label="Compiling templates..." />
-            </Box>;
-      };
     };
   };
 
