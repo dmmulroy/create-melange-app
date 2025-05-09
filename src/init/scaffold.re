@@ -132,8 +132,8 @@ let useStep =
       ~state,
       ~activeStep: step,
       ~action,
-      ~onSuccess,
-      ~onError,
+      ~onComplete,
+      ~onError=_ => (),
       ~loadingLabel="",
       ~successLabel="",
       (),
@@ -150,14 +150,14 @@ let useStep =
           let result = fn();
           // TODO: Handle errors
           set_complete(_ => true);
-          onSuccess(result);
+          onComplete(result);
         | Async(fn) =>
           fn()
           |> Promise_result.perform(result =>
                switch (result) {
                | Ok(res) =>
                  set_complete(_ => true);
-                 onSuccess(res);
+                 onComplete(res);
                | Error(err) => onError(err)
                }
              )
@@ -195,7 +195,7 @@ module Create_dir = {
                  ~overwrite=?state.configuration.overwrite,
                ),
         ),
-      ~onSuccess=onComplete,
+      ~onComplete,
       ~onError,
       (),
     );
@@ -212,7 +212,7 @@ module Copy_base_templates = {
         Async(
           () => state.configuration.directory |> Engine.copy_base_project,
         ),
-      ~onSuccess=onComplete,
+      ~onComplete,
       ~onError,
       ~loadingLabel="Creating base project...",
       ~successLabel={j|✔ Successfully created base project!|j},
@@ -237,7 +237,7 @@ module Bundler = {
                    ~is_react_app=state.configuration.is_react_app,
                  ),
           ),
-        ~onSuccess=onComplete,
+        ~onComplete,
         ~onError,
         (),
       );
@@ -269,8 +269,7 @@ module Bundler = {
               };
             },
           ),
-        ~onSuccess=onComplete,
-        ~onError=_ => (),
+        ~onComplete,
         ~loadingLabel="Initializing bundler: " ++ bundler_name ++ "...",
         ~successLabel=
           {j|✔ Successfully initialized bundler: |j} ++ bundler_name,
@@ -288,7 +287,7 @@ module App_files = {
       useStep(
         ~state,
         ~activeStep=App_copy_files,
-        ~onSuccess=onComplete,
+        ~onComplete,
         ~onError,
         ~action=
           Async(
@@ -307,32 +306,27 @@ module App_files = {
   module Extend_package_json = {
     [@react.component]
     let make = (~state, ~onComplete, ~onError as _) => {
-      // let (complete, set_complete) = React.useState(() => false);
+      useStep(
+        ~state,
+        ~activeStep=App_extend_package_json,
+        ~action=
+          Sync(
+            () => {
+              let updated_pkg_json =
+                state.pkg_json
+                |> Engine.extend_package_json_with_app_settings(
+                     ~is_react_app=state.configuration.is_react_app,
+                   );
 
-      let is_active = state.step == App_extend_package_json;
-      /* let is_visible =
-         step_to_int(state.step) >= step_to_int(App_extend_package_json); */
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            let updated_pkg_json =
-              state.pkg_json
-              |> Engine.extend_package_json_with_app_settings(
-                   ~is_react_app=state.configuration.is_react_app,
-                 );
-            onComplete({
-              ...state,
-              pkg_json: updated_pkg_json,
-            });
-          };
-
-          None;
-        },
-        [|is_active|],
+              {
+                ...state,
+                pkg_json: updated_pkg_json,
+              };
+            },
+          ),
+        ~onComplete,
+        (),
       );
-
-      React.null;
     };
   };
 
@@ -388,7 +382,6 @@ module App_files = {
 
 module Test_files = {
   module Copy_files = {
-    // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
       useStep(
@@ -403,7 +396,7 @@ module Test_files = {
                    ~is_react_app=state.configuration.is_react_app,
                  ),
           ),
-        ~onSuccess=onComplete,
+        ~onComplete,
         ~onError,
         (),
       );
