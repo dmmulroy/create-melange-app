@@ -670,321 +670,126 @@ module Git = {
 module Opam = {
   module Update = {
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Opam_update;
-
-      let is_visible = step_to_int(state.step) >= step_to_int(Opam_update);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.opam_update
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) =>
-                   set_complete(_ => true);
-                   onComplete();
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError) =>
+      useStep(
+        ~state,
+        ~activeStep=Opam_update,
+        ~action=
+          Async(() => state.configuration.directory |> Engine.opam_update),
+        ~onComplete=_ => onComplete(),
+        ~onError,
+        ~loadingLabel=
+          "Initializing OCaml toolchain, this may take a few minutes...",
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner
-                label="Initializing OCaml toolchain, this may take a few minutes..."
-              />
-            </Box>;
-      };
-    };
   };
 
   module Install_dune = {
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Opam_install_dune;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Opam_install_dune);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.opam_install_dune
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) =>
-                   set_complete(_ => true);
-                   onComplete();
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError) =>
+      useStep(
+        ~state,
+        ~activeStep=Opam_install_dune,
+        ~action=
+          Async(
+            () => state.configuration.directory |> Engine.opam_install_dune,
+          ),
+        ~onComplete=_ => onComplete(),
+        ~onError,
+        ~loadingLabel=
+          "Initializing OCaml toolchain, this may take a few minutes...",
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner
-                label="Initializing OCaml toolchain, this may take a few minutes..."
-              />
-            </Box>;
-      };
-    };
   };
 
   module Create_switch = {
-    open Ui;
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Opam_create_switch;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Opam_create_switch);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.opam_create_switch
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) =>
-                   set_complete(_ => true);
-                   onComplete();
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError) =>
+      useStep(
+        ~state,
+        ~activeStep=Opam_create_switch,
+        ~action=
+          Async(
+            () => state.configuration.directory |> Engine.opam_create_switch,
+          ),
+        ~onComplete=_ => onComplete(),
+        ~onError,
+        ~loadingLabel=
+          "Initializing OCaml toolchain, this may take a few minutes...",
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner
-                label="Initializing OCaml toolchain, this may take a few minutes..."
-              />
-            </Box>;
-      };
-    };
   };
 
   module Install_dev_deps = {
-    open Ui;
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Opam_install_dev_deps;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Opam_install_dev_deps);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.opam_install_dev_dependencies
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) =>
-                   set_complete(_ => true);
-                   onComplete();
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError) =>
+      useStep(
+        ~state,
+        ~activeStep=Opam_install_dev_deps,
+        ~action=
+          Async(
+            () =>
+              state.configuration.directory
+              |> Engine.opam_install_dev_dependencies,
+          ),
+        ~onComplete=_ => onComplete(),
+        ~onError,
+        ~loadingLabel=
+          "Initializing OCaml toolchain, this may take a few minutes...",
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner
-                label="Initializing OCaml toolchain, this may take a few minutes..."
-              />
-            </Box>;
-      };
-    };
   };
 
   module Install_deps = {
-    open Ui;
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Opam_install_deps;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Opam_install_deps);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.opam_install_dependencies
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) =>
-                   set_complete(_ => true);
-                   onComplete();
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError) =>
+      useStep(
+        ~state,
+        ~activeStep=Opam_install_deps,
+        ~action=
+          Async(
+            () =>
+              state.configuration.directory |> Engine.opam_install_dependencies,
+          ),
+        ~onComplete=_ => onComplete(),
+        ~onError,
+        ~loadingLabel=
+          "Initializing OCaml toolchain, this may take a few minutes...",
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner
-                label="Initializing OCaml toolchain, this may take a few minutes..."
-              />
-            </Box>;
-      };
-    };
   };
 };
 
 module Dune_install = {
-  open Ui;
   [@react.component]
-  let make = (~state, ~onComplete, ~onError) => {
-    let (complete, set_complete) = React.useState(() => false);
-
-    let is_active = state.step == Dune_install;
-    let is_visible = step_to_int(state.step) >= step_to_int(Dune_install);
-
-    React.useEffect1(
-      () => {
-        if (is_active) {
-          state.configuration.directory
-          |> Engine.dune_install
-          |> Promise_result.perform(result =>
-               switch (result) {
-               | Ok(_) =>
-                 set_complete(_ => true);
-                 onComplete();
-               | Error(err) => onError(err)
-               }
-             );
-        };
-
-        None;
-      },
-      [|is_active|],
+  let make = (~state, ~onComplete, ~onError) =>
+    useStep(
+      ~state,
+      ~activeStep=Dune_install,
+      ~action=
+        Async(() => state.configuration.directory |> Engine.dune_install),
+      ~onComplete=_ => onComplete(),
+      ~onError,
+      ~loadingLabel=
+        "Initializing OCaml toolchain, this may take a few minutes...",
+      (),
     );
-
-    if (!is_visible) {
-      React.null;
-    } else {
-      complete
-        ? React.null
-        : <Box flexDirection=`column gap=1>
-            <Spinner
-              label="Initializing OCaml toolchain, this may take a few minutes..."
-            />
-          </Box>;
-    };
-  };
 };
 
 module Dune_build = {
-  open Ui;
   [@react.component]
-  let make = (~state, ~onComplete, ~onError) => {
-    let (copy_complete, set_copy_complete) = React.useState(() => false);
-
-    let is_active = state.step == Dune_build;
-
-    let is_visible = state.configuration.initialize_ocaml_toolchain;
-
-    React.useEffect1(
-      () => {
-        if (is_active) {
-          state.configuration.directory
-          |> Engine.dune_build
-          |> Promise_result.perform(result =>
-               switch (result) {
-               | Ok(_) =>
-                 set_copy_complete(_ => true);
-                 onComplete();
-               | Error(err) => onError(err)
-               }
-             );
-        };
-
-        None;
-      },
-      [|is_active|],
+  let make = (~state, ~onComplete, ~onError) =>
+    useStep(
+      ~state,
+      ~activeStep=Dune_build,
+      ~action=Async(() => state.configuration.directory |> Engine.dune_build),
+      ~onComplete=_ => onComplete(),
+      ~onError,
+      ~loadingLabel=
+        "Initializing OCaml toolchain, this may take a few minutes...",
+      ~successLabel={j|✔ Successfully intialized the OCaml toolchain!|j},
+      (),
     );
-
-    if (!is_visible) {
-      React.null;
-    } else {
-      <Box flexDirection=`column gap=1>
-        {copy_complete
-           ? <Box flexDirection=`row gap=1>
-               <Text color="green">
-                 {React.string(
-                    {j|✔ Successfully intialized the OCaml toolchain!|j},
-                  )}
-               </Text>
-             </Box>
-           : <Spinner
-               label="Initializing OCaml toolchain, this may take a few minutes..."
-             />}
-      </Box>;
-    };
-  };
 };
 
 [@react.component]
