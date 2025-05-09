@@ -905,12 +905,9 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     />
     <App_files.Extend_dune_project
       state
-      onComplete={updated_state =>
-        goToNextStepWithNewState(
-          configuration.has_tests ? Tests_copy_files : Compile_package_json,
-          updated_state,
-        )
-      }
+      onComplete={goToNextStepWithNewState(
+        configuration.has_tests ? Tests_copy_files : Compile_package_json,
+      )}
       onError
     />
     {state.configuration.has_tests
