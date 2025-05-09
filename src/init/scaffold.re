@@ -895,14 +895,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     />
     <App_files.Copy_files
       state
-      onComplete={() => {
-        set_state(_ =>
-          {
-            ...state,
-            step: App_extend_package_json,
-          }
-        )
-      }}
+      onComplete={goToNextStep(App_extend_package_json)}
       onError
     />
     <App_files.Extend_package_json
