@@ -285,34 +285,43 @@ module App_files = {
     // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      let handleOnComplete = () => {
-        onComplete();
-      };
-
-      let is_active = state.step == App_copy_files;
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.copy_app_files(
-                 ~syntax_preference=state.configuration.syntax_preference,
-                 ~is_react_app=state.configuration.is_react_app,
-               )
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) => handleOnComplete(res)
-                 | Error(err) => onError(err)
-                 }
-               );
-          };
-
-          None;
-        },
-        [|is_active|],
+      useStep(
+        ~state,
+        ~activeStep=App_copy_files,
+        ~onSuccess=_ => onComplete(),
+        ~onError,
+        ~action=
+          Async(
+            () =>
+              state.configuration.directory
+              |> Engine.copy_app_files(
+                   ~syntax_preference=state.configuration.syntax_preference,
+                   ~is_react_app=state.configuration.is_react_app,
+                 ),
+          ),
+        // let is_active = state.step == App_copy_files;
+        // React.useEffect1(
+        //   () => {
+        //     if (is_active) {
+        //       state.configuration.directory
+        //       |> Engine.copy_app_files(
+        //            ~syntax_preference=state.configuration.syntax_preference,
+        //            ~is_react_app=state.configuration.is_react_app,
+        //          )
+        //       |> Promise_result.perform(result =>
+        //            switch (result) {
+        //            | Ok(res) => handleOnComplete(res)
+        //            | Error(err) => onError(err)
+        //            }
+        //          );
+        //     };
+        //     None;
+        //   },
+        //   [|is_active|],
+        // );
+        // React.null;
+        (),
       );
-
-      React.null;
     };
   };
 
