@@ -603,33 +603,19 @@ module Node_pkg_manager_install = {
 
 module Git = {
   module Copy_ignore_file = {
-    // open Ui;
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let is_active =
-        state.step == Git_copy_ignore_file
-        && state.configuration.initialize_git;
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.copy_git_ignore
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) => onComplete()
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError) =>
+      useStep(
+        ~state,
+        ~activeStep=Git_copy_ignore_file,
+        ~action=
+          Async(
+            () => state.configuration.directory |> Engine.copy_git_ignore,
+          ),
+        ~onComplete=_ => onComplete(),
+        ~onError,
+        (),
       );
-      React.null;
-    };
   };
 
   module Init_and_stage = {
