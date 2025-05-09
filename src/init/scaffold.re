@@ -333,49 +333,30 @@ module App_files = {
   module Extend_dune_project = {
     [@react.component]
     let make = (~state, ~onComplete, ~onError as _) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == App_extend_dune_project;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(App_extend_dune_project);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            let updated_dune_project =
-              state.dune_project
-              |> Engine.extend_dune_project_with_app_settings(
-                   ~is_react_app=state.configuration.is_react_app,
-                   ~syntax_preference=state.configuration.syntax_preference,
-                   ~project_name=state.configuration.name,
-                 );
-            set_complete(_ => true);
-            onComplete({
-              ...state,
-              dune_project: updated_dune_project,
-            });
-          };
-
-          None;
-        },
-        [|is_active|],
+      useStep(
+        ~state,
+        ~activeStep=App_extend_dune_project,
+        ~onComplete,
+        ~loadingLabel="Initializing application files...",
+        ~successLabel={j|✔ Successfully initialized application files|j},
+        ~action=
+          Sync(
+            () => {
+              let updated_dune_project =
+                state.dune_project
+                |> Engine.extend_dune_project_with_app_settings(
+                     ~is_react_app=state.configuration.is_react_app,
+                     ~syntax_preference=state.configuration.syntax_preference,
+                     ~project_name=state.configuration.name,
+                   );
+              {
+                ...state,
+                dune_project: updated_dune_project,
+              };
+            },
+          ),
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {complete
-             ? <Box flexDirection=`row gap=1>
-                 <Text color="green">
-                   {React.string(
-                      {j|✔ Successfully initialized application files|j},
-                    )}
-                 </Text>
-               </Box>
-             : <Spinner label="Initializing application files..." />}
-        </Box>;
-      };
     };
   };
 };
