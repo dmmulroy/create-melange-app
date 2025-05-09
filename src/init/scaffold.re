@@ -575,61 +575,29 @@ module Compile = {
 };
 
 module Node_pkg_manager_install = {
-  open Ui;
   [@react.component]
   let make = (~state, ~onComplete, ~onError) => {
-    let (copy_complete, set_copy_complete) = React.useState(() => false);
-
-    let is_active =
-      state.step == Node_pkg_manager_install
-      && state.configuration.initialize_npm;
-    let is_visible =
-      state.configuration.initialize_npm
-      && step_to_int(state.step) >= step_to_int(Node_pkg_manager_install);
-
-    React.useEffect1(
-      () => {
-        if (is_active) {
-          state.configuration.directory
-          |> Engine.node_pkg_manager_install
-          |> Promise_result.perform(result =>
-               switch (result) {
-               | Ok(_) =>
-                 set_copy_complete(_ => true);
-                 onComplete();
-               | Error(err) => onError(err)
-               }
-             );
-          ();
-        };
-
-        None;
-      },
-      [|is_active|],
-    );
-
-    let pkg_manger =
+    let pkg_manager =
       Nodejs.Process.npm_config_user_agent
       |> Nodejs.Process.npm_user_agent_to_string;
 
-    if (!is_visible) {
-      React.null;
-    } else {
-      <Box flexDirection=`column gap=1>
-        {copy_complete
-           ? <Box flexDirection=`row gap=1>
-               <Text color="green">
-                 {React.string(
-                    {j|✔ Successfully installed npm dependencies with |j}
-                    ++ pkg_manger,
-                  )}
-               </Text>
-             </Box>
-           : <Spinner
-               label={"Installing npm dependencies with " ++ pkg_manger}
-             />}
-      </Box>;
-    };
+    useStep(
+      ~state,
+      ~activeStep=Node_pkg_manager_install,
+      ~action=
+        Async(
+          () =>
+            state.configuration.directory |> Engine.node_pkg_manager_install,
+        ),
+      ~onComplete=_ => onComplete(),
+      ~onError,
+      ~loadingLabel={
+        "Installing npm dependencies with " ++ pkg_manager;
+      },
+      ~successLabel=
+        {j|✔ Successfully installed npm dependencies with |j} ++ pkg_manager,
+      (),
+    );
   };
 };
 
