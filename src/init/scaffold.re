@@ -381,29 +381,27 @@ module Test_files = {
   module Extend_package_json = {
     [@react.component]
     let make = (~state, ~onComplete, ~onError as _) => {
-      let is_active = state.step == Tests_extend_package_json;
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            let updated_pkg_json =
-              state.pkg_json
-              |> Engine.extend_package_json_with_tests(
-                   ~is_react_app=state.configuration.is_react_app,
-                   ~project_name=state.configuration.name,
-                 );
-            onComplete({
-              ...state,
-              pkg_json: updated_pkg_json,
-            });
-          };
-
-          None;
-        },
-        [|is_active|],
+      useStep(
+        ~state,
+        ~activeStep=Tests_extend_package_json,
+        ~onComplete,
+        ~action=
+          Sync(
+            () => {
+              let updated_pkg_json =
+                state.pkg_json
+                |> Engine.extend_package_json_with_tests(
+                     ~is_react_app=state.configuration.is_react_app,
+                     ~project_name=state.configuration.name,
+                   );
+              {
+                ...state,
+                pkg_json: updated_pkg_json,
+              };
+            },
+          ),
+        (),
       );
-
-      React.null;
     };
   };
 
