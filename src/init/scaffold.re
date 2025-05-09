@@ -438,46 +438,21 @@ module Compile = {
   module Compile_package_json = {
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_package_json;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_package_json);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.pkg_json
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     pkg_json: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+      useStep(
+        ~state,
+        ~activeStep=Compile_package_json,
+        ~action=Async(() => state.pkg_json |> Engine.compile),
+        ~loadingLabel="Compiling package.json...",
+        ~onError,
+        ~onComplete=
+          updated_pkg_json => {
+            onComplete({
+              ...state,
+              pkg_json: updated_pkg_json,
+            })
+          },
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner label="Compiling templates..." />
-            </Box>;
-      };
     };
   };
 
