@@ -970,20 +970,18 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     />
     <Compile.Compile_readme
       state
-      onComplete={updated_state => {
-        let next_step =
-          switch (
-            configuration.initialize_npm,
-            configuration.initialize_git,
-            configuration.initialize_ocaml_toolchain,
-          ) {
-          | (true, _, _) => Node_pkg_manager_install
-          | (_, true, _) => Git_copy_ignore_file
-          | (_, _, true) => Opam_update
-          | _ => Finished
-          };
-        goToNextStepWithNewState(next_step, updated_state);
-      }}
+      onComplete={goToNextStepWithNewState(
+        switch (
+          configuration.initialize_npm,
+          configuration.initialize_git,
+          configuration.initialize_ocaml_toolchain,
+        ) {
+        | (true, _, _) => Node_pkg_manager_install
+        | (_, true, _) => Git_copy_ignore_file
+        | (_, _, true) => Opam_update
+        | _ => Finished
+        },
+      )}
       onError
     />
     <Node_pkg_manager_install
