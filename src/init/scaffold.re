@@ -46,38 +46,6 @@ type step =
   | Git_init_and_stage
   | Finished;
 
-let step_to_string = step =>
-  switch (step) {
-  | Create_dir => "Create_dir"
-  | Copy_base_templates => "Copy_base_templates"
-  | Bundler_copy_files => "Bundler_copy_files"
-  | Bundler_extend_package_json => "Bundler_extend_package_json"
-  | App_copy_files => "App_copy_files"
-  | App_extend_package_json => "App_extend_package_json"
-  | App_extend_dune_project => "App_extend_dune_project"
-  | Tests_copy_files => "Tests_copy_files"
-  | Tests_extend_package_json => "Tests_extend_package_json"
-  | Tests_extend_dune_project => "Tests_extend_dune_project"
-  | Compile_package_json => "Compile_package_json"
-  | Compile_dune_project => "Compile_dune_project"
-  | Compile_root_dune_file => "Compile_root_dune_file"
-  | Compile_app_dune_file => "Compile_app_dune_file"
-  | Compile_test_dune_file => "Compile_test_dune_file"
-  | Compile_app_module => "Compile_app_module"
-  | Compile_readme => "Compile_readme"
-  | Node_pkg_manager_install => "Node_pkg_manager_install"
-  | Opam_update => "Opam_update"
-  | Opam_create_switch => "Opam_create_switch"
-  | Opam_install_dune => "Opam_install_dune"
-  | Dune_install => "Dune_install"
-  | Opam_install_dev_deps => "Opam_install_dev_deps"
-  | Opam_install_deps => "Opam_install_deps"
-  | Dune_build => "Dune_build"
-  | Git_copy_ignore_file => "Git_copy_ignore_file"
-  | Git_init_and_stage => "Git_init_and_stage"
-  | Finished => "Finished"
-  };
-
 let step_to_int = step =>
   switch (step) {
   | Create_dir => 0
@@ -910,25 +878,21 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       )}
       onError
     />
-    {state.configuration.has_tests
-       ? <>
-           <Test_files.Copy_files
-             state
-             onComplete={goToNextStep(Tests_extend_package_json)}
-             onError
-           />
-           <Test_files.Extend_package_json
-             state
-             onComplete={goToNextStepWithNewState(Tests_extend_dune_project)}
-             onError
-           />
-           <Test_files.Extend_dune_project
-             state
-             onComplete={goToNextStepWithNewState(Compile_package_json)}
-             onError
-           />
-         </>
-       : React.null}
+    <Test_files.Copy_files
+      state
+      onComplete={goToNextStep(Tests_extend_package_json)}
+      onError
+    />
+    <Test_files.Extend_package_json
+      state
+      onComplete={goToNextStepWithNewState(Tests_extend_dune_project)}
+      onError
+    />
+    <Test_files.Extend_dune_project
+      state
+      onComplete={goToNextStepWithNewState(Compile_package_json)}
+      onError
+    />
     <Compile.Compile_package_json
       state
       onComplete={goToNextStepWithNewState(Compile_dune_project)}
@@ -951,15 +915,11 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       )}
       onError
     />
-    {state.configuration.has_tests
-       ? <>
-           <Compile.Compile_test_dune_file
-             state
-             onComplete={goToNextStepWithNewState(Compile_app_module)}
-             onError
-           />
-         </>
-       : React.null}
+    <Compile.Compile_test_dune_file
+      state
+      onComplete={goToNextStepWithNewState(Compile_app_module)}
+      onError
+    />
     <Compile.Compile_app_module
       state
       onComplete={goToNextStepWithNewState(Compile_readme)}
