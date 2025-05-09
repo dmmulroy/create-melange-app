@@ -407,48 +407,30 @@ module Test_files = {
 
   module Extend_dune_project = {
     [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) => {
-      let (complete, set_complete) = React.useState(() => false);
-      let is_active = state.step == Tests_extend_dune_project;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Tests_extend_dune_project);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            let updated_dune_project =
-              state.dune_project
-              |> Engine.extend_dune_project_with_tests(
-                   ~is_react_app=state.configuration.is_react_app,
-                   ~project_name=state.configuration.name,
-                 );
-            set_complete(_ => true);
-            onComplete({
-              ...state,
-              dune_project: updated_dune_project,
-            });
-          };
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError as _) =>
+      useStep(
+        ~state,
+        ~activeStep=Tests_extend_dune_project,
+        ~onComplete,
+        ~action=
+          Sync(
+            () => {
+              let updated_dune_project =
+                state.dune_project
+                |> Engine.extend_dune_project_with_tests(
+                     ~is_react_app=state.configuration.is_react_app,
+                     ~project_name=state.configuration.name,
+                   );
+              {
+                ...state,
+                dune_project: updated_dune_project,
+              };
+            },
+          ),
+        ~loadingLabel="Initializing test files...",
+        ~successLabel={j|✔ Successfully initialized test files|j},
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {complete
-             ? <Box flexDirection=`row gap=1>
-                 <Text color="green">
-                   {React.string(
-                      {j|✔ Successfully initialized test files|j},
-                    )}
-                 </Text>
-               </Box>
-             : <Spinner label="Initializing test files..." />}
-        </Box>;
-      };
-    };
   };
 };
 
