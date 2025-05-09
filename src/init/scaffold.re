@@ -123,85 +123,101 @@ type state = {
   error: option(string),
 };
 
+type actionType('a, 'b) =
+  | Sync(unit => 'a)
+  | Async(unit => Promise_result.t('a, 'b));
+
+let useStep =
+    (
+      ~state,
+      ~activeStep: step,
+      ~action,
+      ~onSuccess,
+      ~onError,
+      ~loadingLabel="",
+      ~successLabel="",
+      (),
+    ) => {
+  let (complete, set_complete) = React.useState(() => false);
+  let is_active = state.step == activeStep;
+  let is_visible = step_to_int(state.step) >= step_to_int(activeStep);
+
+  React.useEffect1(
+    () => {
+      if (is_active) {
+        switch (action) {
+        | Sync(fn) =>
+          let result = fn();
+          // TODO: Handle errors
+          set_complete(_ => true);
+          onSuccess(result);
+        | Async(fn) =>
+          fn()
+          |> Promise_result.perform(result =>
+               switch (result) {
+               | Ok(res) =>
+                 set_complete(_ => true);
+                 onSuccess(res);
+               | Error(err) => onError(err)
+               }
+             )
+        };
+      };
+      None;
+    },
+    [|is_active|],
+  );
+
+  if (!is_visible) {
+    React.null;
+  } else {
+    <Box flexDirection=`column gap=1>
+      {complete
+         ? <Box flexDirection=`row gap=1>
+             <Text color="green"> {React.string(successLabel)} </Text>
+           </Box>
+         : <Spinner label=loadingLabel />}
+    </Box>;
+  };
+};
+
 module Create_dir = {
   [@react.component]
   let make = (~state, ~onComplete, ~onError) => {
-    let handleOnComplete = () => {
-      onComplete();
-    };
-
-    let is_active = state.step == Create_dir;
-
-    React.useEffect1(
-      () => {
-        if (is_active) {
-          state.configuration.directory
-          |> Engine.create_project_directory(
-               ~overwrite=?state.configuration.overwrite,
-             )
-          |> Promise_result.perform(result =>
-               switch (result) {
-               | Ok(res) => handleOnComplete(res)
-               | Error(err) => onError(err)
-               }
-             );
-        };
-
-        None;
-      },
-      [|is_active|],
+    useStep(
+      ~state,
+      ~activeStep=Create_dir,
+      ~action=
+        Async(
+          () =>
+            state.configuration.directory
+            |> Engine.create_project_directory(
+                 ~overwrite=?state.configuration.overwrite,
+               ),
+        ),
+      ~onSuccess=onComplete,
+      ~onError,
+      (),
     );
-
-    React.null;
   };
 };
 
 module Copy_base_templates = {
-  open Ui;
   [@react.component]
   let make = (~state, ~onComplete, ~onError) => {
-    let (copy_complete, set_copy_complete) = React.useState(() => false);
-
-    let is_active = state.step == Copy_base_templates;
-    let is_visible =
-      step_to_int(state.step) >= step_to_int(Copy_base_templates);
-
-    let handleOnComplete = () => {
-      set_copy_complete(_ => true);
-      onComplete();
-    };
-
-    React.useEffect1(
-      () => {
-        if (is_active) {
-          state.configuration.directory
-          |> Engine.copy_base_project
-          |> Promise_result.perform(result =>
-               switch (result) {
-               | Ok(res) => handleOnComplete(res)
-               | Error(err) => onError(err)
-               }
-             );
-        };
-
-        None;
-      },
-      [|is_active|],
+    useStep(
+      ~state,
+      ~activeStep=Copy_base_templates,
+      ~action=
+        Async(
+          () => state.configuration.directory |> Engine.copy_base_project,
+        ),
+      ~onSuccess=onComplete,
+      ~onError,
+      ~loadingLabel="Creating base project...",
+      ~successLabel={j|✔ Successfully created base project!|j},
+      (),
     );
-
-    if (!is_visible) {
-      React.null;
-    } else {
-      <Box flexDirection=`column gap=1>
-        {copy_complete
-           ? <Box flexDirection=`row gap=1>
-               <Text color="green">
-                 {React.string({j|✔ Successfully created base project!|j})}
-               </Text>
-             </Box>
-           : <Spinner label="Creating base project..." />}
-      </Box>;
-    };
   };
 };
 
@@ -209,91 +225,57 @@ module Bundler = {
   module Copy_files = {
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      let handleOnComplete = () => {
-        onComplete();
-      };
-
-      let is_active = state.step == Bundler_copy_files;
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.copy_bundler_files(
-                 ~bundler=state.configuration.bundler,
-                 ~is_react_app=state.configuration.is_react_app,
-               )
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) => handleOnComplete(res)
-                 | Error(err) => onError(err)
-                 }
-               );
-          };
-
-          None;
-        },
-        [|is_active|],
+      useStep(
+        ~state,
+        ~activeStep=Bundler_copy_files,
+        ~action=
+          Async(
+            () =>
+              state.configuration.directory
+              |> Engine.copy_bundler_files(
+                   ~bundler=state.configuration.bundler,
+                   ~is_react_app=state.configuration.is_react_app,
+                 ),
+          ),
+        ~onSuccess=onComplete,
+        ~onError,
+        (),
       );
-
-      React.null;
     };
   };
 
   module Extend_package_json = {
     [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Bundler_extend_package_json;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Bundler_extend_package_json);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            let updated_pkg_json =
-              state.pkg_json
-              |> Engine.extend_package_json_with_bundler(
-                   ~bundler=state.configuration.bundler,
-                   ~project_name=state.configuration.name,
-                 );
-
-            set_complete(_ => true);
-            onComplete({
-              ...state,
-              pkg_json: updated_pkg_json,
-            });
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
+    let make = (~state, ~onComplete: state => unit, ~onError as _) => {
       let bundler_name =
         state.configuration.bundler
         |> Bundler.to_string
         |> String.capitalize_ascii;
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {complete
-             ? <Box flexDirection=`row gap=1>
-                 <Text color="green">
-                   {React.string(
-                      {j|✔ Successfully initialized bundler: |j}
-                      ++ bundler_name,
-                    )}
-                 </Text>
-               </Box>
-             : <Spinner
-                 label={"Initializing bundler: " ++ bundler_name ++ "..."}
-               />}
-        </Box>;
-      };
+      useStep(
+        ~state,
+        ~activeStep=Bundler_extend_package_json,
+        ~action=
+          Sync(
+            () => {
+              let updated_pkg_json =
+                state.pkg_json
+                |> Engine.extend_package_json_with_bundler(
+                     ~bundler=state.configuration.bundler,
+                     ~project_name=state.configuration.name,
+                   );
+              {
+                ...state,
+                pkg_json: updated_pkg_json,
+              };
+            },
+          ),
+        ~onSuccess=onComplete,
+        ~onError=_ => (),
+        ~loadingLabel="Initializing bundler: " ++ bundler_name ++ "...",
+        ~successLabel=
+          {j|✔ Successfully initialized bundler: |j} ++ bundler_name,
+        (),
+      );
     };
   };
 };
@@ -421,30 +403,22 @@ module Test_files = {
     // open Ui;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
-      let handleOnComplete = () => {
-        onComplete();
-      };
-      let is_active = state.step == Tests_copy_files;
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.copy_test_files(
-                 ~syntax_preference=state.configuration.syntax_preference,
-                 ~is_react_app=state.configuration.is_react_app,
-               )
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) => handleOnComplete(res)
-                 | Error(err) => onError(err)
-                 }
-               );
-          };
-          None;
-        },
-        [|is_active|],
+      useStep(
+        ~state,
+        ~activeStep=Tests_copy_files,
+        ~action=
+          Async(
+            () =>
+              state.configuration.directory
+              |> Engine.copy_test_files(
+                   ~syntax_preference=state.configuration.syntax_preference,
+                   ~is_react_app=state.configuration.is_react_app,
+                 ),
+          ),
+        ~onSuccess=onComplete,
+        ~onError,
+        (),
       );
-      React.null;
     };
   };
 
