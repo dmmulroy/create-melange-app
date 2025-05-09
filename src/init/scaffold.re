@@ -586,51 +586,21 @@ module Git = {
   };
 
   module Init_and_stage = {
-    open Ui;
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (copy_complete, set_copy_complete) = React.useState(() => false);
-
-      let is_active =
-        state.step == Git_init_and_stage && state.configuration.initialize_git;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Git_init_and_stage);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.git_init_and_stage
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) =>
-                   set_copy_complete(_ => true);
-                   onComplete();
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError) =>
+      useStep(
+        ~state,
+        ~activeStep=Git_init_and_stage,
+        ~action=
+          Async(
+            () => state.configuration.directory |> Engine.git_init_and_stage,
+          ),
+        ~onComplete=_ => onComplete(),
+        ~onError,
+        ~loadingLabel="Initializing git...",
+        ~successLabel={j|✔ Successfully initialized git!|j},
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {copy_complete
-             ? <Box flexDirection=`row gap=1>
-                 <Text color="green">
-                   {React.string({j|✔ Successfully initialized git!|j})}
-                 </Text>
-               </Box>
-             : <Spinner label="Initializing git..." />}
-        </Box>;
-      };
-    };
   };
 };
 
