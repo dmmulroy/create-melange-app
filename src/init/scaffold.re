@@ -67,9 +67,9 @@ let step_to_string = step =>
   | Compile_readme => "Compile_readme"
   | Node_pkg_manager_install => "Node_pkg_manager_install"
   | Opam_update => "Opam_update"
+  | Opam_create_switch => "Opam_create_switch"
   | Opam_install_dune => "Opam_install_dune"
   | Dune_install => "Dune_install"
-  | Opam_create_switch => "Opam_create_switch"
   | Opam_install_dev_deps => "Opam_install_dev_deps"
   | Opam_install_deps => "Opam_install_deps"
   | Dune_build => "Dune_build"
@@ -479,237 +479,98 @@ module Compile = {
 
   module Compile_root_dune_file = {
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_root_dune_file;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_root_dune_file);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.root_dune_file
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     root_dune_file: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError) =>
+      useStep(
+        ~state,
+        ~activeStep=Compile_root_dune_file,
+        ~action=Async(() => state.root_dune_file |> Engine.compile),
+        ~loadingLabel="Compiling templates...",
+        ~onComplete=
+          res =>
+            onComplete({
+              ...state,
+              root_dune_file: res,
+            }),
+        ~onError,
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner label="Compiling templates..." />
-            </Box>;
-      };
-    };
   };
 
   module Compile_app_dune_file = {
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_app_dune_file;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_app_dune_file);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.app_dune_file
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     app_dune_file: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError) =>
+      useStep(
+        ~state,
+        ~activeStep=Compile_app_dune_file,
+        ~action=Async(() => state.app_dune_file |> Engine.compile),
+        ~loadingLabel="Compiling templates...",
+        ~onComplete=
+          res =>
+            onComplete({
+              ...state,
+              app_dune_file: res,
+            }),
+        ~onError,
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner label="Compiling templates..." />
-            </Box>;
-      };
-    };
   };
 
   module Compile_test_dune_file = {
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_test_dune_file;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_test_dune_file);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.test_dune_file
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     test_dune_file: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError) =>
+      useStep(
+        ~state,
+        ~activeStep=Compile_test_dune_file,
+        ~action=Async(() => state.test_dune_file |> Engine.compile),
+        ~loadingLabel="Compiling templates...",
+        ~onComplete=
+          res =>
+            onComplete({
+              ...state,
+              test_dune_file: res,
+            }),
+        ~onError,
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner label="Compiling templates..." />
-            </Box>;
-      };
-    };
   };
 
   module Compile_app_module = {
-    open Ui;
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_app_module;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_app_module);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.app_module
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     app_module: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError) =>
+      useStep(
+        ~state,
+        ~activeStep=Compile_app_module,
+        ~action=Async(() => state.app_module |> Engine.compile),
+        ~loadingLabel="Compiling templates...",
+        ~onComplete=
+          res =>
+            onComplete({
+              ...state,
+              app_module: res,
+            }),
+        ~onError,
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner label="Compiling templates..." />
-            </Box>;
-      };
-    };
   };
 
   module Compile_readme = {
-    open Ui;
     [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_readme;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_readme);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.readme
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     app_module: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
+    let make = (~state, ~onComplete, ~onError) =>
+      useStep(
+        ~state,
+        ~activeStep=Compile_readme,
+        ~action=Async(() => state.readme |> Engine.compile),
+        ~loadingLabel="Compiling templates...",
+        ~successLabel={j|✔ Successfully compiled templates!|j},
+        ~onComplete=
+          res =>
+            onComplete({
+              ...state,
+              readme: res,
+            }),
+        ~onError,
+        (),
       );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {complete
-             ? <Box flexDirection=`row gap=1>
-                 <Text color="green">
-                   {React.string({j|✔ Successfully compiled templates!|j})}
-                 </Text>
-               </Box>
-             : <Spinner label="Compiling templates..." />}
-        </Box>;
-      };
-    };
   };
 };
 
