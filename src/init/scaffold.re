@@ -949,13 +949,9 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     />
     <Compile.Compile_app_dune_file
       state
-      onComplete={updated_state =>
-        goToNextStepWithNewState(
-          configuration.has_tests
-            ? Compile_test_dune_file : Compile_app_module,
-          updated_state,
-        )
-      }
+      onComplete={goToNextStepWithNewState(
+        configuration.has_tests ? Compile_test_dune_file : Compile_app_module,
+      )}
       onError
     />
     {state.configuration.has_tests
@@ -992,18 +988,16 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     />
     <Node_pkg_manager_install
       state
-      onComplete={() => {
-        let next_step =
-          switch (
-            configuration.initialize_git,
-            configuration.initialize_ocaml_toolchain,
-          ) {
-          | (_, true) => Opam_update
-          | (true, false) => Git_copy_ignore_file
-          | _ => Finished
-          };
-        goToNextStep(next_step, ());
-      }}
+      onComplete={goToNextStep(
+        switch (
+          configuration.initialize_git,
+          configuration.initialize_ocaml_toolchain,
+        ) {
+        | (_, true) => Opam_update
+        | (true, false) => Git_copy_ignore_file
+        | _ => Finished
+        },
+      )}
       onError
     />
     <Opam.Update
@@ -1034,11 +1028,9 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     <Opam.Install_deps state onComplete={goToNextStep(Dune_build)} onError />
     <Dune_build
       state
-      onComplete={() => {
-        let next_step =
-          configuration.initialize_git ? Git_copy_ignore_file : Finished;
-        goToNextStep(next_step, ());
-      }}
+      onComplete={goToNextStep(
+        configuration.initialize_git ? Git_copy_ignore_file : Finished,
+      )}
       onError
     />
     <Git.Copy_ignore_file
