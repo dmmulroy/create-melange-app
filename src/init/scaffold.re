@@ -855,54 +855,42 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     [|state.step|],
   );
 
+  let goToNextStep = (step, ()) =>
+    set_state(state =>
+      {
+        ...state,
+        step,
+      }
+    );
+
+  let goToNextStepWithNewState = (step, newState) =>
+    set_state(_ =>
+      {
+        ...newState,
+        step,
+      }
+    );
+
   <Box flexDirection=`column gap=1>
     <Text color="cyan"> {React.string("Scaffolding project...")} </Text>
     <Create_dir
       state
-      onComplete={() => {
-        set_state(_ =>
-          {
-            ...state,
-            step: Copy_base_templates,
-          }
-        )
-      }}
+      onComplete={goToNextStep(Copy_base_templates)}
       onError
     />
     <Copy_base_templates
       state
-      onComplete={() => {
-        set_state(state =>
-          {
-            ...state,
-            step: Bundler_copy_files,
-          }
-        )
-      }}
+      onComplete={goToNextStep(Bundler_copy_files)}
       onError
     />
     <Bundler.Copy_files
       state
-      onComplete={() => {
-        set_state(state =>
-          {
-            ...state,
-            step: Bundler_extend_package_json,
-          }
-        )
-      }}
+      onComplete={goToNextStep(Bundler_extend_package_json)}
       onError
     />
     <Bundler.Extend_package_json
       state
-      onComplete={(updated_state: state) => {
-        set_state(_ =>
-          {
-            ...updated_state,
-            step: App_copy_files,
-          }
-        )
-      }}
+      onComplete={goToNextStepWithNewState(App_copy_files)}
       onError
     />
     <App_files.Copy_files
