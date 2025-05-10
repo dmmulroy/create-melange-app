@@ -820,6 +820,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onComplete={goToNextStep(Copy_base_templates)}
       onError
     />
+    // Creating base project
     <Copy_base_templates
       state
       onComplete={goToNextStep(Bundler_copy_files)}
@@ -830,6 +831,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onComplete={goToNextStep(Bundler_extend_package_json)}
       onError
     />
+    // Initilizing bundler
     <Bundler.Extend_package_json
       state
       onComplete={goToNextStepWithNewState(App_copy_files)}
@@ -845,6 +847,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onComplete={goToNextStepWithNewState(App_extend_dune_project)}
       onError
     />
+    // Initializing application files
     <App_files.Extend_dune_project
       state
       onComplete={goToNextStepWithNewState(
@@ -862,11 +865,13 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onComplete={goToNextStepWithNewState(Tests_extend_dune_project)}
       onError
     />
+    // Initializing test files
     <Test_files.Extend_dune_project
       state
       onComplete={goToNextStepWithNewState(Compile_package_json)}
       onError
     />
+    // Compiling package.json
     <Compile.Compile_package_json
       state
       onComplete={goToNextStepWithNewState(Compile_dune_project)}
@@ -899,6 +904,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onComplete={goToNextStepWithNewState(Compile_readme)}
       onError
     />
+    // Successfully compiled templates
     <Compile.Compile_readme
       state
       onComplete={goToNextStepWithNewState(
