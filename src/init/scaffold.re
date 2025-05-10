@@ -530,18 +530,6 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onError
       fn={() => {Opam.Install_dune.fn(state)}}
     />
-    // let step_to_int = step =>
-    //   switch (step) {
-    //   | Opam_update => 6
-    //   | Opam_create_switch => 7
-    //   | Opam_install_dune => 8
-    //   | Dune_install => 9
-    //   | Opam_install_dev_deps => 10
-    //   | Opam_install_deps => 11
-    //   | Dune_build => 12
-    //   | Initialize_git => 13
-    //   | Finished => 14j
-    //   };
     <Progress_display2
       startStep=Dune_install
       currentStep={state.step}
