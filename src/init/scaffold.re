@@ -6,10 +6,6 @@ open Core;
 let ( let* ) = Promise_result.bind;
 let (let+) = Promise_result.map;
 
-// For Minttea rewrite:
-// This file is a great example of do as I say not as I do. It's a mess and
-// I just brute forced it to work w/ lots of copy/paste. I think a better way
-// to have done this would have been to create functor to create the steps
 type step =
   // Section 1 - Create project directory
   | Create_base_project
@@ -32,8 +28,7 @@ type step =
   | Opam_install_deps
   | Dune_build
   // Section 8 - optional - Initialize git
-  | Git_copy_ignore_file
-  | Git_init_and_stage
+  | Initialize_git
   | Finished;
 
 let step_to_int = step =>
@@ -51,9 +46,8 @@ let step_to_int = step =>
   | Opam_install_dev_deps => 10
   | Opam_install_deps => 11
   | Dune_build => 12
-  | Git_copy_ignore_file => 13
-  | Git_init_and_stage => 14
-  | Finished => 15
+  | Initialize_git => 13
+  | Finished => 14
   };
 
 type state = {
@@ -67,83 +61,6 @@ type state = {
   readme: Template.t(Readme.t),
   step,
   error: option(string),
-};
-
-type actionType('a, 'b) =
-  | Sync(unit => 'a)
-  | Async(unit => Promise_result.t('a, 'b));
-
-let res: Promise_result.t(string, int) =
-  Js.Promise.make((~resolve, ~reject as _) => {resolve(. "hello")})
-  |> Promise_result.of_js_promise;
-
-let useStep =
-    (~state, ~activeStep: step, ~action, ~onComplete, ~onError=_ => (), ()) => {
-  // let (complete, set_complete) = React.useState(() => false);
-  let is_active = state.step == activeStep;
-  // let is_visible = step_to_int(state.step) >= step_to_int(activeStep);
-
-  React.useEffect1(
-    () => {
-      if (is_active) {
-        switch (action) {
-        | Sync(fn) =>
-          let result = fn();
-          // TODO: Handle errors
-          // set_complete(_ => true);
-          onComplete(result);
-        | Async(fn) =>
-          fn()
-          |> Promise_result.perform(result =>
-               switch (result) {
-               | Ok(res) =>
-                 //  set_complete(_ => true);
-                 onComplete(res)
-               | Error(err) => onError(err)
-               }
-             )
-        };
-      };
-      None;
-    },
-    [|is_active|],
-  );
-
-  React.null;
-  // if (!is_visible) {
-  //   React.null;
-  // } else {
-  //   <Box flexDirection=`column gap=1>
-  //     {complete
-  //        ? <Box flexDirection=`row gap=1>
-  //            <Text color="green"> {React.string(successLabel)} </Text>
-  //          </Box>
-  //        : <Spinner label=loadingLabel />}
-  //   </Box>;
-  // };
-};
-
-module Progress_display = {
-  [@react.component]
-  let make =
-      (
-        ~displayFrom: step,
-        ~displayTo: step,
-        ~loadingLabel: string,
-        ~successLabel: string,
-        ~currentStep: step,
-      ) => {
-    let currentStepIndex = step_to_int(currentStep);
-    if (currentStepIndex < step_to_int(displayFrom)) {
-      React.null;
-    } else if (currentStepIndex < step_to_int(displayTo)) {
-      <Ui.Spinner label=loadingLabel />;
-    } else {
-      <Box flexDirection=`column gap=1>
-        <Text color="green"> {React.string(successLabel)} </Text>
-      </Box>;
-    };
-  };
 };
 
 module Progress_display2 = {
@@ -201,31 +118,10 @@ module Create_dir = {
     |> Engine.create_project_directory(
          ~overwrite=?state.configuration.overwrite,
        );
-  // [@react.component]
-  // let make = (~state, ~onComplete, ~onError) =>
-  //   useStep(
-  //     ~state,
-  //     ~activeStep=Create_dir,
-  //     ~action=Async(() => fn(state)),
-  //     ~onComplete,
-  //     ~onError,
-  //     (),
-  //   );
 };
 
 module Copy_base_templates = {
   let fn = state => state.configuration.directory |> Engine.copy_base_project;
-  // [@react.component]
-  // let make = (~state, ~onComplete, ~onError) => {
-  //   useStep(
-  //     ~state,
-  //     ~activeStep=Copy_base_templates,
-  //     ~action=Async(() => fn(state)),
-  //     ~onComplete,
-  //     ~onError,
-  //     (),
-  //   );
-  // };
 };
 
 module Bundler = {
@@ -382,157 +278,51 @@ module Node_pkg_manager_install = {
 
 module Git = {
   module Copy_ignore_file = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Git_copy_ignore_file,
-        ~action=
-          Async(
-            () => state.configuration.directory |> Engine.copy_git_ignore,
-          ),
-        ~onComplete=_ => onComplete(),
-        ~onError,
-        (),
-      );
+    let fn = state => state.configuration.directory |> Engine.copy_git_ignore;
   };
 
   module Init_and_stage = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Git_init_and_stage,
-        ~action=
-          Async(
-            () => state.configuration.directory |> Engine.git_init_and_stage,
-          ),
-        ~onComplete=_ => onComplete(),
-        ~onError,
-        (),
-      );
+    let fn = state =>
+      state.configuration.directory |> Engine.git_init_and_stage;
   };
+
+  let initilizeGit = state =>
+    Copy_ignore_file.fn(state)
+    ->Promise_result.bind(() => Init_and_stage.fn(state));
 };
 
 module Opam = {
   module Update = {
     let fn = state => state.configuration.directory |> Engine.opam_update;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Opam_update,
-        ~action=
-          Async(() => state.configuration.directory |> Engine.opam_update),
-        ~onComplete=_ => onComplete(),
-        ~onError,
-        (),
-      );
   };
 
   module Install_dune = {
     let fn = state =>
       state.configuration.directory |> Engine.opam_install_dune;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Opam_install_dune,
-        ~action=
-          Async(
-            () => state.configuration.directory |> Engine.opam_install_dune,
-          ),
-        ~onComplete=_ => onComplete(),
-        ~onError,
-        (),
-      );
   };
 
   module Create_switch = {
     let fn = state =>
       state.configuration.directory |> Engine.opam_create_switch;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Opam_create_switch,
-        ~action=
-          Async(
-            () => state.configuration.directory |> Engine.opam_create_switch,
-          ),
-        ~onComplete=_ => onComplete(),
-        ~onError,
-        (),
-      );
   };
 
   module Install_dev_deps = {
     let fn = state =>
       state.configuration.directory |> Engine.opam_install_dev_dependencies;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Opam_install_dev_deps,
-        ~action=
-          Async(
-            () =>
-              state.configuration.directory
-              |> Engine.opam_install_dev_dependencies,
-          ),
-        ~onComplete=_ => onComplete(),
-        ~onError,
-        (),
-      );
   };
 
   module Install_deps = {
     let fn = state =>
       state.configuration.directory |> Engine.opam_install_dependencies;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Opam_install_deps,
-        ~action=
-          Async(
-            () =>
-              state.configuration.directory |> Engine.opam_install_dependencies,
-          ),
-        ~onComplete=_ => onComplete(),
-        ~onError,
-        (),
-      );
   };
 };
 
 module Dune_install = {
   let fn = state => state.configuration.directory |> Engine.dune_install;
-  [@react.component]
-  let make = (~state, ~onComplete, ~onError) =>
-    useStep(
-      ~state,
-      ~activeStep=Dune_install,
-      ~action=
-        Async(() => state.configuration.directory |> Engine.dune_install),
-      ~onComplete=_ => onComplete(),
-      ~onError,
-      (),
-    );
 };
 
 module Dune_build = {
   let fn = state => state.configuration.directory |> Engine.dune_build;
-  [@react.component]
-  let make = (~state, ~onComplete, ~onError) =>
-    useStep(
-      ~state,
-      ~activeStep=Dune_build,
-      ~action=Async(() => state.configuration.directory |> Engine.dune_build),
-      ~onComplete=_ => onComplete(),
-      ~onError,
-      (),
-    );
 };
 
 [@react.component]
@@ -707,14 +497,14 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
        successLabel={
          {j|✔ Successfully installed npm dependencies with |j} ++ pkg_manager
        }
-       onComplete={_ => goToNextStep(Finished, ())}
+       onComplete={_ => goToNextStep(Opam_update, ())}
        onError
        fn={() => {Node_pkg_manager_install.fn(state)}}
      />}
     <Progress_display2
       startStep=Opam_update
       currentStep={state.step}
-      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... (Updating opam)"
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 1/7 (Updating opam)"
       successLabel={j|✔ Successfully updated opam!|j}
       onComplete={_ => goToNextStep(Opam_create_switch, ())}
       onError
@@ -723,7 +513,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     <Progress_display2
       startStep=Opam_create_switch
       currentStep={state.step}
-      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... (Creating opam switch)"
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 2/7 (Creating opam switch)"
       successLabel={j|✔ Successfully created opam switch!|j}
       onComplete={_ => goToNextStep(Opam_install_dune, ())}
       onError
@@ -732,7 +522,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     <Progress_display2
       startStep=Opam_install_dune
       currentStep={state.step}
-      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... (Installing dune)"
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 3/7 (Installing dune)"
       successLabel={j|✔ Successfully installed dune!|j}
       onComplete={_ => goToNextStep(Opam_install_dev_deps, ())}
       onError
@@ -741,7 +531,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     <Progress_display2
       startStep=Opam_install_dev_deps
       currentStep={state.step}
-      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... (Installing dev dependencies)"
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 4/7 (Installing dev dependencies)"
       successLabel={j|✔ Successfully installed dev dependencies!|j}
       onComplete={_ => goToNextStep(Opam_install_deps, ())}
       onError
@@ -750,7 +540,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     <Progress_display2
       startStep=Opam_install_deps
       currentStep={state.step}
-      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... (Installing dependencies)"
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 5/7 (Installing dependencies)"
       successLabel={j|✔ Successfully installed dependencies!|j}
       onComplete={_ => goToNextStep(Dune_install, ())}
       onError
@@ -759,7 +549,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     <Progress_display2
       startStep=Dune_install
       currentStep={state.step}
-      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... (Installing dune)"
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 6/7 (Installing dune)"
       successLabel={j|✔ Successfully installed dune!|j}
       onComplete={_ => goToNextStep(Dune_build, ())}
       onError
@@ -768,69 +558,25 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     <Progress_display2
       startStep=Dune_build
       currentStep={state.step}
-      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... (Building project)"
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 7/7 (Building project)"
       successLabel={j|✔ Successfully built project!|j}
       onComplete={_ =>
         goToNextStep(
-          configuration.initialize_git ? Git_copy_ignore_file : Finished,
+          configuration.initialize_git ? Initialize_git : Finished,
           (),
         )
       }
       onError
       fn={() => {Dune_build.fn(state)}}
     />
-    <Progress_display
-      displayFrom=Git_copy_ignore_file
-      displayTo=Finished
+    <Progress_display2
+      startStep=Initialize_git
+      currentStep={state.step}
       loadingLabel="Initializing git..."
       successLabel={j|✔ Successfully initialized git!|j}
-      currentStep={state.step}
-    />
-    <Git.Copy_ignore_file
-      state
-      onComplete={goToNextStep(Git_init_and_stage)}
+      onComplete={_ => goToNextStep(Finished, ())}
       onError
+      fn={() => {Git.initilizeGit(state)}}
     />
-    <Git.Init_and_stage state onComplete={goToNextStep(Finished)} onError />
   </Box>;
-  // <Progress_display
-  //   displayFrom=Opam_update
-  //   displayTo=Git_init_and_stage
-  //   loadingLabel="Initializing OCaml toolchain, this may take a few minutes..."
-  //   successLabel={j|✔ Successfully initialized OCaml toolchain!|j}
-  //   currentStep={state.step}
-  // />
-  // <Opam.Update
-  //   state
-  //   onComplete={goToNextStep(Opam_create_switch)}
-  //   onError
-  // />
-  // <Opam.Create_switch
-  //   state
-  //   onComplete={goToNextStep(Opam_install_dune)}
-  //   onError
-  // />
-  // <Opam.Install_dune
-  //   state
-  //   onComplete={goToNextStep(Dune_install)}
-  //   onError
-  // />
-  // <Dune_install
-  //   state
-  //   onComplete={goToNextStep(Opam_install_dev_deps)}
-  //   onError
-  // />
-  // <Opam.Install_dev_deps
-  //   state
-  //   onComplete={goToNextStep(Opam_install_deps)}
-  //   onError
-  // />
-  // <Opam.Install_deps state onComplete={goToNextStep(Dune_build)} onError />
-  // <Dune_build
-  //   state
-  //   onComplete={goToNextStep(
-  //     configuration.initialize_git ? Git_copy_ignore_file : Finished,
-  //   )}
-  //   onError
-  // />
 };
