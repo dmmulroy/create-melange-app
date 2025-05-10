@@ -336,6 +336,7 @@ module Test_files = {
 
 module Compile = {
   module Compile_package_json = {
+    let fn = state => state.pkg_json |> Engine.compile;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
       useStep(
@@ -356,6 +357,7 @@ module Compile = {
   };
 
   module Compile_dune_project = {
+    let fn = state => state.dune_project |> Engine.compile;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) => {
       useStep(
@@ -376,6 +378,7 @@ module Compile = {
   };
 
   module Compile_root_dune_file = {
+    let fn = state => state.root_dune_file |> Engine.compile;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) =>
       useStep(
@@ -394,6 +397,7 @@ module Compile = {
   };
 
   module Compile_app_dune_file = {
+    let fn = state => state.app_dune_file |> Engine.compile;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) =>
       useStep(
@@ -412,6 +416,7 @@ module Compile = {
   };
 
   module Compile_test_dune_file = {
+    let fn = state => state.test_dune_file |> Engine.compile;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) =>
       useStep(
@@ -430,6 +435,7 @@ module Compile = {
   };
 
   module Compile_app_module = {
+    let fn = state => state.app_module |> Engine.compile;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) =>
       useStep(
@@ -448,6 +454,7 @@ module Compile = {
   };
 
   module Compile_readme = {
+    let fn = state => state.readme |> Engine.compile;
     [@react.component]
     let make = (~state, ~onComplete, ~onError) =>
       useStep(
