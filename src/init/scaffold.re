@@ -483,7 +483,9 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       loadingLabel="Compiling templates..."
       successLabel={j|✔ Successfully compiled templates!|j}
       currentStep={state.step}
-      onComplete={goToNextStepWithNewState(Node_pkg_manager_install)}
+      onComplete={goToNextStepWithNewState(
+        configuration.initialize_npm ? Node_pkg_manager_install : Opam_update,
+      )}
       onError
       fn={() => Compile.compile(state)}
     />
@@ -501,18 +503,6 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
        onError
        fn={() => {Node_pkg_manager_install.fn(state)}}
      />}
-    // let step_to_int = step =>
-    //   switch (step) {
-    //   | Opam_update => 6
-    //   | Opam_create_switch => 7
-    //   | Opam_install_dune => 8
-    //   | Dune_install => 9
-    //   | Opam_install_dev_deps => 10
-    //   | Opam_install_deps => 11
-    //   | Dune_build => 12
-    //   | Initialize_git => 13
-    //   | Finished => 14j
-    //   };
     <Progress_display2
       startStep=Opam_update
       currentStep={state.step}
@@ -540,6 +530,18 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onError
       fn={() => {Opam.Install_dune.fn(state)}}
     />
+    // let step_to_int = step =>
+    //   switch (step) {
+    //   | Opam_update => 6
+    //   | Opam_create_switch => 7
+    //   | Opam_install_dune => 8
+    //   | Dune_install => 9
+    //   | Opam_install_dev_deps => 10
+    //   | Opam_install_deps => 11
+    //   | Dune_build => 12
+    //   | Initialize_git => 13
+    //   | Finished => 14j
+    //   };
     <Progress_display2
       startStep=Dune_install
       currentStep={state.step}
@@ -547,7 +549,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       successLabel={j|✔ Successfully installed dependencies!|j}
       onComplete={_ => goToNextStep(Opam_install_dev_deps, ())}
       onError
-      fn={() => {Opam.Install_deps.fn(state)}}
+      fn={() => {Dune_install.fn(state)}}
     />
     <Progress_display2
       startStep=Opam_install_dev_deps
@@ -565,7 +567,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       successLabel={j|✔ Successfully installed dune!|j}
       onComplete={_ => goToNextStep(Dune_build, ())}
       onError
-      fn={() => {Dune_install.fn(state)}}
+      fn={() => {Opam.Install_deps.fn(state)}}
     />
     <Progress_display2
       startStep=Dune_build
