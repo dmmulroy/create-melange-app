@@ -168,6 +168,7 @@ module Progress_display2 = {
     React.useEffect1(
       () => {
         if (isCurrentStep) {
+          setIsLoading(_ => true);
           fnRef.current()
           |> Promise_result.perform(result => {
                setIsLoading(_ => false);
@@ -375,21 +376,8 @@ module Compile = {
 };
 
 module Node_pkg_manager_install = {
-  [@react.component]
-  let make = (~state, ~onComplete, ~onError) => {
-    useStep(
-      ~state,
-      ~activeStep=Node_pkg_manager_install,
-      ~action=
-        Async(
-          () =>
-            state.configuration.directory |> Engine.node_pkg_manager_install,
-        ),
-      ~onComplete=_ => onComplete(),
-      ~onError,
-      (),
-    );
-  };
+  let fn = state =>
+    state.configuration.directory |> Engine.node_pkg_manager_install;
 };
 
 module Git = {
@@ -643,146 +631,127 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
          }
        );
 
-  let el =
-    <Box flexDirection=`column gap=1>
-      <Text color="cyan"> {React.string("Scaffolding project...")} </Text>
-      <Progress_display2
-        startStep=Create_base_project
-        currentStep={state.step}
-        loadingLabel="Creating base project..."
-        successLabel="Successfully created base project!"
-        onComplete={goToNextStep(Initialize_bundler)}
-        onError
-        fn={() => createBaseProject(state)}
-      />
-      {let bundler_name =
-         state.configuration.bundler
-         |> Bundler.to_string
-         |> String.capitalize_ascii;
-       <Progress_display2
-         startStep=Initialize_bundler
-         currentStep={state.step}
-         loadingLabel={"Initializing bundler: " ++ bundler_name ++ "..."}
-         successLabel={
-           {j|✔ Successfully initialized bundler: |j} ++ bundler_name
-         }
-         onComplete={goToNextStepWithNewState(Initialize_app_files)}
-         onError
-         fn={() => initializeBundler(state)}
-       />}
-      <Progress_display2
-        startStep=Initialize_app_files
-        loadingLabel="Copying application files..."
-        successLabel={j|✔ Successfully copied application files!|j}
-        currentStep={state.step}
-        onComplete={goToNextStepWithNewState(
-          configuration.has_tests ? Initialize_test_files : Compile_templates,
-        )}
-        onError
-        fn={() => copyApplicationFiles(state)}
-      />
-      <Progress_display2
-        startStep=Initialize_test_files
-        loadingLabel="Copying test files"
-        successLabel={j|✔ Successfully copied test files!|j}
-        currentStep={state.step}
-        onComplete={goToNextStepWithNewState(Compile_templates)}
-        onError
-        fn={() => Test_files.initilizeTestFiles(state)}
-      />
-      <Progress_display2
-        startStep=Compile_templates
-        loadingLabel="Compiling templates..."
-        successLabel={j|✔ Successfully compiled templates!|j}
-        currentStep={state.step}
-        onComplete={goToNextStepWithNewState(Node_pkg_manager_install)}
-        onError
-        fn={() => Compile.compile(state)}
-      />
-      {let pkg_manager =
-         Nodejs.Process.npm_config_user_agent
-         |> Nodejs.Process.npm_user_agent_to_string;
-       <Progress_display
-         displayFrom=Node_pkg_manager_install
-         displayTo=Opam_update
-         loadingLabel={"Installing npm dependencies with " ++ pkg_manager}
-         successLabel={
-           {j|✔ Successfully installed npm dependencies with |j}
-           ++ pkg_manager
-         }
-         currentStep={state.step}
-       />}
-      <Node_pkg_manager_install
-        state
-        onComplete={goToNextStep(
-          switch (
-            configuration.initialize_git,
-            configuration.initialize_ocaml_toolchain,
-          ) {
-          | (_, true) => Opam_update
-          | (true, false) => Git_copy_ignore_file
-          | _ => Finished
-          },
-        )}
-        onError
-      />
-      <Progress_display
-        displayFrom=Opam_update
-        displayTo=Git_init_and_stage
-        loadingLabel="Initializing OCaml toolchain, this may take a few minutes..."
-        successLabel={j|✔ Successfully initialized OCaml toolchain!|j}
-        currentStep={state.step}
-      />
-      <Opam.Update
-        state
-        onComplete={goToNextStep(Opam_create_switch)}
-        onError
-      />
-      <Opam.Create_switch
-        state
-        onComplete={goToNextStep(Opam_install_dune)}
-        onError
-      />
-      <Opam.Install_dune
-        state
-        onComplete={goToNextStep(Dune_install)}
-        onError
-      />
-      <Dune_install
-        state
-        onComplete={goToNextStep(Opam_install_dev_deps)}
-        onError
-      />
-      <Opam.Install_dev_deps
-        state
-        onComplete={goToNextStep(Opam_install_deps)}
-        onError
-      />
-      <Opam.Install_deps
-        state
-        onComplete={goToNextStep(Dune_build)}
-        onError
-      />
-      <Dune_build
-        state
-        onComplete={goToNextStep(
-          configuration.initialize_git ? Git_copy_ignore_file : Finished,
-        )}
-        onError
-      />
-      <Progress_display
-        displayFrom=Git_copy_ignore_file
-        displayTo=Finished
-        loadingLabel="Initializing git..."
-        successLabel={j|✔ Successfully initialized git!|j}
-        currentStep={state.step}
-      />
-      <Git.Copy_ignore_file
-        state
-        onComplete={goToNextStep(Git_init_and_stage)}
-        onError
-      />
-      <Git.Init_and_stage state onComplete={goToNextStep(Finished)} onError />
-    </Box>;
-  el;
+  <Box flexDirection=`column gap=1>
+    <Text color="cyan"> {React.string("Scaffolding project...")} </Text>
+    <Progress_display2
+      startStep=Create_base_project
+      currentStep={state.step}
+      loadingLabel="Creating base project..."
+      successLabel="Successfully created base project!"
+      onComplete={goToNextStep(Initialize_bundler)}
+      onError
+      fn={() => createBaseProject(state)}
+    />
+    {let bundler_name =
+       state.configuration.bundler
+       |> Bundler.to_string
+       |> String.capitalize_ascii;
+     <Progress_display2
+       startStep=Initialize_bundler
+       currentStep={state.step}
+       loadingLabel={"Initializing bundler: " ++ bundler_name ++ "..."}
+       successLabel={
+         {j|✔ Successfully initialized bundler: |j} ++ bundler_name
+       }
+       onComplete={goToNextStepWithNewState(Initialize_app_files)}
+       onError
+       fn={() => initializeBundler(state)}
+     />}
+    <Progress_display2
+      startStep=Initialize_app_files
+      loadingLabel="Copying application files..."
+      successLabel={j|✔ Successfully copied application files!|j}
+      currentStep={state.step}
+      onComplete={goToNextStepWithNewState(
+        configuration.has_tests ? Initialize_test_files : Compile_templates,
+      )}
+      onError
+      fn={() => copyApplicationFiles(state)}
+    />
+    <Progress_display2
+      startStep=Initialize_test_files
+      loadingLabel="Copying test files"
+      successLabel={j|✔ Successfully copied test files!|j}
+      currentStep={state.step}
+      onComplete={goToNextStepWithNewState(Compile_templates)}
+      onError
+      fn={() => Test_files.initilizeTestFiles(state)}
+    />
+    <Progress_display2
+      startStep=Compile_templates
+      loadingLabel="Compiling templates..."
+      successLabel={j|✔ Successfully compiled templates!|j}
+      currentStep={state.step}
+      onComplete={goToNextStepWithNewState(Node_pkg_manager_install)}
+      onError
+      fn={() => Compile.compile(state)}
+    />
+    {let pkg_manager =
+       Nodejs.Process.npm_config_user_agent
+       |> Nodejs.Process.npm_user_agent_to_string;
+     <Progress_display2
+       startStep=Node_pkg_manager_install
+       currentStep={state.step}
+       loadingLabel={"Installing npm dependencies with " ++ pkg_manager}
+       successLabel={
+         {j|✔ Successfully installed npm dependencies with |j} ++ pkg_manager
+       }
+       onComplete={_ => goToNextStep(Finished, ())}
+       onError
+       fn={() => {Node_pkg_manager_install.fn(state)}}
+     />}
+  </Box>;
+  // <Progress_display
+  //   displayFrom=Opam_update
+  //   displayTo=Git_init_and_stage
+  //   loadingLabel="Initializing OCaml toolchain, this may take a few minutes..."
+  //   successLabel={j|✔ Successfully initialized OCaml toolchain!|j}
+  //   currentStep={state.step}
+  // />
+  // <Opam.Update
+  //   state
+  //   onComplete={goToNextStep(Opam_create_switch)}
+  //   onError
+  // />
+  // <Opam.Create_switch
+  //   state
+  //   onComplete={goToNextStep(Opam_install_dune)}
+  //   onError
+  // />
+  // <Opam.Install_dune
+  //   state
+  //   onComplete={goToNextStep(Dune_install)}
+  //   onError
+  // />
+  // <Dune_install
+  //   state
+  //   onComplete={goToNextStep(Opam_install_dev_deps)}
+  //   onError
+  // />
+  // <Opam.Install_dev_deps
+  //   state
+  //   onComplete={goToNextStep(Opam_install_deps)}
+  //   onError
+  // />
+  // <Opam.Install_deps state onComplete={goToNextStep(Dune_build)} onError />
+  // <Dune_build
+  //   state
+  //   onComplete={goToNextStep(
+  //     configuration.initialize_git ? Git_copy_ignore_file : Finished,
+  //   )}
+  //   onError
+  // />
+  // <Progress_display
+  //   displayFrom=Git_copy_ignore_file
+  //   displayTo=Finished
+  //   loadingLabel="Initializing git..."
+  //   successLabel={j|✔ Successfully initialized git!|j}
+  //   currentStep={state.step}
+  // />
+  // <Git.Copy_ignore_file
+  //   state
+  //   onComplete={goToNextStep(Git_init_and_stage)}
+  //   onError
+  // />
+  // <Git.Init_and_stage state onComplete={goToNextStep(Finished)} onError />
 };
