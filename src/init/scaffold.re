@@ -13,9 +13,7 @@ type step =
   // Setting 2 - Initialize bundler
   | Initialize_bundler
   // Section 3 - Initialize app files
-  | App_copy_files
-  | App_extend_package_json
-  | App_extend_dune_project
+  | Initialize_app_files
   // Section 4 - Initialize test files
   | Tests_copy_files
   | Tests_extend_package_json
@@ -47,16 +45,14 @@ let step_to_int = step =>
   switch (step) {
   | Create_base_project => 0
   | Initialize_bundler => 1
-  | App_copy_files => 4
-  | App_extend_package_json => 5
-  | App_extend_dune_project => 6
-  | Tests_copy_files => 7
-  | Tests_extend_package_json => 8
-  | Tests_extend_dune_project => 9
-  | Compile_package_json => 10
-  | Compile_dune_project => 11
-  | Compile_root_dune_file => 12
-  | Compile_app_dune_file => 13
+  | Initialize_app_files => 2
+  | Tests_copy_files => 3
+  | Tests_extend_package_json => 4
+  | Tests_extend_dune_project => 5
+  | Compile_package_json => 6
+  | Compile_dune_project => 7
+  | Compile_root_dune_file => 8
+  | Compile_app_dune_file => 9
   | Compile_test_dune_file => 14
   | Compile_app_module => 15
   | Compile_readme => 16
@@ -323,6 +319,13 @@ module Test_files = {
   };
 
   module Extend_package_json = {
+    let fn = state =>
+      state.pkg_json
+      |> Engine.extend_package_json_with_tests(
+           ~is_react_app=state.configuration.is_react_app,
+           ~project_name=state.configuration.name,
+         );
+
     [@react.component]
     let make = (~state, ~onComplete, ~onError as _) => {
       useStep(
@@ -350,6 +353,12 @@ module Test_files = {
   };
 
   module Extend_dune_project = {
+    let fn = state =>
+      state.dune_project
+      |> Engine.extend_dune_project_with_tests(
+           ~is_react_app=state.configuration.is_react_app,
+           ~project_name=state.configuration.name,
+         );
     [@react.component]
     let make = (~state, ~onComplete, ~onError as _) =>
       useStep(
@@ -802,12 +811,12 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
          successLabel={
            {j|✔ Successfully initialized bundler: |j} ++ bundler_name
          }
-         onComplete={goToNextStepWithNewState(App_copy_files)}
+         onComplete={goToNextStepWithNewState(Initialize_app_files)}
          onError
          fn={() => initializeBundler(state)}
        />}
       <Progress_display2
-        startStep=App_copy_files
+        startStep=Initialize_app_files
         loadingLabel="Copying application files..."
         successLabel={j|✔ Successfully copied application files!|j}
         currentStep={state.step}
