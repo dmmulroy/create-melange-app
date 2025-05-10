@@ -522,6 +522,7 @@ module Dune_install = {
 };
 
 module Dune_build = {
+  let fn = state => state.configuration.directory |> Engine.dune_build;
   [@react.component]
   let make = (~state, ~onComplete, ~onError) =>
     useStep(
@@ -764,6 +765,33 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onError
       fn={() => {Dune_install.fn(state)}}
     />
+    <Progress_display2
+      startStep=Dune_build
+      currentStep={state.step}
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... (Building project)"
+      successLabel={j|✔ Successfully built project!|j}
+      onComplete={_ =>
+        goToNextStep(
+          configuration.initialize_git ? Git_copy_ignore_file : Finished,
+          (),
+        )
+      }
+      onError
+      fn={() => {Dune_build.fn(state)}}
+    />
+    <Progress_display
+      displayFrom=Git_copy_ignore_file
+      displayTo=Finished
+      loadingLabel="Initializing git..."
+      successLabel={j|✔ Successfully initialized git!|j}
+      currentStep={state.step}
+    />
+    <Git.Copy_ignore_file
+      state
+      onComplete={goToNextStep(Git_init_and_stage)}
+      onError
+    />
+    <Git.Init_and_stage state onComplete={goToNextStep(Finished)} onError />
   </Box>;
   // <Progress_display
   //   displayFrom=Opam_update
@@ -805,17 +833,4 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
   //   )}
   //   onError
   // />
-  // <Progress_display
-  //   displayFrom=Git_copy_ignore_file
-  //   displayTo=Finished
-  //   loadingLabel="Initializing git..."
-  //   successLabel={j|✔ Successfully initialized git!|j}
-  //   currentStep={state.step}
-  // />
-  // <Git.Copy_ignore_file
-  //   state
-  //   onComplete={goToNextStep(Git_init_and_stage)}
-  //   onError
-  // />
-  // <Git.Init_and_stage state onComplete={goToNextStep(Finished)} onError />
 };
