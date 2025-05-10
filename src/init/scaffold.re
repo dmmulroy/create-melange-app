@@ -20,13 +20,7 @@ type step =
   // Section 4 - Initialize test files
   | Initialize_test_files
   // Section 5 - Compile templates
-  | Compile_package_json
-  | Compile_dune_project
-  | Compile_root_dune_file
-  | Compile_app_dune_file
-  | Compile_test_dune_file
-  | Compile_app_module
-  | Compile_readme
+  | Compile_templates
   // Section 6 - Optional - Initialize node package manager
   | Node_pkg_manager_install
   // Section 7 - optional - Initialize ocaml toolchain
@@ -48,24 +42,18 @@ let step_to_int = step =>
   | Initialize_bundler => 1
   | Initialize_app_files => 2
   | Initialize_test_files => 3
-  | Compile_package_json => 6
-  | Compile_dune_project => 7
-  | Compile_root_dune_file => 8
-  | Compile_app_dune_file => 9
-  | Compile_test_dune_file => 14
-  | Compile_app_module => 15
-  | Compile_readme => 16
-  | Node_pkg_manager_install => 17
-  | Opam_update => 18
-  | Opam_create_switch => 19
-  | Opam_install_dune => 20
-  | Dune_install => 21
-  | Opam_install_dev_deps => 22
-  | Opam_install_deps => 23
-  | Dune_build => 24
-  | Git_copy_ignore_file => 25
-  | Git_init_and_stage => 26
-  | Finished => 27
+  | Compile_templates => 4
+  | Node_pkg_manager_install => 5
+  | Opam_update => 6
+  | Opam_create_switch => 7
+  | Opam_install_dune => 8
+  | Dune_install => 9
+  | Opam_install_dev_deps => 10
+  | Opam_install_deps => 11
+  | Dune_build => 12
+  | Git_copy_ignore_file => 13
+  | Git_init_and_stage => 14
+  | Finished => 15
   };
 
 type state = {
@@ -688,8 +676,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
         successLabel={j|✔ Successfully copied application files!|j}
         currentStep={state.step}
         onComplete={goToNextStepWithNewState(
-          configuration.has_tests
-            ? Initialize_test_files : Compile_package_json,
+          configuration.has_tests ? Initialize_test_files : Compile_templates,
         )}
         onError
         fn={() => copyApplicationFiles(state)}
@@ -699,12 +686,12 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
         loadingLabel="Copying test files"
         successLabel={j|✔ Successfully copied test files!|j}
         currentStep={state.step}
-        onComplete={goToNextStepWithNewState(Compile_package_json)}
+        onComplete={goToNextStepWithNewState(Compile_templates)}
         onError
         fn={() => Test_files.initilizeTestFiles(state)}
       />
       <Progress_display2
-        startStep=Compile_package_json
+        startStep=Compile_templates
         loadingLabel="Compiling templates..."
         successLabel={j|✔ Successfully compiled templates!|j}
         currentStep={state.step}
