@@ -9,11 +9,9 @@ open Core;
 // to have done this would have been to create functor to create the steps
 type step =
   // Section 1 - Create project directory
-  | Create_dir
-  | Copy_base_templates
+  | Create_base_project
   // Setting 2 - Initialize bundler
-  | Bundler_copy_files
-  | Bundler_extend_package_json
+  | Initialize_bundler
   // Section 3 - Initialize app files
   | App_copy_files
   | App_extend_package_json
@@ -47,10 +45,8 @@ type step =
 
 let step_to_int = step =>
   switch (step) {
-  | Create_dir => 0
-  | Copy_base_templates => 1
-  | Bundler_copy_files => 2
-  | Bundler_extend_package_json => 3
+  | Create_base_project => 0
+  | Initialize_bundler => 1
   | App_copy_files => 4
   | App_extend_package_json => 5
   | App_extend_dune_project => 6
@@ -680,7 +676,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     React.useState(_ =>
       {
         configuration,
-        step: Create_dir,
+        step: Create_base_project,
         pkg_json:
           Package_json.template(
             ~project_name=configuration.name,
@@ -787,11 +783,11 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     <Box flexDirection=`column gap=1>
       <Text color="cyan"> {React.string("Scaffolding project...")} </Text>
       <Progress_display2
-        startStep=Create_dir
+        startStep=Create_base_project
         currentStep={state.step}
         loadingLabel="Creating base project..."
         successLabel="Successfully created base project!"
-        onComplete={goToNextStep(Copy_base_templates)}
+        onComplete={goToNextStep(Initialize_bundler)}
         onError
         fn={() => createBaseProject(state)}
       />
@@ -800,7 +796,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
          |> Bundler.to_string
          |> String.capitalize_ascii;
        <Progress_display2
-         startStep=Copy_base_templates
+         startStep=Initialize_bundler
          currentStep={state.step}
          loadingLabel={"Initializing bundler: " ++ bundler_name ++ "..."}
          successLabel={
