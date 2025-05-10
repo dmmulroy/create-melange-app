@@ -1,6 +1,5 @@
 open Bindings;
 open Ink;
-open Ui;
 
 open Core;
 
@@ -156,16 +155,10 @@ module Progress_display = {
         ~currentStep: step,
       ) => {
     let currentStepIndex = step_to_int(currentStep);
-
     if (currentStepIndex < step_to_int(displayFrom)) {
       React.null;
     } else if (currentStepIndex < step_to_int(displayTo)) {
-      <div>
-        <Box flexDirection=`column gap=1>
-          <Text color="cyan"> {React.string(loadingLabel)} </Text>
-        </Box>
-        <Spinner label=loadingLabel />
-      </div>;
+      <Ui.Spinner label=loadingLabel />;
     } else {
       <Box flexDirection=`column gap=1>
         <Text color="green"> {React.string(successLabel)} </Text>
