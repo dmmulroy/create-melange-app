@@ -153,6 +153,32 @@ let useStep =
   };
 };
 
+module Progress_display = {
+  [@react.component]
+  let make =
+      (
+        ~displayFrom: step,
+        ~displayTo: step,
+        ~loadingLabel: string,
+        ~successLabel: string,
+        ~currentStep: step,
+      ) => {
+    let currentStepIndex = step_to_int(currentStep);
+
+    if (currentStepIndex < step_to_int(displayFrom)) {
+      React.null;
+    } else if (currentStepIndex < step_to_int(displayTo)) {
+      <Box flexDirection=`column gap=1>
+        <Text color="cyan"> {React.string(loadingLabel)} </Text>
+      </Box>;
+    } else {
+      <Box flexDirection=`column gap=1>
+        <Text color="green"> {React.string(successLabel)} </Text>
+      </Box>;
+    };
+  };
+};
+
 module Create_dir = {
   [@react.component]
   let make = (~state, ~onComplete, ~onError) =>
