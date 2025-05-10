@@ -100,19 +100,10 @@ let res: Promise_result.t(string, int) =
   |> Promise_result.of_js_promise;
 
 let useStep =
-    (
-      ~state,
-      ~activeStep: step,
-      ~action,
-      ~onComplete,
-      ~onError=_ => (),
-      ~loadingLabel="",
-      ~successLabel="",
-      (),
-    ) => {
-  let (complete, set_complete) = React.useState(() => false);
+    (~state, ~activeStep: step, ~action, ~onComplete, ~onError=_ => (), ()) => {
+  // let (complete, set_complete) = React.useState(() => false);
   let is_active = state.step == activeStep;
-  let is_visible = step_to_int(state.step) >= step_to_int(activeStep);
+  // let is_visible = step_to_int(state.step) >= step_to_int(activeStep);
 
   React.useEffect1(
     () => {
@@ -121,15 +112,15 @@ let useStep =
         | Sync(fn) =>
           let result = fn();
           // TODO: Handle errors
-          set_complete(_ => true);
+          // set_complete(_ => true);
           onComplete(result);
         | Async(fn) =>
           fn()
           |> Promise_result.perform(result =>
                switch (result) {
                | Ok(res) =>
-                 set_complete(_ => true);
-                 onComplete(res);
+                 //  set_complete(_ => true);
+                 onComplete(res)
                | Error(err) => onError(err)
                }
              )
@@ -140,17 +131,18 @@ let useStep =
     [|is_active|],
   );
 
-  if (!is_visible) {
-    React.null;
-  } else {
-    <Box flexDirection=`column gap=1>
-      {complete
-         ? <Box flexDirection=`row gap=1>
-             <Text color="green"> {React.string(successLabel)} </Text>
-           </Box>
-         : <Spinner label=loadingLabel />}
-    </Box>;
-  };
+  React.null;
+  // if (!is_visible) {
+  //   React.null;
+  // } else {
+  //   <Box flexDirection=`column gap=1>
+  //     {complete
+  //        ? <Box flexDirection=`row gap=1>
+  //            <Text color="green"> {React.string(successLabel)} </Text>
+  //          </Box>
+  //        : <Spinner label=loadingLabel />}
+  //   </Box>;
+  // };
 };
 
 module Progress_display = {
@@ -168,9 +160,12 @@ module Progress_display = {
     if (currentStepIndex < step_to_int(displayFrom)) {
       React.null;
     } else if (currentStepIndex < step_to_int(displayTo)) {
-      <Box flexDirection=`column gap=1>
-        <Text color="cyan"> {React.string(loadingLabel)} </Text>
-      </Box>;
+      <div>
+        <Box flexDirection=`column gap=1>
+          <Text color="cyan"> {React.string(loadingLabel)} </Text>
+        </Box>
+        <Spinner label=loadingLabel />
+      </div>;
     } else {
       <Box flexDirection=`column gap=1>
         <Text color="green"> {React.string(successLabel)} </Text>
