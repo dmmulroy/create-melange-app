@@ -95,6 +95,10 @@ type actionType('a, 'b) =
   | Sync(unit => 'a)
   | Async(unit => Promise_result.t('a, 'b));
 
+let res: Promise_result.t(string, int) =
+  Js.Promise.make((~resolve, ~reject) => {resolve(. "hello")})
+  |> Promise_result.of_js_promise;
+
 let useStep =
     (
       ~state,
