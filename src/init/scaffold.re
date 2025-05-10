@@ -719,21 +719,19 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
 
   let initializeBundler = state =>
     state->Bundler.Copy_files.fn
-    |> map(_ => Bundler.Extend_package_json.fn(state))
-    |> map(updated_pkg_json =>
+    |> map(() =>
          {
            ...state,
-           pkg_json: updated_pkg_json,
+           pkg_json: Bundler.Extend_package_json.fn(state),
          }
        );
 
   let copyApplicationFiles = state =>
     state->App_files.Copy_files.fn
-    |> map(_ => App_files.Extend_package_json.fn(state))
-    |> map(updated_pkg_json =>
+    |> map(() =>
          {
            ...state,
-           pkg_json: updated_pkg_json,
+           pkg_json: App_files.Extend_package_json.fn(state),
          }
        );
 
