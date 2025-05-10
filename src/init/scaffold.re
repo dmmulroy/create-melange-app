@@ -211,8 +211,6 @@ module Copy_base_templates = {
         ),
       ~onComplete,
       ~onError,
-      ~loadingLabel="Creating base project...",
-      ~successLabel={j|✔ Successfully created base project!|j},
       (),
     );
   };
@@ -240,13 +238,10 @@ module Bundler = {
       );
   };
 
+  let to_string = Bundler.to_string;
   module Extend_package_json = {
     [@react.component]
     let make = (~state, ~onComplete: state => unit, ~onError as _) => {
-      let bundler_name =
-        state.configuration.bundler
-        |> Bundler.to_string
-        |> String.capitalize_ascii;
       useStep(
         ~state,
         ~activeStep=Bundler_extend_package_json,
@@ -266,9 +261,6 @@ module Bundler = {
             },
           ),
         ~onComplete,
-        ~loadingLabel="Initializing bundler: " ++ bundler_name ++ "...",
-        ~successLabel=
-          {j|✔ Successfully initialized bundler: |j} ++ bundler_name,
         (),
       );
     };
@@ -841,6 +833,13 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
 
   <Box flexDirection=`column gap=1>
     <Text color="cyan"> {React.string("Scaffolding project...")} </Text>
+    <Progress_display
+      displayFrom=Create_dir
+      displayTo=Bundler_copy_files
+      loadingLabel="Creating base project..."
+      successLabel="Successfully created base project!"
+      currentStep={state.step}
+    />
     <Create_dir
       state
       onComplete={goToNextStep(Copy_base_templates)}
@@ -852,16 +851,35 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onComplete={goToNextStep(Bundler_copy_files)}
       onError
     />
+    {let bundler_name =
+       state.configuration.bundler
+       |> Bundler.to_string
+       |> String.capitalize_ascii;
+     <Progress_display
+       displayFrom=Bundler_copy_files
+       displayTo=App_copy_files
+       loadingLabel={"Initializing bundler: " ++ bundler_name ++ "..."}
+       successLabel={
+         {j|✔ Successfully initialized bundler: |j} ++ bundler_name
+       }
+       currentStep={state.step}
+     />}
     <Bundler.Copy_files
       state
       onComplete={goToNextStep(Bundler_extend_package_json)}
       onError
     />
-    // Initilizing bundler
     <Bundler.Extend_package_json
       state
       onComplete={goToNextStepWithNewState(App_copy_files)}
       onError
+    />
+    <Progress_display
+      displayFrom=App_copy_files
+      displayTo=App_extend_package_json
+      loadingLabel="Copying application files..."
+      successLabel={j|✔ Successfully copied application files!|j}
+      currentStep={state.step}
     />
     <App_files.Copy_files
       state
@@ -881,6 +899,13 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       )}
       onError
     />
+    <Progress_display
+      displayFrom=Tests_copy_files
+      displayTo=Tests_extend_dune_project
+      loadingLabel="Copying test files..."
+      successLabel={j|✔ Successfully copied test files!|j}
+      currentStep={state.step}
+    />
     <Test_files.Copy_files
       state
       onComplete={goToNextStep(Tests_extend_package_json)}
@@ -897,7 +922,13 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onComplete={goToNextStepWithNewState(Compile_package_json)}
       onError
     />
-    // Compiling package.json
+    <Progress_display
+      displayFrom=Compile_package_json
+      displayTo=Compile_readme
+      loadingLabel="Compiling templates..."
+      successLabel={j|✔ Successfully compiled templates!|j}
+      currentStep={state.step}
+    />
     <Compile.Compile_package_json
       state
       onComplete={goToNextStepWithNewState(Compile_dune_project)}
@@ -947,6 +978,18 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       )}
       onError
     />
+    {let pkg_manager =
+       Nodejs.Process.npm_config_user_agent
+       |> Nodejs.Process.npm_user_agent_to_string;
+     <Progress_display
+       displayFrom=Node_pkg_manager_install
+       displayTo=Opam_update
+       loadingLabel={"Installing npm dependencies with " ++ pkg_manager}
+       successLabel={
+         {j|✔ Successfully installed npm dependencies with |j} ++ pkg_manager
+       }
+       currentStep={state.step}
+     />}
     <Node_pkg_manager_install
       state
       onComplete={goToNextStep(
@@ -960,6 +1003,13 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
         },
       )}
       onError
+    />
+    <Progress_display
+      displayFrom=Opam_update
+      displayTo=Git_init_and_stage
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes..."
+      successLabel={j|✔ Successfully initialized OCaml toolchain!|j}
+      currentStep={state.step}
     />
     <Opam.Update
       state
