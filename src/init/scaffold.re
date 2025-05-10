@@ -322,8 +322,6 @@ module App_files = {
         ~state,
         ~activeStep=App_extend_dune_project,
         ~onComplete,
-        ~loadingLabel="Initializing application files...",
-        ~successLabel={j|✔ Successfully initialized application files|j},
         ~action=
           Sync(
             () => {
@@ -416,8 +414,6 @@ module Test_files = {
               };
             },
           ),
-        ~loadingLabel="Initializing test files...",
-        ~successLabel={j|✔ Successfully initialized test files|j},
         (),
       );
   };
@@ -431,7 +427,6 @@ module Compile = {
         ~state,
         ~activeStep=Compile_package_json,
         ~action=Async(() => state.pkg_json |> Engine.compile),
-        ~loadingLabel="Compiling package.json...",
         ~onError,
         ~onComplete=
           updated_pkg_json => {
@@ -451,7 +446,6 @@ module Compile = {
       useStep(
         ~state,
         ~action=Async(() => state.dune_project |> Engine.compile),
-        ~loadingLabel="Compiling templates...",
         ~activeStep=Compile_dune_project,
         ~onError,
         ~onComplete=
@@ -473,7 +467,6 @@ module Compile = {
         ~state,
         ~activeStep=Compile_root_dune_file,
         ~action=Async(() => state.root_dune_file |> Engine.compile),
-        ~loadingLabel="Compiling templates...",
         ~onComplete=
           res =>
             onComplete({
@@ -492,7 +485,6 @@ module Compile = {
         ~state,
         ~activeStep=Compile_app_dune_file,
         ~action=Async(() => state.app_dune_file |> Engine.compile),
-        ~loadingLabel="Compiling templates...",
         ~onComplete=
           res =>
             onComplete({
@@ -511,7 +503,6 @@ module Compile = {
         ~state,
         ~activeStep=Compile_test_dune_file,
         ~action=Async(() => state.test_dune_file |> Engine.compile),
-        ~loadingLabel="Compiling templates...",
         ~onComplete=
           res =>
             onComplete({
@@ -530,7 +521,6 @@ module Compile = {
         ~state,
         ~activeStep=Compile_app_module,
         ~action=Async(() => state.app_module |> Engine.compile),
-        ~loadingLabel="Compiling templates...",
         ~onComplete=
           res =>
             onComplete({
@@ -549,8 +539,6 @@ module Compile = {
         ~state,
         ~activeStep=Compile_readme,
         ~action=Async(() => state.readme |> Engine.compile),
-        ~loadingLabel="Compiling templates...",
-        ~successLabel={j|✔ Successfully compiled templates!|j},
         ~onComplete=
           res =>
             onComplete({
@@ -566,10 +554,6 @@ module Compile = {
 module Node_pkg_manager_install = {
   [@react.component]
   let make = (~state, ~onComplete, ~onError) => {
-    let pkg_manager =
-      Nodejs.Process.npm_config_user_agent
-      |> Nodejs.Process.npm_user_agent_to_string;
-
     useStep(
       ~state,
       ~activeStep=Node_pkg_manager_install,
@@ -580,11 +564,6 @@ module Node_pkg_manager_install = {
         ),
       ~onComplete=_ => onComplete(),
       ~onError,
-      ~loadingLabel={
-        "Installing npm dependencies with " ++ pkg_manager;
-      },
-      ~successLabel=
-        {j|✔ Successfully installed npm dependencies with |j} ++ pkg_manager,
       (),
     );
   };
@@ -619,8 +598,6 @@ module Git = {
           ),
         ~onComplete=_ => onComplete(),
         ~onError,
-        ~loadingLabel="Initializing git...",
-        ~successLabel={j|✔ Successfully initialized git!|j},
         (),
       );
   };
@@ -637,8 +614,6 @@ module Opam = {
           Async(() => state.configuration.directory |> Engine.opam_update),
         ~onComplete=_ => onComplete(),
         ~onError,
-        ~loadingLabel=
-          "Initializing OCaml toolchain, this may take a few minutes...",
         (),
       );
   };
@@ -655,8 +630,6 @@ module Opam = {
           ),
         ~onComplete=_ => onComplete(),
         ~onError,
-        ~loadingLabel=
-          "Initializing OCaml toolchain, this may take a few minutes...",
         (),
       );
   };
@@ -673,8 +646,6 @@ module Opam = {
           ),
         ~onComplete=_ => onComplete(),
         ~onError,
-        ~loadingLabel=
-          "Initializing OCaml toolchain, this may take a few minutes...",
         (),
       );
   };
@@ -693,8 +664,6 @@ module Opam = {
           ),
         ~onComplete=_ => onComplete(),
         ~onError,
-        ~loadingLabel=
-          "Initializing OCaml toolchain, this may take a few minutes...",
         (),
       );
   };
@@ -712,8 +681,6 @@ module Opam = {
           ),
         ~onComplete=_ => onComplete(),
         ~onError,
-        ~loadingLabel=
-          "Initializing OCaml toolchain, this may take a few minutes...",
         (),
       );
   };
@@ -729,8 +696,6 @@ module Dune_install = {
         Async(() => state.configuration.directory |> Engine.dune_install),
       ~onComplete=_ => onComplete(),
       ~onError,
-      ~loadingLabel=
-        "Initializing OCaml toolchain, this may take a few minutes...",
       (),
     );
 };
@@ -744,9 +709,6 @@ module Dune_build = {
       ~action=Async(() => state.configuration.directory |> Engine.dune_build),
       ~onComplete=_ => onComplete(),
       ~onError,
-      ~loadingLabel=
-        "Initializing OCaml toolchain, this may take a few minutes...",
-      ~successLabel={j|✔ Successfully intialized the OCaml toolchain!|j},
       (),
     );
 };
@@ -876,7 +838,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     />
     <Progress_display
       displayFrom=App_copy_files
-      displayTo=App_extend_package_json
+      displayTo=Tests_copy_files
       loadingLabel="Copying application files..."
       successLabel={j|✔ Successfully copied application files!|j}
       currentStep={state.step}
@@ -901,7 +863,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     />
     <Progress_display
       displayFrom=Tests_copy_files
-      displayTo=Tests_extend_dune_project
+      displayTo=Compile_package_json
       loadingLabel="Copying test files..."
       successLabel={j|✔ Successfully copied test files!|j}
       currentStep={state.step}
@@ -924,7 +886,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     />
     <Progress_display
       displayFrom=Compile_package_json
-      displayTo=Compile_readme
+      displayTo=Node_pkg_manager_install
       loadingLabel="Compiling templates..."
       successLabel={j|✔ Successfully compiled templates!|j}
       currentStep={state.step}
@@ -1043,6 +1005,13 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
         configuration.initialize_git ? Git_copy_ignore_file : Finished,
       )}
       onError
+    />
+    <Progress_display
+      displayFrom=Git_copy_ignore_file
+      displayTo=Finished
+      loadingLabel="Initializing git..."
+      successLabel={j|✔ Successfully initialized git!|j}
+      currentStep={state.step}
     />
     <Git.Copy_ignore_file
       state
