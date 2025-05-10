@@ -298,24 +298,6 @@ module Test_files = {
            ~syntax_preference=state.configuration.syntax_preference,
            ~is_react_app=state.configuration.is_react_app,
          );
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Tests_copy_files,
-        ~action=
-          Async(
-            () =>
-              state.configuration.directory
-              |> Engine.copy_test_files(
-                   ~syntax_preference=state.configuration.syntax_preference,
-                   ~is_react_app=state.configuration.is_react_app,
-                 ),
-          ),
-        ~onComplete,
-        ~onError,
-        (),
-      );
   };
 
   module Extend_package_json = {
@@ -325,31 +307,6 @@ module Test_files = {
            ~is_react_app=state.configuration.is_react_app,
            ~project_name=state.configuration.name,
          );
-
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) => {
-      useStep(
-        ~state,
-        ~activeStep=Tests_extend_package_json,
-        ~onComplete,
-        ~action=
-          Sync(
-            () => {
-              let updated_pkg_json =
-                state.pkg_json
-                |> Engine.extend_package_json_with_tests(
-                     ~is_react_app=state.configuration.is_react_app,
-                     ~project_name=state.configuration.name,
-                   );
-              {
-                ...state,
-                pkg_json: updated_pkg_json,
-              };
-            },
-          ),
-        (),
-      );
-    };
   };
 
   module Extend_dune_project = {
@@ -359,30 +316,22 @@ module Test_files = {
            ~is_react_app=state.configuration.is_react_app,
            ~project_name=state.configuration.name,
          );
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) =>
-      useStep(
-        ~state,
-        ~activeStep=Tests_extend_dune_project,
-        ~onComplete,
-        ~action=
-          Sync(
-            () => {
-              let updated_dune_project =
-                state.dune_project
-                |> Engine.extend_dune_project_with_tests(
-                     ~is_react_app=state.configuration.is_react_app,
-                     ~project_name=state.configuration.name,
-                   );
-              {
-                ...state,
-                dune_project: updated_dune_project,
-              };
-            },
-          ),
-        (),
-      );
   };
+
+  let initilizeTestFiles = state =>
+    Copy_files.fn(state)
+    |> Promise_result.map(() =>
+         {
+           ...state,
+           pkg_json: Extend_package_json.fn(state),
+         }
+       )
+    |> Promise_result.map(state =>
+         {
+           ...state,
+           dune_project: Extend_dune_project.fn(state),
+         }
+       );
 };
 
 module Compile = {
@@ -826,28 +775,14 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
         onError
         fn={() => copyApplicationFiles(state)}
       />
-      <Progress_display
-        displayFrom=Tests_copy_files
-        displayTo=Compile_package_json
-        loadingLabel="Copying test files..."
+      <Progress_display2
+        startStep=Initialize_app_files
+        loadingLabel="Copying test files"
         successLabel={j|✔ Successfully copied test files!|j}
         currentStep={state.step}
-      />
-      <Test_files.Copy_files
-        state
-        onComplete={goToNextStep(Tests_extend_package_json)}
-        onError
-      />
-      <Test_files.Extend_package_json
-        state
-        onComplete={goToNextStepWithNewState(Tests_extend_dune_project)}
-        onError
-      />
-      // Initializing test files
-      <Test_files.Extend_dune_project
-        state
         onComplete={goToNextStepWithNewState(Compile_package_json)}
         onError
+        fn={() => Test_files.initilizeTestFiles(state)}
       />
       <Progress_display
         displayFrom=Compile_package_json
