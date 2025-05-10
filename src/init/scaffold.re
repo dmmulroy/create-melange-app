@@ -3,6 +3,9 @@ open Ink;
 
 open Core;
 
+let ( let* ) = Promise_result.bind;
+let (let+) = Promise_result.map;
+
 // For Minttea rewrite:
 // This file is a great example of do as I say not as I do. It's a mess and
 // I just brute forced it to work w/ lots of copy/paste. I think a better way
@@ -337,139 +340,53 @@ module Test_files = {
 module Compile = {
   module Compile_package_json = {
     let fn = state => state.pkg_json |> Engine.compile;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      useStep(
-        ~state,
-        ~activeStep=Compile_package_json,
-        ~action=Async(() => state.pkg_json |> Engine.compile),
-        ~onError,
-        ~onComplete=
-          updated_pkg_json => {
-            onComplete({
-              ...state,
-              pkg_json: updated_pkg_json,
-            })
-          },
-        (),
-      );
-    };
   };
 
   module Compile_dune_project = {
     let fn = state => state.dune_project |> Engine.compile;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      useStep(
-        ~state,
-        ~action=Async(() => state.dune_project |> Engine.compile),
-        ~activeStep=Compile_dune_project,
-        ~onError,
-        ~onComplete=
-          updated_dune_project => {
-            onComplete({
-              ...state,
-              dune_project: updated_dune_project,
-            })
-          },
-        (),
-      );
-    };
   };
 
   module Compile_root_dune_file = {
     let fn = state => state.root_dune_file |> Engine.compile;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Compile_root_dune_file,
-        ~action=Async(() => state.root_dune_file |> Engine.compile),
-        ~onComplete=
-          res =>
-            onComplete({
-              ...state,
-              root_dune_file: res,
-            }),
-        ~onError,
-        (),
-      );
   };
 
   module Compile_app_dune_file = {
     let fn = state => state.app_dune_file |> Engine.compile;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Compile_app_dune_file,
-        ~action=Async(() => state.app_dune_file |> Engine.compile),
-        ~onComplete=
-          res =>
-            onComplete({
-              ...state,
-              app_dune_file: res,
-            }),
-        ~onError,
-        (),
-      );
   };
 
   module Compile_test_dune_file = {
     let fn = state => state.test_dune_file |> Engine.compile;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Compile_test_dune_file,
-        ~action=Async(() => state.test_dune_file |> Engine.compile),
-        ~onComplete=
-          res =>
-            onComplete({
-              ...state,
-              test_dune_file: res,
-            }),
-        ~onError,
-        (),
-      );
   };
 
   module Compile_app_module = {
     let fn = state => state.app_module |> Engine.compile;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Compile_app_module,
-        ~action=Async(() => state.app_module |> Engine.compile),
-        ~onComplete=
-          res =>
-            onComplete({
-              ...state,
-              app_module: res,
-            }),
-        ~onError,
-        (),
-      );
   };
 
   module Compile_readme = {
     let fn = state => state.readme |> Engine.compile;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Compile_readme,
-        ~action=Async(() => state.readme |> Engine.compile),
-        ~onComplete=
-          res =>
-            onComplete({
-              ...state,
-              readme: res,
-            }),
-        ~onError,
-        (),
-      );
+  };
+
+  let compile = state => {
+    let* pkg_json = Compile_package_json.fn(state);
+    let* dune_project = Compile_dune_project.fn(state);
+    let* root_dune_file = Compile_root_dune_file.fn(state);
+    let* app_dune_file = Compile_app_dune_file.fn(state);
+    let* test_dune_file = Compile_test_dune_file.fn(state);
+    let* app_module = Compile_app_module.fn(state);
+    let* readme = Compile_readme.fn(state);
+
+    Promise.resolve(
+      Ok({
+        ...state,
+        pkg_json,
+        dune_project,
+        root_dune_file,
+        app_dune_file,
+        test_dune_file,
+        app_module,
+        readme,
+      }),
+    );
   };
 };
 
@@ -789,62 +706,14 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
         onError
         fn={() => Test_files.initilizeTestFiles(state)}
       />
-      <Progress_display
-        displayFrom=Compile_package_json
-        displayTo=Node_pkg_manager_install
+      <Progress_display2
+        startStep=Compile_package_json
         loadingLabel="Compiling templates..."
         successLabel={j|✔ Successfully compiled templates!|j}
         currentStep={state.step}
-      />
-      <Compile.Compile_package_json
-        state
-        onComplete={goToNextStepWithNewState(Compile_dune_project)}
+        onComplete={goToNextStepWithNewState(Node_pkg_manager_install)}
         onError
-      />
-      <Compile.Compile_dune_project
-        state
-        onComplete={goToNextStepWithNewState(Compile_root_dune_file)}
-        onError
-      />
-      <Compile.Compile_root_dune_file
-        state
-        onComplete={goToNextStepWithNewState(Compile_app_dune_file)}
-        onError
-      />
-      <Compile.Compile_app_dune_file
-        state
-        onComplete={goToNextStepWithNewState(
-          configuration.has_tests
-            ? Compile_test_dune_file : Compile_app_module,
-        )}
-        onError
-      />
-      <Compile.Compile_test_dune_file
-        state
-        onComplete={goToNextStepWithNewState(Compile_app_module)}
-        onError
-      />
-      <Compile.Compile_app_module
-        state
-        onComplete={goToNextStepWithNewState(Compile_readme)}
-        onError
-      />
-      // Successfully compiled templates
-      <Compile.Compile_readme
-        state
-        onComplete={goToNextStepWithNewState(
-          switch (
-            configuration.initialize_npm,
-            configuration.initialize_git,
-            configuration.initialize_ocaml_toolchain,
-          ) {
-          | (true, _, _) => Node_pkg_manager_install
-          | (_, true, _) => Git_copy_ignore_file
-          | (_, _, true) => Opam_update
-          | _ => Finished
-          },
-        )}
-        onError
+        fn={() => Compile.compile(state)}
       />
       {let pkg_manager =
          Nodejs.Process.npm_config_user_agent
