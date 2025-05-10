@@ -167,172 +167,145 @@ module Progress_display = {
   };
 };
 
-module Create_dir = {
+module Progress_display2 = {
   [@react.component]
-  let make = (~state, ~onComplete, ~onError) =>
-    useStep(
-      ~state,
-      ~activeStep=Create_dir,
-      ~action=
-        Async(
-          () =>
-            state.configuration.directory
-            |> Engine.create_project_directory(
-                 ~overwrite=?state.configuration.overwrite,
-               ),
-        ),
-      ~onComplete,
-      ~onError,
-      (),
+  let make =
+      (
+        ~startStep: step,
+        ~currentStep: step,
+        ~loadingLabel: string,
+        ~successLabel: string,
+        ~fn: unit => Promise_result.t('a, 'b),
+        ~onComplete: 'a => unit,
+        ~onError: 'b => unit,
+      ) => {
+    let (isLoading, setIsLoading) = React.useState(() => false);
+    let currentStepIndex = step_to_int(currentStep);
+    let isCurrentStep = currentStep == startStep;
+
+    let fnRef = React.useRef(fn);
+    fnRef.current = fn;
+
+    React.useEffect1(
+      () => {
+        if (isCurrentStep) {
+          fnRef.current()
+          |> Promise_result.perform(result => {
+               setIsLoading(_ => false);
+               switch (result) {
+               | Ok(res) => onComplete(res)
+               | Error(err) => onError(err)
+               };
+             });
+        };
+        None;
+      },
+      [|isCurrentStep|],
     );
+
+    if (currentStepIndex < step_to_int(startStep)) {
+      React.null;
+    } else if (isLoading) {
+      <Ui.Spinner label=loadingLabel />;
+    } else {
+      <Box flexDirection=`column gap=1>
+        <Text color="green"> {React.string(successLabel)} </Text>
+      </Box>;
+    };
+  };
+};
+
+module Create_dir = {
+  let fn = state =>
+    state.configuration.directory
+    |> Engine.create_project_directory(
+         ~overwrite=?state.configuration.overwrite,
+       );
+  // [@react.component]
+  // let make = (~state, ~onComplete, ~onError) =>
+  //   useStep(
+  //     ~state,
+  //     ~activeStep=Create_dir,
+  //     ~action=Async(() => fn(state)),
+  //     ~onComplete,
+  //     ~onError,
+  //     (),
+  //   );
 };
 
 module Copy_base_templates = {
-  [@react.component]
-  let make = (~state, ~onComplete, ~onError) => {
-    useStep(
-      ~state,
-      ~activeStep=Copy_base_templates,
-      ~action=
-        Async(
-          () => state.configuration.directory |> Engine.copy_base_project,
-        ),
-      ~onComplete,
-      ~onError,
-      (),
-    );
-  };
+  let fn = state => state.configuration.directory |> Engine.copy_base_project;
+  // [@react.component]
+  // let make = (~state, ~onComplete, ~onError) => {
+  //   useStep(
+  //     ~state,
+  //     ~activeStep=Copy_base_templates,
+  //     ~action=Async(() => fn(state)),
+  //     ~onComplete,
+  //     ~onError,
+  //     (),
+  //   );
+  // };
 };
 
 module Bundler = {
   module Copy_files = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=Bundler_copy_files,
-        ~action=
-          Async(
-            () =>
-              state.configuration.directory
-              |> Engine.copy_bundler_files(
-                   ~bundler=state.configuration.bundler,
-                   ~is_react_app=state.configuration.is_react_app,
-                 ),
-          ),
-        ~onComplete,
-        ~onError,
-        (),
-      );
+    let fn = state =>
+      state.configuration.directory
+      |> Engine.copy_bundler_files(
+           ~bundler=state.configuration.bundler,
+           ~is_react_app=state.configuration.is_react_app,
+         );
   };
 
   let to_string = Bundler.to_string;
   module Extend_package_json = {
-    [@react.component]
-    let make = (~state, ~onComplete: state => unit, ~onError as _) => {
-      useStep(
-        ~state,
-        ~activeStep=Bundler_extend_package_json,
-        ~action=
-          Sync(
-            () => {
-              let updated_pkg_json =
-                state.pkg_json
-                |> Engine.extend_package_json_with_bundler(
-                     ~bundler=state.configuration.bundler,
-                     ~project_name=state.configuration.name,
-                   );
-              {
-                ...state,
-                pkg_json: updated_pkg_json,
-              };
-            },
-          ),
-        ~onComplete,
-        (),
-      );
-    };
+    let fn = state =>
+      state.pkg_json
+      |> Engine.extend_package_json_with_bundler(
+           ~bundler=state.configuration.bundler,
+           ~project_name=state.configuration.name,
+         );
   };
 };
 
 module App_files = {
   module Copy_files = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) =>
-      useStep(
-        ~state,
-        ~activeStep=App_copy_files,
-        ~onComplete,
-        ~onError,
-        ~action=
-          Async(
-            () =>
-              state.configuration.directory
-              |> Engine.copy_app_files(
-                   ~syntax_preference=state.configuration.syntax_preference,
-                   ~is_react_app=state.configuration.is_react_app,
-                 ),
-          ),
-        (),
-      );
+    let fn = state =>
+      state.configuration.directory
+      |> Engine.copy_app_files(
+           ~syntax_preference=state.configuration.syntax_preference,
+           ~is_react_app=state.configuration.is_react_app,
+         );
   };
 
   module Extend_package_json = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) =>
-      useStep(
-        ~state,
-        ~activeStep=App_extend_package_json,
-        ~action=
-          Sync(
-            () => {
-              let updated_pkg_json =
-                state.pkg_json
-                |> Engine.extend_package_json_with_app_settings(
-                     ~is_react_app=state.configuration.is_react_app,
-                   );
-
-              {
-                ...state,
-                pkg_json: updated_pkg_json,
-              };
-            },
-          ),
-        ~onComplete,
-        (),
-      );
+    let fn = state =>
+      state.pkg_json
+      |> Engine.extend_package_json_with_app_settings(
+           ~is_react_app=state.configuration.is_react_app,
+         );
   };
 
   module Extend_dune_project = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) =>
-      useStep(
-        ~state,
-        ~activeStep=App_extend_dune_project,
-        ~onComplete,
-        ~action=
-          Sync(
-            () => {
-              let updated_dune_project =
-                state.dune_project
-                |> Engine.extend_dune_project_with_app_settings(
-                     ~is_react_app=state.configuration.is_react_app,
-                     ~syntax_preference=state.configuration.syntax_preference,
-                     ~project_name=state.configuration.name,
-                   );
-              {
-                ...state,
-                dune_project: updated_dune_project,
-              };
-            },
-          ),
-        (),
-      );
+    let fn = state =>
+      state.dune_project
+      |> Engine.extend_dune_project_with_app_settings(
+           ~is_react_app=state.configuration.is_react_app,
+           ~syntax_preference=state.configuration.syntax_preference,
+           ~project_name=state.configuration.name,
+         );
   };
 };
 
 module Test_files = {
   module Copy_files = {
+    let fn = state =>
+      state.configuration.directory
+      |> Engine.copy_test_files(
+           ~syntax_preference=state.configuration.syntax_preference,
+           ~is_react_app=state.configuration.is_react_app,
+         );
     [@react.component]
     let make = (~state, ~onComplete, ~onError) =>
       useStep(
@@ -748,7 +721,10 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
 
   let onError =
     React.useCallback1(
-      err => {onComplete(Result.error(err))},
+      err => {
+        Js.Console.log2("err", err);
+        onComplete(Result.error(err));
+      },
       [|onComplete|],
     );
 
@@ -781,231 +757,234 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       }
     );
 
-  <Box flexDirection=`column gap=1>
-    <Text color="cyan"> {React.string("Scaffolding project...")} </Text>
-    <Progress_display
-      displayFrom=Create_dir
-      displayTo=Bundler_copy_files
-      loadingLabel="Creating base project..."
-      successLabel="Successfully created base project!"
-      currentStep={state.step}
-    />
-    <Create_dir
-      state
-      onComplete={goToNextStep(Copy_base_templates)}
-      onError
-    />
-    // Creating base project
-    <Copy_base_templates
-      state
-      onComplete={goToNextStep(Bundler_copy_files)}
-      onError
-    />
-    {let bundler_name =
-       state.configuration.bundler
-       |> Bundler.to_string
-       |> String.capitalize_ascii;
-     <Progress_display
-       displayFrom=Bundler_copy_files
-       displayTo=App_copy_files
-       loadingLabel={"Initializing bundler: " ++ bundler_name ++ "..."}
-       successLabel={
-         {j|✔ Successfully initialized bundler: |j} ++ bundler_name
-       }
-       currentStep={state.step}
-     />}
-    <Bundler.Copy_files
-      state
-      onComplete={goToNextStep(Bundler_extend_package_json)}
-      onError
-    />
-    <Bundler.Extend_package_json
-      state
-      onComplete={goToNextStepWithNewState(App_copy_files)}
-      onError
-    />
-    <Progress_display
-      displayFrom=App_copy_files
-      displayTo=Tests_copy_files
-      loadingLabel="Copying application files..."
-      successLabel={j|✔ Successfully copied application files!|j}
-      currentStep={state.step}
-    />
-    <App_files.Copy_files
-      state
-      onComplete={goToNextStep(App_extend_package_json)}
-      onError
-    />
-    <App_files.Extend_package_json
-      state
-      onComplete={goToNextStepWithNewState(App_extend_dune_project)}
-      onError
-    />
-    // Initializing application files
-    <App_files.Extend_dune_project
-      state
-      onComplete={goToNextStepWithNewState(
-        configuration.has_tests ? Tests_copy_files : Compile_package_json,
-      )}
-      onError
-    />
-    <Progress_display
-      displayFrom=Tests_copy_files
-      displayTo=Compile_package_json
-      loadingLabel="Copying test files..."
-      successLabel={j|✔ Successfully copied test files!|j}
-      currentStep={state.step}
-    />
-    <Test_files.Copy_files
-      state
-      onComplete={goToNextStep(Tests_extend_package_json)}
-      onError
-    />
-    <Test_files.Extend_package_json
-      state
-      onComplete={goToNextStepWithNewState(Tests_extend_dune_project)}
-      onError
-    />
-    // Initializing test files
-    <Test_files.Extend_dune_project
-      state
-      onComplete={goToNextStepWithNewState(Compile_package_json)}
-      onError
-    />
-    <Progress_display
-      displayFrom=Compile_package_json
-      displayTo=Node_pkg_manager_install
-      loadingLabel="Compiling templates..."
-      successLabel={j|✔ Successfully compiled templates!|j}
-      currentStep={state.step}
-    />
-    <Compile.Compile_package_json
-      state
-      onComplete={goToNextStepWithNewState(Compile_dune_project)}
-      onError
-    />
-    <Compile.Compile_dune_project
-      state
-      onComplete={goToNextStepWithNewState(Compile_root_dune_file)}
-      onError
-    />
-    <Compile.Compile_root_dune_file
-      state
-      onComplete={goToNextStepWithNewState(Compile_app_dune_file)}
-      onError
-    />
-    <Compile.Compile_app_dune_file
-      state
-      onComplete={goToNextStepWithNewState(
-        configuration.has_tests ? Compile_test_dune_file : Compile_app_module,
-      )}
-      onError
-    />
-    <Compile.Compile_test_dune_file
-      state
-      onComplete={goToNextStepWithNewState(Compile_app_module)}
-      onError
-    />
-    <Compile.Compile_app_module
-      state
-      onComplete={goToNextStepWithNewState(Compile_readme)}
-      onError
-    />
-    // Successfully compiled templates
-    <Compile.Compile_readme
-      state
-      onComplete={goToNextStepWithNewState(
-        switch (
-          configuration.initialize_npm,
-          configuration.initialize_git,
-          configuration.initialize_ocaml_toolchain,
-        ) {
-        | (true, _, _) => Node_pkg_manager_install
-        | (_, true, _) => Git_copy_ignore_file
-        | (_, _, true) => Opam_update
-        | _ => Finished
-        },
-      )}
-      onError
-    />
-    {let pkg_manager =
-       Nodejs.Process.npm_config_user_agent
-       |> Nodejs.Process.npm_user_agent_to_string;
-     <Progress_display
-       displayFrom=Node_pkg_manager_install
-       displayTo=Opam_update
-       loadingLabel={"Installing npm dependencies with " ++ pkg_manager}
-       successLabel={
-         {j|✔ Successfully installed npm dependencies with |j} ++ pkg_manager
-       }
-       currentStep={state.step}
-     />}
-    <Node_pkg_manager_install
-      state
-      onComplete={goToNextStep(
-        switch (
-          configuration.initialize_git,
-          configuration.initialize_ocaml_toolchain,
-        ) {
-        | (_, true) => Opam_update
-        | (true, false) => Git_copy_ignore_file
-        | _ => Finished
-        },
-      )}
-      onError
-    />
-    <Progress_display
-      displayFrom=Opam_update
-      displayTo=Git_init_and_stage
-      loadingLabel="Initializing OCaml toolchain, this may take a few minutes..."
-      successLabel={j|✔ Successfully initialized OCaml toolchain!|j}
-      currentStep={state.step}
-    />
-    <Opam.Update
-      state
-      onComplete={goToNextStep(Opam_create_switch)}
-      onError
-    />
-    <Opam.Create_switch
-      state
-      onComplete={goToNextStep(Opam_install_dune)}
-      onError
-    />
-    <Opam.Install_dune
-      state
-      onComplete={goToNextStep(Dune_install)}
-      onError
-    />
-    <Dune_install
-      state
-      onComplete={goToNextStep(Opam_install_dev_deps)}
-      onError
-    />
-    <Opam.Install_dev_deps
-      state
-      onComplete={goToNextStep(Opam_install_deps)}
-      onError
-    />
-    <Opam.Install_deps state onComplete={goToNextStep(Dune_build)} onError />
-    <Dune_build
-      state
-      onComplete={goToNextStep(
-        configuration.initialize_git ? Git_copy_ignore_file : Finished,
-      )}
-      onError
-    />
-    <Progress_display
-      displayFrom=Git_copy_ignore_file
-      displayTo=Finished
-      loadingLabel="Initializing git..."
-      successLabel={j|✔ Successfully initialized git!|j}
-      currentStep={state.step}
-    />
-    <Git.Copy_ignore_file
-      state
-      onComplete={goToNextStep(Git_init_and_stage)}
-      onError
-    />
-    <Git.Init_and_stage state onComplete={goToNextStep(Finished)} onError />
-  </Box>;
+  let bind = Promise_result.bind;
+  let map = Promise_result.map;
+
+  let createBaseProject = state =>
+    state->Create_dir.fn->bind(() => Copy_base_templates.fn(state));
+
+  let initializeBundler = state =>
+    state->Bundler.Copy_files.fn
+    |> map(_ => Bundler.Extend_package_json.fn(state))
+    |> map(updated_pkg_json =>
+         {
+           ...state,
+           pkg_json: updated_pkg_json,
+         }
+       );
+
+  let copyApplicationFiles = state =>
+    state->App_files.Copy_files.fn
+    |> map(_ => App_files.Extend_package_json.fn(state))
+    |> map(updated_pkg_json =>
+         {
+           ...state,
+           pkg_json: updated_pkg_json,
+         }
+       );
+
+  let el =
+    <Box flexDirection=`column gap=1>
+      <Text color="cyan"> {React.string("Scaffolding project...")} </Text>
+      <Progress_display2
+        startStep=Create_dir
+        currentStep={state.step}
+        loadingLabel="Creating base project..."
+        successLabel="Successfully created base project!"
+        onComplete={goToNextStep(Copy_base_templates)}
+        onError
+        fn={() => createBaseProject(state)}
+      />
+      {let bundler_name =
+         state.configuration.bundler
+         |> Bundler.to_string
+         |> String.capitalize_ascii;
+       <Progress_display2
+         startStep=Copy_base_templates
+         currentStep={state.step}
+         loadingLabel={"Initializing bundler: " ++ bundler_name ++ "..."}
+         successLabel={
+           {j|✔ Successfully initialized bundler: |j} ++ bundler_name
+         }
+         onComplete={goToNextStepWithNewState(App_copy_files)}
+         onError
+         fn={() => initializeBundler(state)}
+       />}
+      <Progress_display2
+        startStep=App_copy_files
+        loadingLabel="Copying application files..."
+        successLabel={j|✔ Successfully copied application files!|j}
+        currentStep={state.step}
+        onComplete={goToNextStepWithNewState(
+          configuration.has_tests ? Tests_copy_files : Compile_package_json,
+        )}
+        onError
+        fn={() => copyApplicationFiles(state)}
+      />
+      <Progress_display
+        displayFrom=Tests_copy_files
+        displayTo=Compile_package_json
+        loadingLabel="Copying test files..."
+        successLabel={j|✔ Successfully copied test files!|j}
+        currentStep={state.step}
+      />
+      <Test_files.Copy_files
+        state
+        onComplete={goToNextStep(Tests_extend_package_json)}
+        onError
+      />
+      <Test_files.Extend_package_json
+        state
+        onComplete={goToNextStepWithNewState(Tests_extend_dune_project)}
+        onError
+      />
+      // Initializing test files
+      <Test_files.Extend_dune_project
+        state
+        onComplete={goToNextStepWithNewState(Compile_package_json)}
+        onError
+      />
+      <Progress_display
+        displayFrom=Compile_package_json
+        displayTo=Node_pkg_manager_install
+        loadingLabel="Compiling templates..."
+        successLabel={j|✔ Successfully compiled templates!|j}
+        currentStep={state.step}
+      />
+      <Compile.Compile_package_json
+        state
+        onComplete={goToNextStepWithNewState(Compile_dune_project)}
+        onError
+      />
+      <Compile.Compile_dune_project
+        state
+        onComplete={goToNextStepWithNewState(Compile_root_dune_file)}
+        onError
+      />
+      <Compile.Compile_root_dune_file
+        state
+        onComplete={goToNextStepWithNewState(Compile_app_dune_file)}
+        onError
+      />
+      <Compile.Compile_app_dune_file
+        state
+        onComplete={goToNextStepWithNewState(
+          configuration.has_tests
+            ? Compile_test_dune_file : Compile_app_module,
+        )}
+        onError
+      />
+      <Compile.Compile_test_dune_file
+        state
+        onComplete={goToNextStepWithNewState(Compile_app_module)}
+        onError
+      />
+      <Compile.Compile_app_module
+        state
+        onComplete={goToNextStepWithNewState(Compile_readme)}
+        onError
+      />
+      // Successfully compiled templates
+      <Compile.Compile_readme
+        state
+        onComplete={goToNextStepWithNewState(
+          switch (
+            configuration.initialize_npm,
+            configuration.initialize_git,
+            configuration.initialize_ocaml_toolchain,
+          ) {
+          | (true, _, _) => Node_pkg_manager_install
+          | (_, true, _) => Git_copy_ignore_file
+          | (_, _, true) => Opam_update
+          | _ => Finished
+          },
+        )}
+        onError
+      />
+      {let pkg_manager =
+         Nodejs.Process.npm_config_user_agent
+         |> Nodejs.Process.npm_user_agent_to_string;
+       <Progress_display
+         displayFrom=Node_pkg_manager_install
+         displayTo=Opam_update
+         loadingLabel={"Installing npm dependencies with " ++ pkg_manager}
+         successLabel={
+           {j|✔ Successfully installed npm dependencies with |j}
+           ++ pkg_manager
+         }
+         currentStep={state.step}
+       />}
+      <Node_pkg_manager_install
+        state
+        onComplete={goToNextStep(
+          switch (
+            configuration.initialize_git,
+            configuration.initialize_ocaml_toolchain,
+          ) {
+          | (_, true) => Opam_update
+          | (true, false) => Git_copy_ignore_file
+          | _ => Finished
+          },
+        )}
+        onError
+      />
+      <Progress_display
+        displayFrom=Opam_update
+        displayTo=Git_init_and_stage
+        loadingLabel="Initializing OCaml toolchain, this may take a few minutes..."
+        successLabel={j|✔ Successfully initialized OCaml toolchain!|j}
+        currentStep={state.step}
+      />
+      <Opam.Update
+        state
+        onComplete={goToNextStep(Opam_create_switch)}
+        onError
+      />
+      <Opam.Create_switch
+        state
+        onComplete={goToNextStep(Opam_install_dune)}
+        onError
+      />
+      <Opam.Install_dune
+        state
+        onComplete={goToNextStep(Dune_install)}
+        onError
+      />
+      <Dune_install
+        state
+        onComplete={goToNextStep(Opam_install_dev_deps)}
+        onError
+      />
+      <Opam.Install_dev_deps
+        state
+        onComplete={goToNextStep(Opam_install_deps)}
+        onError
+      />
+      <Opam.Install_deps
+        state
+        onComplete={goToNextStep(Dune_build)}
+        onError
+      />
+      <Dune_build
+        state
+        onComplete={goToNextStep(
+          configuration.initialize_git ? Git_copy_ignore_file : Finished,
+        )}
+        onError
+      />
+      <Progress_display
+        displayFrom=Git_copy_ignore_file
+        displayTo=Finished
+        loadingLabel="Initializing git..."
+        successLabel={j|✔ Successfully initialized git!|j}
+        currentStep={state.step}
+      />
+      <Git.Copy_ignore_file
+        state
+        onComplete={goToNextStep(Git_init_and_stage)}
+        onError
+      />
+      <Git.Init_and_stage state onComplete={goToNextStep(Finished)} onError />
+    </Box>;
+  el;
 };
