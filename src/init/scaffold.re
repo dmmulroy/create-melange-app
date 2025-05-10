@@ -501,6 +501,18 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
        onError
        fn={() => {Node_pkg_manager_install.fn(state)}}
      />}
+    // let step_to_int = step =>
+    //   switch (step) {
+    //   | Opam_update => 6
+    //   | Opam_create_switch => 7
+    //   | Opam_install_dune => 8
+    //   | Dune_install => 9
+    //   | Opam_install_dev_deps => 10
+    //   | Opam_install_deps => 11
+    //   | Dune_build => 12
+    //   | Initialize_git => 13
+    //   | Finished => 14j
+    //   };
     <Progress_display2
       startStep=Opam_update
       currentStep={state.step}
@@ -524,14 +536,23 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       currentStep={state.step}
       loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 3/7 (Installing dune)"
       successLabel={j|✔ Successfully installed dune!|j}
-      onComplete={_ => goToNextStep(Opam_install_dev_deps, ())}
+      onComplete={_ => goToNextStep(Dune_install, ())}
       onError
       fn={() => {Opam.Install_dune.fn(state)}}
     />
     <Progress_display2
+      startStep=Dune_install
+      currentStep={state.step}
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 4/7 (Running dune install)"
+      successLabel={j|✔ Successfully installed dependencies!|j}
+      onComplete={_ => goToNextStep(Opam_install_dev_deps, ())}
+      onError
+      fn={() => {Opam.Install_deps.fn(state)}}
+    />
+    <Progress_display2
       startStep=Opam_install_dev_deps
       currentStep={state.step}
-      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 4/7 (Installing dev dependencies)"
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 5/7 (Installing dev dependencies)"
       successLabel={j|✔ Successfully installed dev dependencies!|j}
       onComplete={_ => goToNextStep(Opam_install_deps, ())}
       onError
@@ -539,15 +560,6 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     />
     <Progress_display2
       startStep=Opam_install_deps
-      currentStep={state.step}
-      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 5/7 (Installing dependencies)"
-      successLabel={j|✔ Successfully installed dependencies!|j}
-      onComplete={_ => goToNextStep(Dune_install, ())}
-      onError
-      fn={() => {Opam.Install_deps.fn(state)}}
-    />
-    <Progress_display2
-      startStep=Dune_install
       currentStep={state.step}
       loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 6/7 (Installing dune)"
       successLabel={j|✔ Successfully installed dune!|j}
