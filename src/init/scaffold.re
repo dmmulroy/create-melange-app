@@ -18,9 +18,7 @@ type step =
   // Section 3 - Initialize app files
   | Initialize_app_files
   // Section 4 - Initialize test files
-  | Tests_copy_files
-  | Tests_extend_package_json
-  | Tests_extend_dune_project
+  | Initialize_test_files
   // Section 5 - Compile templates
   | Compile_package_json
   | Compile_dune_project
@@ -49,9 +47,7 @@ let step_to_int = step =>
   | Create_base_project => 0
   | Initialize_bundler => 1
   | Initialize_app_files => 2
-  | Tests_copy_files => 3
-  | Tests_extend_package_json => 4
-  | Tests_extend_dune_project => 5
+  | Initialize_test_files => 3
   | Compile_package_json => 6
   | Compile_dune_project => 7
   | Compile_root_dune_file => 8
@@ -692,13 +688,14 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
         successLabel={j|✔ Successfully copied application files!|j}
         currentStep={state.step}
         onComplete={goToNextStepWithNewState(
-          configuration.has_tests ? Tests_copy_files : Compile_package_json,
+          configuration.has_tests
+            ? Initialize_test_files : Compile_package_json,
         )}
         onError
         fn={() => copyApplicationFiles(state)}
       />
       <Progress_display2
-        startStep=Initialize_app_files
+        startStep=Initialize_test_files
         loadingLabel="Copying test files"
         successLabel={j|✔ Successfully copied test files!|j}
         currentStep={state.step}
