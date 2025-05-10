@@ -74,6 +74,7 @@ module Progress_display2 = {
         ~fn: unit => Promise_result.t('a, 'b),
         ~onComplete: 'a => unit,
         ~onError: 'b => unit,
+        ~skip=?,
       ) => {
     let (isLoading, setIsLoading) = React.useState(() => false);
     let currentStepIndex = step_to_int(currentStep);
@@ -82,9 +83,14 @@ module Progress_display2 = {
     let fnRef = React.useRef(fn);
     fnRef.current = fn;
 
+    let skipRef = React.useRef(skip);
+    skipRef.current = skip;
+
     React.useEffect1(
       () => {
-        if (isCurrentStep) {
+        switch (skipRef.current, isCurrentStep) {
+        | (Some(skip), true) => skip()
+        | (None, true) =>
           setIsLoading(_ => true);
           fnRef.current()
           |> Promise_result.perform(result => {
@@ -94,7 +100,20 @@ module Progress_display2 = {
                | Error(err) => onError(err)
                };
              });
+        | (_, false) => ()
         };
+
+        // if (isCurrentStep) {
+        //   setIsLoading(_ => true);
+        //   fnRef.current()
+        //   |> Promise_result.perform(result => {
+        //        setIsLoading(_ => false);
+        //        switch (result) {
+        //        | Ok(res) => onComplete(res)
+        //        | Error(err) => onError(err)
+        //        };
+        //      });
+        // };
         None;
       },
       [|isCurrentStep|],
@@ -483,9 +502,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       loadingLabel="Compiling templates..."
       successLabel={j|✔ Successfully compiled templates!|j}
       currentStep={state.step}
-      onComplete={goToNextStepWithNewState(
-        configuration.initialize_npm ? Node_pkg_manager_install : Opam_update,
-      )}
+      onComplete={goToNextStepWithNewState(Node_pkg_manager_install)}
       onError
       fn={() => Compile.compile(state)}
     />
