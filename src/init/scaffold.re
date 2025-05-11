@@ -109,7 +109,9 @@ module Progress_display = {
     if (currentStepIndex < step_to_int(startStep) || skip) {
       React.null;
     } else if (isLoading) {
-      <Ui.Spinner label=loadingLabel />;
+      <Box flexDirection=`column gap=1>
+        <Ui.Spinner label=loadingLabel />
+      </Box>;
     } else {
       <Box flexDirection=`column gap=1>
         <Text color="green"> {React.string(successLabel)} </Text>
