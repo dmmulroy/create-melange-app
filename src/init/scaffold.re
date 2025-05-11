@@ -74,7 +74,8 @@ module Progress_display2 = {
         ~fn: unit => Promise_result.t('a, 'b),
         ~onComplete: 'a => unit,
         ~onError: 'b => unit,
-        ~skip=?,
+        ~skip=false,
+        ~onSkip=() => (),
       ) => {
     let (isLoading, setIsLoading) = React.useState(() => false);
     let currentStepIndex = step_to_int(currentStep);
@@ -83,43 +84,32 @@ module Progress_display2 = {
     let fnRef = React.useRef(fn);
     fnRef.current = fn;
 
-    let skipRef = React.useRef(skip);
-    skipRef.current = skip;
+    let onSkipRef = React.useRef(onSkip);
+    onSkipRef.current = onSkip;
 
     React.useEffect1(
       () => {
-        switch (skipRef.current, isCurrentStep) {
-        | (Some(skip), true) => skip()
-        | (None, true) =>
-          setIsLoading(_ => true);
-          fnRef.current()
-          |> Promise_result.perform(result => {
-               setIsLoading(_ => false);
-               switch (result) {
-               | Ok(res) => onComplete(res)
-               | Error(err) => onError(err)
-               };
-             });
-        | (_, false) => ()
+        if (isCurrentStep) {
+          if (skip) {
+            onSkipRef.current();
+          } else {
+            setIsLoading(_ => true);
+            fnRef.current()
+            |> Promise_result.perform(result => {
+                 setIsLoading(_ => false);
+                 switch (result) {
+                 | Ok(res) => onComplete(res)
+                 | Error(err) => onError(err)
+                 };
+               });
+          };
         };
-
-        // if (isCurrentStep) {
-        //   setIsLoading(_ => true);
-        //   fnRef.current()
-        //   |> Promise_result.perform(result => {
-        //        setIsLoading(_ => false);
-        //        switch (result) {
-        //        | Ok(res) => onComplete(res)
-        //        | Error(err) => onError(err)
-        //        };
-        //      });
-        // };
         None;
       },
       [|isCurrentStep|],
     );
 
-    if (currentStepIndex < step_to_int(startStep)) {
+    if (currentStepIndex < step_to_int(startStep) || skip) {
       React.null;
     } else if (isLoading) {
       <Ui.Spinner label=loadingLabel />;
@@ -519,6 +509,8 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
        onComplete={_ => goToNextStep(Opam_update, ())}
        onError
        fn={() => {Node_pkg_manager_install.fn(state)}}
+       skip={!state.configuration.initialize_npm}
+       onSkip={() => goToNextStep(Opam_update, ())}
      />}
     <Progress_display2
       startStep=Opam_update
@@ -527,6 +519,8 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       successLabel={j|✔ Successfully updated opam!|j}
       onComplete={_ => goToNextStep(Opam_create_switch, ())}
       onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
+      onSkip={() => goToNextStep(Initialize_git, ())}
       fn={() => {Opam.Update.fn(state)}}
     />
     <Progress_display2
@@ -536,6 +530,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       successLabel={j|✔ Successfully created opam switch!|j}
       onComplete={_ => goToNextStep(Opam_install_dune, ())}
       onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
       fn={() => {Opam.Create_switch.fn(state)}}
     />
     <Progress_display2
@@ -545,6 +540,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       successLabel={j|✔ Successfully installed dune!|j}
       onComplete={_ => goToNextStep(Dune_install, ())}
       onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
       fn={() => {Opam.Install_dune.fn(state)}}
     />
     <Progress_display2
@@ -554,6 +550,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       successLabel={j|✔ Successfully installed dependencies!|j}
       onComplete={_ => goToNextStep(Opam_install_dev_deps, ())}
       onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
       fn={() => {Dune_install.fn(state)}}
     />
     <Progress_display2
@@ -563,6 +560,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       successLabel={j|✔ Successfully installed dev dependencies!|j}
       onComplete={_ => goToNextStep(Opam_install_deps, ())}
       onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
       fn={() => {Opam.Install_dev_deps.fn(state)}}
     />
     <Progress_display2
@@ -572,6 +570,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       successLabel={j|✔ Successfully installed dune!|j}
       onComplete={_ => goToNextStep(Dune_build, ())}
       onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
       fn={() => {Opam.Install_deps.fn(state)}}
     />
     <Progress_display2
@@ -586,6 +585,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
         )
       }
       onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
       fn={() => {Dune_build.fn(state)}}
     />
     <Progress_display2
@@ -595,6 +595,8 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       successLabel={j|✔ Successfully initialized git!|j}
       onComplete={_ => goToNextStep(Finished, ())}
       onError
+      skip={!state.configuration.initialize_git}
+      onSkip={goToNextStep(Finished)}
       fn={() => {Git.initilizeGit(state)}}
     />
   </Box>;
