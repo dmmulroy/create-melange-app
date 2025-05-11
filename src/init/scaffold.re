@@ -520,7 +520,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       onComplete={_ => goToNextStep(Opam_create_switch, ())}
       onError
       skip={!state.configuration.initialize_ocaml_toolchain}
-      onSkip={() => goToNextStep(Initialize_git, ())}
+      onSkip={goToNextStep(Initialize_git)}
       fn={() => {Opam.Update.fn(state)}}
     />
     <Progress_display2
