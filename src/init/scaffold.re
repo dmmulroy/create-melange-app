@@ -1,39 +1,21 @@
 open Bindings;
 open Ink;
-open Ui;
-
 open Core;
 
-// For Minttea rewrite:
-// This file is a great example of do as I say not as I do. It's a mess and
-// I just brute forced it to work w/ lots of copy/paste. I think a better way
-// to have done this would have been to create functor to create the steps
 type step =
-  // Section 1 - Create project directory
-  | Create_dir
-  | Copy_base_templates
+  // Section 1 - Create project directory and base project files
+  | Create_base_project
   // Setting 2 - Initialize bundler
-  | Bundler_copy_files
-  | Bundler_extend_package_json
+  | Initialize_bundler
   // Section 3 - Initialize app files
-  | App_copy_files
-  | App_extend_package_json
-  | App_extend_dune_project
+  | Initialize_app_files
   // Section 4 - Initialize test files
-  | Tests_copy_files
-  | Tests_extend_package_json
-  | Tests_extend_dune_project
+  | Initialize_test_files
   // Section 5 - Compile templates
-  | Compile_package_json
-  | Compile_dune_project
-  | Compile_root_dune_file
-  | Compile_app_dune_file
-  | Compile_test_dune_file
-  | Compile_app_module
-  | Compile_readme
+  | Compile_templates
   // Section 6 - Optional - Initialize node package manager
   | Node_pkg_manager_install
-  // Section 7 - optional - Initialize ocaml toolchain
+  // Section 7 - Optional - Initialize OCaml toolchain
   | Opam_update
   | Opam_create_switch
   | Opam_install_dune
@@ -41,73 +23,28 @@ type step =
   | Opam_install_dev_deps
   | Opam_install_deps
   | Dune_build
-  // Section 8 - optional - Initialize git
-  | Git_copy_ignore_file
-  | Git_init_and_stage
+  // Section 8 - Optional - Initialize git
+  | Initialize_git
+  // Section 9 - Finished
   | Finished;
-
-let step_to_string = step =>
-  switch (step) {
-  | Create_dir => "Create_dir"
-  | Copy_base_templates => "Copy_base_templates"
-  | Bundler_copy_files => "Bundler_copy_files"
-  | Bundler_extend_package_json => "Bundler_extend_package_json"
-  | App_copy_files => "App_copy_files"
-  | App_extend_package_json => "App_extend_package_json"
-  | App_extend_dune_project => "App_extend_dune_project"
-  | Tests_copy_files => "Tests_copy_files"
-  | Tests_extend_package_json => "Tests_extend_package_json"
-  | Tests_extend_dune_project => "Tests_extend_dune_project"
-  | Compile_package_json => "Compile_package_json"
-  | Compile_dune_project => "Compile_dune_project"
-  | Compile_root_dune_file => "Compile_root_dune_file"
-  | Compile_app_dune_file => "Compile_app_dune_file"
-  | Compile_test_dune_file => "Compile_test_dune_file"
-  | Compile_app_module => "Compile_app_module"
-  | Compile_readme => "Compile_readme"
-  | Node_pkg_manager_install => "Node_pkg_manager_install"
-  | Opam_update => "Opam_update"
-  | Opam_install_dune => "Opam_install_dune"
-  | Dune_install => "Dune_install"
-  | Opam_create_switch => "Opam_create_switch"
-  | Opam_install_dev_deps => "Opam_install_dev_deps"
-  | Opam_install_deps => "Opam_install_deps"
-  | Dune_build => "Dune_build"
-  | Git_copy_ignore_file => "Git_copy_ignore_file"
-  | Git_init_and_stage => "Git_init_and_stage"
-  | Finished => "Finished"
-  };
 
 let step_to_int = step =>
   switch (step) {
-  | Create_dir => 0
-  | Copy_base_templates => 1
-  | Bundler_copy_files => 2
-  | Bundler_extend_package_json => 3
-  | App_copy_files => 4
-  | App_extend_package_json => 5
-  | App_extend_dune_project => 6
-  | Tests_copy_files => 7
-  | Tests_extend_package_json => 8
-  | Tests_extend_dune_project => 9
-  | Compile_package_json => 10
-  | Compile_dune_project => 11
-  | Compile_root_dune_file => 12
-  | Compile_app_dune_file => 13
-  | Compile_test_dune_file => 14
-  | Compile_app_module => 15
-  | Compile_readme => 16
-  | Node_pkg_manager_install => 17
-  | Opam_update => 18
-  | Opam_create_switch => 19
-  | Opam_install_dune => 20
-  | Dune_install => 21
-  | Opam_install_dev_deps => 22
-  | Opam_install_deps => 23
-  | Dune_build => 24
-  | Git_copy_ignore_file => 25
-  | Git_init_and_stage => 26
-  | Finished => 27
+  | Create_base_project => 0
+  | Initialize_bundler => 1
+  | Initialize_app_files => 2
+  | Initialize_test_files => 3
+  | Compile_templates => 4
+  | Node_pkg_manager_install => 5
+  | Opam_update => 6
+  | Opam_create_switch => 7
+  | Opam_install_dune => 8
+  | Dune_install => 9
+  | Opam_install_dev_deps => 10
+  | Opam_install_deps => 11
+  | Dune_build => 12
+  | Initialize_git => 13
+  | Finished => 14
   };
 
 type state = {
@@ -123,1218 +60,302 @@ type state = {
   error: option(string),
 };
 
-module Create_dir = {
+module Progress_display = {
   [@react.component]
-  let make = (~state, ~onComplete, ~onError) => {
-    let handleOnComplete = () => {
-      onComplete();
-    };
+  let make =
+      (
+        ~startStep: step,
+        ~currentStep: step,
+        ~loadingLabel: string,
+        ~successLabel: string,
+        ~fn: unit => Promise_result.t('a, 'b),
+        ~onComplete: 'a => unit,
+        ~onError: 'b => unit,
+        ~skip=false,
+        ~onSkip=() => (),
+      ) => {
+    let (isLoading, setIsLoading) = React.useState(() => false);
+    let currentStepIndex = step_to_int(currentStep);
+    let isCurrentStep = currentStep == startStep;
 
-    let is_active = state.step == Create_dir;
+    let fnRef = React.useRef(fn);
+    fnRef.current = fn;
+
+    let onSkipRef = React.useRef(onSkip);
+    onSkipRef.current = onSkip;
 
     React.useEffect1(
       () => {
-        if (is_active) {
-          state.configuration.directory
-          |> Engine.create_project_directory(
-               ~overwrite=?state.configuration.overwrite,
-             )
-          |> Promise_result.perform(result =>
-               switch (result) {
-               | Ok(res) => handleOnComplete(res)
-               | Error(err) => onError(err)
-               }
-             );
+        if (isCurrentStep) {
+          if (skip) {
+            onSkipRef.current();
+          } else {
+            setIsLoading(_ => true);
+            fnRef.current()
+            |> Promise_result.perform(result => {
+                 setIsLoading(_ => false);
+                 switch (result) {
+                 | Ok(res) => onComplete(res)
+                 | Error(err) => onError(err)
+                 };
+               });
+          };
         };
-
         None;
       },
-      [|is_active|],
+      [|isCurrentStep|],
     );
 
-    React.null;
-  };
-};
-
-module Copy_base_templates = {
-  open Ui;
-  [@react.component]
-  let make = (~state, ~onComplete, ~onError) => {
-    let (copy_complete, set_copy_complete) = React.useState(() => false);
-
-    let is_active = state.step == Copy_base_templates;
-    let is_visible =
-      step_to_int(state.step) >= step_to_int(Copy_base_templates);
-
-    let handleOnComplete = () => {
-      set_copy_complete(_ => true);
-      onComplete();
-    };
-
-    React.useEffect1(
-      () => {
-        if (is_active) {
-          state.configuration.directory
-          |> Engine.copy_base_project
-          |> Promise_result.perform(result =>
-               switch (result) {
-               | Ok(res) => handleOnComplete(res)
-               | Error(err) => onError(err)
-               }
-             );
-        };
-
-        None;
-      },
-      [|is_active|],
-    );
-
-    if (!is_visible) {
+    if (currentStepIndex < step_to_int(startStep) || skip) {
       React.null;
+    } else if (isLoading) {
+      <Ui.Spinner label=loadingLabel />;
     } else {
       <Box flexDirection=`column gap=1>
-        {copy_complete
-           ? <Box flexDirection=`row gap=1>
-               <Text color="green">
-                 {React.string({j|✔ Successfully created base project!|j})}
-               </Text>
-             </Box>
-           : <Spinner label="Creating base project..." />}
+        <Text color="green"> {React.string(successLabel)} </Text>
       </Box>;
     };
   };
 };
 
+module Base_project = {
+  module Create_dir = {
+    let fn = state =>
+      state.configuration.directory
+      |> Engine.create_project_directory(
+           ~overwrite=?state.configuration.overwrite,
+         );
+  };
+
+  module Copy_base_templates = {
+    let fn = state =>
+      state.configuration.directory |> Engine.copy_base_project;
+  };
+
+  let createBaseProject = state =>
+    state
+    ->Create_dir.fn
+    ->Promise_result.bind(() => Copy_base_templates.fn(state));
+};
+
 module Bundler = {
+  let to_string = Bundler.to_string;
+
   module Copy_files = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let handleOnComplete = () => {
-        onComplete();
-      };
-
-      let is_active = state.step == Bundler_copy_files;
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.copy_bundler_files(
-                 ~bundler=state.configuration.bundler,
-                 ~is_react_app=state.configuration.is_react_app,
-               )
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) => handleOnComplete(res)
-                 | Error(err) => onError(err)
-                 }
-               );
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      React.null;
-    };
+    let fn = state =>
+      state.configuration.directory
+      |> Engine.copy_bundler_files(
+           ~bundler=state.configuration.bundler,
+           ~is_react_app=state.configuration.is_react_app,
+         );
   };
 
   module Extend_package_json = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Bundler_extend_package_json;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Bundler_extend_package_json);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            let updated_pkg_json =
-              state.pkg_json
-              |> Engine.extend_package_json_with_bundler(
-                   ~bundler=state.configuration.bundler,
-                   ~project_name=state.configuration.name,
-                 );
-
-            set_complete(_ => true);
-            onComplete({
-              ...state,
-              pkg_json: updated_pkg_json,
-            });
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      let bundler_name =
-        state.configuration.bundler
-        |> Bundler.to_string
-        |> String.capitalize_ascii;
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {complete
-             ? <Box flexDirection=`row gap=1>
-                 <Text color="green">
-                   {React.string(
-                      {j|✔ Successfully initialized bundler: |j}
-                      ++ bundler_name,
-                    )}
-                 </Text>
-               </Box>
-             : <Spinner
-                 label={"Initializing bundler: " ++ bundler_name ++ "..."}
-               />}
-        </Box>;
-      };
-    };
+    let fn = state =>
+      state.pkg_json
+      |> Engine.extend_package_json_with_bundler(
+           ~bundler=state.configuration.bundler,
+           ~project_name=state.configuration.name,
+         );
   };
+
+  let initializeBundler = state =>
+    state->Copy_files.fn
+    |> Promise_result.map(() =>
+         {
+           ...state,
+           pkg_json: Extend_package_json.fn(state),
+         }
+       );
 };
 
 module App_files = {
   module Copy_files = {
-    // open Ui;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let handleOnComplete = () => {
-        onComplete();
-      };
-
-      let is_active = state.step == App_copy_files;
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.copy_app_files(
-                 ~syntax_preference=state.configuration.syntax_preference,
-                 ~is_react_app=state.configuration.is_react_app,
-               )
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) => handleOnComplete(res)
-                 | Error(err) => onError(err)
-                 }
-               );
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      React.null;
-    };
+    let fn = state =>
+      state.configuration.directory
+      |> Engine.copy_app_files(
+           ~syntax_preference=state.configuration.syntax_preference,
+           ~is_react_app=state.configuration.is_react_app,
+         );
   };
 
   module Extend_package_json = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) => {
-      // let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == App_extend_package_json;
-      /* let is_visible =
-         step_to_int(state.step) >= step_to_int(App_extend_package_json); */
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            let updated_pkg_json =
-              state.pkg_json
-              |> Engine.extend_package_json_with_app_settings(
-                   ~is_react_app=state.configuration.is_react_app,
-                 );
-            onComplete({
-              ...state,
-              pkg_json: updated_pkg_json,
-            });
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      React.null;
-    };
+    let fn = state =>
+      state.pkg_json
+      |> Engine.extend_package_json_with_app_settings(
+           ~is_react_app=state.configuration.is_react_app,
+         );
   };
 
   module Extend_dune_project = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == App_extend_dune_project;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(App_extend_dune_project);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            let updated_dune_project =
-              state.dune_project
-              |> Engine.extend_dune_project_with_app_settings(
-                   ~is_react_app=state.configuration.is_react_app,
-                   ~syntax_preference=state.configuration.syntax_preference,
-                   ~project_name=state.configuration.name,
-                 );
-            set_complete(_ => true);
-            onComplete({
-              ...state,
-              dune_project: updated_dune_project,
-            });
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {complete
-             ? <Box flexDirection=`row gap=1>
-                 <Text color="green">
-                   {React.string(
-                      {j|✔ Successfully initialized application files|j},
-                    )}
-                 </Text>
-               </Box>
-             : <Spinner label="Initializing application files..." />}
-        </Box>;
-      };
-    };
+    let fn = state =>
+      state.dune_project
+      |> Engine.extend_dune_project_with_app_settings(
+           ~is_react_app=state.configuration.is_react_app,
+           ~syntax_preference=state.configuration.syntax_preference,
+           ~project_name=state.configuration.name,
+         );
   };
+
+  let copyApplicationFiles = state =>
+    state->Copy_files.fn
+    |> Promise_result.map(() =>
+         {
+           ...state,
+           pkg_json: Extend_package_json.fn(state),
+         }
+       );
 };
 
 module Test_files = {
   module Copy_files = {
-    // open Ui;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let handleOnComplete = () => {
-        onComplete();
-      };
-      let is_active = state.step == Tests_copy_files;
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.copy_test_files(
-                 ~syntax_preference=state.configuration.syntax_preference,
-                 ~is_react_app=state.configuration.is_react_app,
-               )
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) => handleOnComplete(res)
-                 | Error(err) => onError(err)
-                 }
-               );
-          };
-          None;
-        },
-        [|is_active|],
-      );
-      React.null;
-    };
+    let fn = state =>
+      state.configuration.directory
+      |> Engine.copy_test_files(
+           ~syntax_preference=state.configuration.syntax_preference,
+           ~is_react_app=state.configuration.is_react_app,
+         );
   };
 
   module Extend_package_json = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) => {
-      let is_active = state.step == Tests_extend_package_json;
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            let updated_pkg_json =
-              state.pkg_json
-              |> Engine.extend_package_json_with_tests(
-                   ~is_react_app=state.configuration.is_react_app,
-                   ~project_name=state.configuration.name,
-                 );
-            onComplete({
-              ...state,
-              pkg_json: updated_pkg_json,
-            });
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      React.null;
-    };
+    let fn = state =>
+      state.pkg_json
+      |> Engine.extend_package_json_with_tests(
+           ~is_react_app=state.configuration.is_react_app,
+           ~project_name=state.configuration.name,
+         );
   };
 
   module Extend_dune_project = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError as _) => {
-      let (complete, set_complete) = React.useState(() => false);
-      let is_active = state.step == Tests_extend_dune_project;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Tests_extend_dune_project);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            let updated_dune_project =
-              state.dune_project
-              |> Engine.extend_dune_project_with_tests(
-                   ~is_react_app=state.configuration.is_react_app,
-                   ~project_name=state.configuration.name,
-                 );
-            set_complete(_ => true);
-            onComplete({
-              ...state,
-              dune_project: updated_dune_project,
-            });
-          };
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {complete
-             ? <Box flexDirection=`row gap=1>
-                 <Text color="green">
-                   {React.string(
-                      {j|✔ Successfully initialized test files|j},
-                    )}
-                 </Text>
-               </Box>
-             : <Spinner label="Initializing test files..." />}
-        </Box>;
-      };
-    };
+    let fn = state =>
+      state.dune_project
+      |> Engine.extend_dune_project_with_tests(
+           ~is_react_app=state.configuration.is_react_app,
+           ~project_name=state.configuration.name,
+         );
   };
+
+  let initilizeTestFiles = state =>
+    Copy_files.fn(state)
+    |> Promise_result.map(() =>
+         {
+           ...state,
+           pkg_json: Extend_package_json.fn(state),
+         }
+       )
+    |> Promise_result.map(state =>
+         {
+           ...state,
+           dune_project: Extend_dune_project.fn(state),
+         }
+       );
 };
 
 module Compile = {
   module Compile_package_json = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_package_json;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_package_json);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.pkg_json
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     pkg_json: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner label="Compiling templates..." />
-            </Box>;
-      };
-    };
+    let fn = state => state.pkg_json |> Engine.compile;
   };
 
   module Compile_dune_project = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_dune_project;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_dune_project);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.dune_project
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     dune_project: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner label="Compiling templates..." />
-            </Box>;
-      };
-    };
+    let fn = state => state.dune_project |> Engine.compile;
   };
 
   module Compile_root_dune_file = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_root_dune_file;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_root_dune_file);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.root_dune_file
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     root_dune_file: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner label="Compiling templates..." />
-            </Box>;
-      };
-    };
+    let fn = state => state.root_dune_file |> Engine.compile;
   };
 
   module Compile_app_dune_file = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_app_dune_file;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_app_dune_file);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.app_dune_file
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     app_dune_file: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner label="Compiling templates..." />
-            </Box>;
-      };
-    };
+    let fn = state => state.app_dune_file |> Engine.compile;
   };
 
   module Compile_test_dune_file = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_test_dune_file;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_test_dune_file);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.test_dune_file
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     test_dune_file: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner label="Compiling templates..." />
-            </Box>;
-      };
-    };
+    let fn = state => state.test_dune_file |> Engine.compile;
   };
 
   module Compile_app_module = {
-    open Ui;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active = state.step == Compile_app_module;
-
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_app_module);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.app_module
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     app_module: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner label="Compiling templates..." />
-            </Box>;
-      };
-    };
+    let fn = state => state.app_module |> Engine.compile;
   };
 
   module Compile_readme = {
-    open Ui;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
+    let fn = state => state.readme |> Engine.compile;
+  };
 
-      let is_active = state.step == Compile_readme;
-      let is_visible =
-        step_to_int(state.step) >= step_to_int(Compile_readme);
+  let compile = state => {
+    open Promise_result.Syntax.Let;
 
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.readme
-            |> Engine.compile
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(res) =>
-                   set_complete(_ => true);
-                   onComplete({
-                     ...state,
-                     app_module: res,
-                   });
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
+    let+ pkg_json = Compile_package_json.fn(state);
+    let+ dune_project = Compile_dune_project.fn(state);
+    let+ root_dune_file = Compile_root_dune_file.fn(state);
+    let+ app_dune_file = Compile_app_dune_file.fn(state);
+    let+ test_dune_file = Compile_test_dune_file.fn(state);
+    let+ app_module = Compile_app_module.fn(state);
+    let+ readme = Compile_readme.fn(state);
 
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {complete
-             ? <Box flexDirection=`row gap=1>
-                 <Text color="green">
-                   {React.string({j|✔ Successfully compiled templates!|j})}
-                 </Text>
-               </Box>
-             : <Spinner label="Compiling templates..." />}
-        </Box>;
-      };
-    };
+    Promise_result.resolve_ok({
+      ...state,
+      pkg_json,
+      dune_project,
+      root_dune_file,
+      app_dune_file,
+      test_dune_file,
+      app_module,
+      readme,
+    });
   };
 };
 
 module Node_pkg_manager_install = {
-  open Ui;
-  [@react.component]
-  let make = (~state, ~onComplete, ~onError) => {
-    let (copy_complete, set_copy_complete) = React.useState(() => false);
-
-    let is_active =
-      state.step == Node_pkg_manager_install
-      && state.configuration.initialize_npm;
-    let is_visible =
-      state.configuration.initialize_npm
-      && step_to_int(state.step) >= step_to_int(Node_pkg_manager_install);
-
-    React.useEffect1(
-      () => {
-        if (is_active) {
-          state.configuration.directory
-          |> Engine.node_pkg_manager_install
-          |> Promise_result.perform(result =>
-               switch (result) {
-               | Ok(_) =>
-                 set_copy_complete(_ => true);
-                 onComplete();
-               | Error(err) => onError(err)
-               }
-             );
-          ();
-        };
-
-        None;
-      },
-      [|is_active|],
-    );
-
-    let pkg_manger =
-      Nodejs.Process.npm_config_user_agent
-      |> Nodejs.Process.npm_user_agent_to_string;
-
-    if (!is_visible) {
-      React.null;
-    } else {
-      <Box flexDirection=`column gap=1>
-        {copy_complete
-           ? <Box flexDirection=`row gap=1>
-               <Text color="green">
-                 {React.string(
-                    {j|✔ Successfully installed npm dependencies with |j}
-                    ++ pkg_manger,
-                  )}
-               </Text>
-             </Box>
-           : <Spinner
-               label={"Installing npm dependencies with " ++ pkg_manger}
-             />}
-      </Box>;
-    };
-  };
+  let fn = state =>
+    state.configuration.directory |> Engine.node_pkg_manager_install;
 };
 
 module Git = {
   module Copy_ignore_file = {
-    // open Ui;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let is_active =
-        state.step == Git_copy_ignore_file
-        && state.configuration.initialize_git;
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.copy_git_ignore
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) => onComplete()
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-      React.null;
-    };
+    let fn = state => state.configuration.directory |> Engine.copy_git_ignore;
   };
 
   module Init_and_stage = {
-    open Ui;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (copy_complete, set_copy_complete) = React.useState(() => false);
-
-      let is_active =
-        state.step == Git_init_and_stage && state.configuration.initialize_git;
-      let is_visible =
-        state.configuration.initialize_git
-        && step_to_int(state.step) >= step_to_int(Git_init_and_stage);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.git_init_and_stage
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) =>
-                   set_copy_complete(_ => true);
-                   onComplete();
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        <Box flexDirection=`column gap=1>
-          {copy_complete
-             ? <Box flexDirection=`row gap=1>
-                 <Text color="green">
-                   {React.string({j|✔ Successfully initialized git!|j})}
-                 </Text>
-               </Box>
-             : <Spinner label="Initializing git..." />}
-        </Box>;
-      };
-    };
+    let fn = state =>
+      state.configuration.directory |> Engine.git_init_and_stage;
   };
+
+  let initilizeGit = state =>
+    Copy_ignore_file.fn(state)
+    ->Promise_result.bind(() => Init_and_stage.fn(state));
 };
 
 module Opam = {
   module Update = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active =
-        state.step == Opam_update
-        && state.configuration.initialize_ocaml_toolchain;
-
-      let is_visible =
-        state.configuration.initialize_ocaml_toolchain
-        && step_to_int(state.step) >= step_to_int(Opam_update);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.opam_update
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) =>
-                   set_complete(_ => true);
-                   onComplete();
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner
-                label="Initializing OCaml toolchain, this may take a few minutes..."
-              />
-            </Box>;
-      };
-    };
+    let fn = state => state.configuration.directory |> Engine.opam_update;
   };
 
   module Install_dune = {
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active =
-        state.step == Opam_install_dune
-        && state.configuration.initialize_ocaml_toolchain;
-
-      let is_visible =
-        state.configuration.initialize_ocaml_toolchain
-        && step_to_int(state.step) >= step_to_int(Opam_install_dune);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.opam_install_dune
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) =>
-                   set_complete(_ => true);
-                   onComplete();
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner
-                label="Initializing OCaml toolchain, this may take a few minutes..."
-              />
-            </Box>;
-      };
-    };
+    let fn = state =>
+      state.configuration.directory |> Engine.opam_install_dune;
   };
 
   module Create_switch = {
-    open Ui;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active =
-        state.step == Opam_create_switch
-        && state.configuration.initialize_ocaml_toolchain;
-
-      let is_visible =
-        state.configuration.initialize_ocaml_toolchain
-        && step_to_int(state.step) >= step_to_int(Opam_create_switch);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.opam_create_switch
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) =>
-                   set_complete(_ => true);
-                   onComplete();
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner
-                label="Initializing OCaml toolchain, this may take a few minutes..."
-              />
-            </Box>;
-      };
-    };
+    let fn = state =>
+      state.configuration.directory |> Engine.opam_create_switch;
   };
 
   module Install_dev_deps = {
-    open Ui;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active =
-        state.step == Opam_install_dev_deps
-        && state.configuration.initialize_ocaml_toolchain;
-      let is_visible =
-        state.configuration.initialize_ocaml_toolchain
-        && step_to_int(state.step) >= step_to_int(Opam_install_dev_deps);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.opam_install_dev_dependencies
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) =>
-                   set_complete(_ => true);
-                   onComplete();
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner
-                label="Initializing OCaml toolchain, this may take a few minutes..."
-              />
-            </Box>;
-      };
-    };
+    let fn = state =>
+      state.configuration.directory |> Engine.opam_install_dev_dependencies;
   };
 
   module Install_deps = {
-    open Ui;
-    [@react.component]
-    let make = (~state, ~onComplete, ~onError) => {
-      let (complete, set_complete) = React.useState(() => false);
-
-      let is_active =
-        state.step == Opam_install_deps
-        && state.configuration.initialize_ocaml_toolchain;
-      let is_visible =
-        state.configuration.initialize_ocaml_toolchain
-        && step_to_int(state.step) >= step_to_int(Opam_install_deps);
-
-      React.useEffect1(
-        () => {
-          if (is_active) {
-            state.configuration.directory
-            |> Engine.opam_install_dependencies
-            |> Promise_result.perform(result =>
-                 switch (result) {
-                 | Ok(_) =>
-                   set_complete(_ => true);
-                   onComplete();
-                 | Error(err) => onError(err)
-                 }
-               );
-            ();
-          };
-
-          None;
-        },
-        [|is_active|],
-      );
-
-      if (!is_visible) {
-        React.null;
-      } else {
-        complete
-          ? React.null
-          : <Box flexDirection=`column gap=1>
-              <Spinner
-                label="Initializing OCaml toolchain, this may take a few minutes..."
-              />
-            </Box>;
-      };
-    };
+    let fn = state =>
+      state.configuration.directory |> Engine.opam_install_dependencies;
   };
 };
 
 module Dune_install = {
-  open Ui;
-  [@react.component]
-  let make = (~state, ~onComplete, ~onError) => {
-    let (complete, set_complete) = React.useState(() => false);
-
-    let is_active =
-      state.step == Dune_install
-      && state.configuration.initialize_ocaml_toolchain;
-    let is_visible =
-      state.configuration.initialize_ocaml_toolchain
-      && step_to_int(state.step) >= step_to_int(Dune_install);
-
-    React.useEffect1(
-      () => {
-        if (is_active) {
-          state.configuration.directory
-          |> Engine.dune_install
-          |> Promise_result.perform(result =>
-               switch (result) {
-               | Ok(_) =>
-                 set_complete(_ => true);
-                 onComplete();
-               | Error(err) => onError(err)
-               }
-             );
-        };
-
-        None;
-      },
-      [|is_active|],
-    );
-
-    if (!is_visible) {
-      React.null;
-    } else {
-      complete
-        ? React.null
-        : <Box flexDirection=`column gap=1>
-            <Spinner
-              label="Initializing OCaml toolchain, this may take a few minutes..."
-            />
-          </Box>;
-    };
-  };
+  let fn = state => state.configuration.directory |> Engine.dune_install;
 };
 
 module Dune_build = {
-  open Ui;
-  [@react.component]
-  let make = (~state, ~onComplete, ~onError) => {
-    let (copy_complete, set_copy_complete) = React.useState(() => false);
-
-    let is_active =
-      state.step == Dune_build
-      && state.configuration.initialize_ocaml_toolchain;
-
-    let is_visible =
-      state.configuration.initialize_ocaml_toolchain
-      && step_to_int(state.step) >= step_to_int(Dune_build);
-
-    React.useEffect1(
-      () => {
-        if (is_active) {
-          state.configuration.directory
-          |> Engine.dune_build
-          |> Promise_result.perform(result =>
-               switch (result) {
-               | Ok(_) =>
-                 set_copy_complete(_ => true);
-                 onComplete();
-               | Error(err) => onError(err)
-               }
-             );
-        };
-
-        None;
-      },
-      [|is_active|],
-    );
-
-    if (!is_visible) {
-      React.null;
-    } else {
-      <Box flexDirection=`column gap=1>
-        {copy_complete
-           ? <Box flexDirection=`row gap=1>
-               <Text color="green">
-                 {React.string(
-                    {j|✔ Successfully intialized the OCaml toolchain!|j},
-                  )}
-               </Text>
-             </Box>
-           : <Spinner
-               label="Initializing OCaml toolchain, this may take a few minutes..."
-             />}
-      </Box>;
-    };
-  };
+  let fn = state => state.configuration.directory |> Engine.dune_build;
 };
 
 [@react.component]
@@ -1343,7 +364,7 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     React.useState(_ =>
       {
         configuration,
-        step: Create_dir,
+        step: Create_base_project,
         pkg_json:
           Package_json.template(
             ~project_name=configuration.name,
@@ -1401,374 +422,179 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
     [|state.step|],
   );
 
+  let goToNextStep = (step, ()) =>
+    set_state(state =>
+      {
+        ...state,
+        step,
+      }
+    );
+
+  let goToNextStepWithNewState = (step, newState) =>
+    set_state(_ =>
+      {
+        ...newState,
+        step,
+      }
+    );
+
   <Box flexDirection=`column gap=1>
     <Text color="cyan"> {React.string("Scaffolding project...")} </Text>
-    <Create_dir
-      state
-      onComplete={() => {
-        set_state(_ =>
-          {
-            ...state,
-            step: Copy_base_templates,
-          }
+    <Progress_display
+      startStep=Create_base_project
+      currentStep={state.step}
+      loadingLabel="Creating base project..."
+      successLabel="Successfully created base project!"
+      onComplete={goToNextStep(Initialize_bundler)}
+      onError
+      fn={() => Base_project.createBaseProject(state)}
+    />
+    {let bundler_name =
+       state.configuration.bundler
+       |> Bundler.to_string
+       |> String.capitalize_ascii;
+     <Progress_display
+       startStep=Initialize_bundler
+       currentStep={state.step}
+       loadingLabel={"Initializing bundler: " ++ bundler_name ++ "..."}
+       successLabel={
+         {j|✔ Successfully initialized bundler: |j} ++ bundler_name
+       }
+       onComplete={goToNextStepWithNewState(Initialize_app_files)}
+       onError
+       fn={() => Bundler.initializeBundler(state)}
+     />}
+    <Progress_display
+      startStep=Initialize_app_files
+      currentStep={state.step}
+      loadingLabel="Copying application files..."
+      successLabel={j|✔ Successfully copied application files!|j}
+      onComplete={goToNextStepWithNewState(
+        configuration.has_tests ? Initialize_test_files : Compile_templates,
+      )}
+      onError
+      fn={() => App_files.copyApplicationFiles(state)}
+    />
+    <Progress_display
+      startStep=Initialize_test_files
+      loadingLabel="Copying test files"
+      successLabel={j|✔ Successfully copied test files!|j}
+      currentStep={state.step}
+      onComplete={goToNextStepWithNewState(Compile_templates)}
+      onError
+      fn={() => Test_files.initilizeTestFiles(state)}
+    />
+    <Progress_display
+      startStep=Compile_templates
+      loadingLabel="Compiling templates..."
+      successLabel={j|✔ Successfully compiled templates!|j}
+      currentStep={state.step}
+      onComplete={goToNextStepWithNewState(Node_pkg_manager_install)}
+      onError
+      fn={() => Compile.compile(state)}
+    />
+    {let pkg_manager =
+       Nodejs.Process.npm_config_user_agent
+       |> Nodejs.Process.npm_user_agent_to_string;
+     <Progress_display
+       startStep=Node_pkg_manager_install
+       currentStep={state.step}
+       loadingLabel={"Installing npm dependencies with " ++ pkg_manager}
+       successLabel={
+         {j|✔ Successfully installed npm dependencies with |j} ++ pkg_manager
+       }
+       onComplete={_ => goToNextStep(Opam_update, ())}
+       onError
+       fn={() => Node_pkg_manager_install.fn(state)}
+       skip={!state.configuration.initialize_npm}
+       onSkip={() => goToNextStep(Opam_update, ())}
+     />}
+    <Progress_display
+      startStep=Opam_update
+      currentStep={state.step}
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 1/7 (Updating opam)"
+      successLabel={j|✔ Successfully updated opam!|j}
+      onComplete={_ => goToNextStep(Opam_create_switch, ())}
+      onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
+      onSkip={goToNextStep(Initialize_git)}
+      fn={() => Opam.Update.fn(state)}
+    />
+    <Progress_display
+      startStep=Opam_create_switch
+      currentStep={state.step}
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 2/7 (Creating opam switch)"
+      successLabel={j|✔ Successfully created opam switch!|j}
+      onComplete={_ => goToNextStep(Opam_install_dune, ())}
+      onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
+      fn={() => Opam.Create_switch.fn(state)}
+    />
+    <Progress_display
+      startStep=Opam_install_dune
+      currentStep={state.step}
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 3/7 (Installing dune)"
+      successLabel={j|✔ Successfully installed dune!|j}
+      onComplete={_ => goToNextStep(Dune_install, ())}
+      onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
+      fn={() => Opam.Install_dune.fn(state)}
+    />
+    <Progress_display
+      startStep=Dune_install
+      currentStep={state.step}
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 4/7 (Running dune install)"
+      successLabel={j|✔ Successfully installed dependencies!|j}
+      onComplete={_ => goToNextStep(Opam_install_dev_deps, ())}
+      onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
+      fn={() => Dune_install.fn(state)}
+    />
+    <Progress_display
+      startStep=Opam_install_dev_deps
+      currentStep={state.step}
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 5/7 (Installing dev dependencies)"
+      successLabel={j|✔ Successfully installed dev dependencies!|j}
+      onComplete={_ => goToNextStep(Opam_install_deps, ())}
+      onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
+      fn={() => Opam.Install_dev_deps.fn(state)}
+    />
+    <Progress_display
+      startStep=Opam_install_deps
+      currentStep={state.step}
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 6/7 (Installing dune)"
+      successLabel={j|✔ Successfully installed dune!|j}
+      onComplete={_ => goToNextStep(Dune_build, ())}
+      onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
+      fn={() => Opam.Install_deps.fn(state)}
+    />
+    <Progress_display
+      startStep=Dune_build
+      currentStep={state.step}
+      loadingLabel="Initializing OCaml toolchain, this may take a few minutes... Step 7/7 (Building project)"
+      successLabel={j|✔ Successfully built project!|j}
+      onComplete={_ =>
+        goToNextStep(
+          configuration.initialize_git ? Initialize_git : Finished,
+          (),
         )
-      }}
+      }
       onError
+      skip={!state.configuration.initialize_ocaml_toolchain}
+      fn={() => Dune_build.fn(state)}
     />
-    <Copy_base_templates
-      state
-      onComplete={() => {
-        set_state(state =>
-          {
-            ...state,
-            step: Bundler_copy_files,
-          }
-        )
-      }}
+    <Progress_display
+      startStep=Initialize_git
+      currentStep={state.step}
+      loadingLabel="Initializing git..."
+      successLabel={j|✔ Successfully initialized git!|j}
+      onComplete={_ => goToNextStep(Finished, ())}
       onError
-    />
-    <Bundler.Copy_files
-      state
-      onComplete={() => {
-        set_state(state =>
-          {
-            ...state,
-            step: Bundler_extend_package_json,
-          }
-        )
-      }}
-      onError
-    />
-    <Bundler.Extend_package_json
-      state
-      onComplete={(updated_state: state) => {
-        set_state(_ =>
-          {
-            ...updated_state,
-            step: App_copy_files,
-          }
-        )
-      }}
-      onError
-    />
-    <App_files.Copy_files
-      state
-      onComplete={() => {
-        set_state(_ =>
-          {
-            ...state,
-            step: App_extend_package_json,
-          }
-        )
-      }}
-      onError
-    />
-    <App_files.Extend_package_json
-      state
-      onComplete={updated_state => {
-        set_state(_ =>
-          {
-            ...updated_state,
-            step: App_extend_dune_project,
-          }
-        )
-      }}
-      onError
-    />
-    <App_files.Extend_dune_project
-      state
-      onComplete={updated_state => {
-        set_state(_ =>
-          {
-            ...updated_state,
-            step:
-              configuration.has_tests
-                ? Tests_copy_files : Compile_package_json,
-          }
-        )
-      }}
-      onError
-    />
-    {state.configuration.has_tests
-       ? <>
-           <Test_files.Copy_files
-             state
-             onComplete={() => {
-               set_state(_ =>
-                 {
-                   ...state,
-                   step: Tests_extend_package_json,
-                 }
-               )
-             }}
-             onError
-           />
-           <Test_files.Extend_package_json
-             state
-             onComplete={updated_state => {
-               set_state(_ =>
-                 {
-                   ...updated_state,
-                   step: Tests_extend_dune_project,
-                 }
-               )
-             }}
-             onError
-           />
-           <Test_files.Extend_dune_project
-             state
-             onComplete={updated_state => {
-               set_state(_ =>
-                 {
-                   ...updated_state,
-                   step: Compile_package_json,
-                 }
-               )
-             }}
-             onError
-           />
-         </>
-       : React.null}
-    <Compile.Compile_package_json
-      state
-      onComplete={updated_state => {
-        set_state(_ =>
-          {
-            ...updated_state,
-            step: Compile_dune_project,
-          }
-        )
-      }}
-      onError
-    />
-    <Compile.Compile_dune_project
-      state
-      onComplete={updated_state => {
-        let next_step = Compile_root_dune_file;
-        set_state(_ => {
-          {
-            ...updated_state,
-            step: next_step,
-          }
-        });
-      }}
-      onError
-    />
-    <Compile.Compile_root_dune_file
-      state
-      onComplete={updated_state => {
-        let next_step = Compile_app_dune_file;
-        set_state(_ => {
-          {
-            ...updated_state,
-            step: next_step,
-          }
-        });
-      }}
-      onError
-    />
-    <Compile.Compile_app_dune_file
-      state
-      onComplete={updated_state => {
-        let next_step =
-          configuration.has_tests
-            ? Compile_test_dune_file : Compile_app_module;
-        set_state(_ => {
-          {
-            ...updated_state,
-            step: next_step,
-          }
-        });
-      }}
-      onError
-    />
-    {state.configuration.has_tests
-       ? <>
-           <Compile.Compile_test_dune_file
-             state
-             onComplete={updated_state => {
-               let next_step = Compile_app_module;
-               set_state(_ => {
-                 {
-                   ...updated_state,
-                   step: next_step,
-                 }
-               });
-             }}
-             onError
-           />
-         </>
-       : React.null}
-    <Compile.Compile_app_module
-      state
-      onComplete={updated_state => {
-        let next_step = Compile_readme;
-        set_state(_ => {
-          {
-            ...updated_state,
-            step: next_step,
-          }
-        });
-      }}
-      onError
-    />
-    <Compile.Compile_readme
-      state
-      onComplete={updated_state => {
-        let next_step =
-          switch (
-            configuration.initialize_npm,
-            configuration.initialize_git,
-            configuration.initialize_ocaml_toolchain,
-          ) {
-          | (true, _, _) => Node_pkg_manager_install
-          | (_, true, _) => Git_copy_ignore_file
-          | (_, _, true) => Opam_update
-          | _ => Finished
-          };
-        set_state(_ => {
-          {
-            ...updated_state,
-            step: next_step,
-          }
-        });
-      }}
-      onError
-    />
-    <Node_pkg_manager_install
-      state
-      onComplete={() => {
-        let next_step =
-          switch (
-            configuration.initialize_git,
-            configuration.initialize_ocaml_toolchain,
-          ) {
-          | (_, true) => Opam_update
-          | (true, false) => Git_copy_ignore_file
-          | _ => Finished
-          };
-
-        set_state(_ => {
-          {
-            ...state,
-            step: next_step,
-          }
-        });
-      }}
-      onError
-    />
-    <Opam.Update
-      state
-      onComplete={() => {
-        set_state(_ =>
-          {
-            ...state,
-            step: Opam_create_switch,
-          }
-        )
-      }}
-      onError
-    />
-    <Opam.Create_switch
-      state
-      onComplete={() => {
-        set_state(_ =>
-          {
-            ...state,
-            step: Opam_install_dune,
-          }
-        )
-      }}
-      onError
-    />
-    <Opam.Install_dune
-      state
-      onComplete={() => {
-        set_state(_ =>
-          {
-            ...state,
-            step: Dune_install,
-          }
-        )
-      }}
-      onError
-    />
-    <Dune_install
-      state
-      onComplete={() => {
-        let next_step = Opam_install_dev_deps;
-        set_state(_ =>
-          {
-            ...state,
-            step: next_step,
-          }
-        );
-      }}
-      onError
-    />
-    <Opam.Install_dev_deps
-      state
-      onComplete={() => {
-        set_state(_ =>
-          {
-            ...state,
-            step: Opam_install_deps,
-          }
-        )
-      }}
-      onError
-    />
-    <Opam.Install_deps
-      state
-      onComplete={() => {
-        set_state(_ =>
-          {
-            ...state,
-            step: Dune_build,
-          }
-        )
-      }}
-      onError
-    />
-    <Dune_build
-      state
-      onComplete={() => {
-        let next_step =
-          configuration.initialize_git ? Git_copy_ignore_file : Finished;
-        set_state(_ =>
-          {
-            ...state,
-            step: next_step,
-          }
-        );
-      }}
-      onError
-    />
-    <Git.Copy_ignore_file
-      state
-      onComplete={() => {
-        let next_step = Git_init_and_stage;
-
-        set_state(_ =>
-          {
-            ...state,
-            step: next_step,
-          }
-        );
-      }}
-      onError
-    />
-    <Git.Init_and_stage
-      state
-      onComplete={() => {
-        set_state(_ =>
-          {
-            ...state,
-            step: Finished,
-          }
-        )
-      }}
-      onError
+      fn={() => Git.initilizeGit(state)}
+      skip={!state.configuration.initialize_git}
+      onSkip={goToNextStep(Finished)}
     />
   </Box>;
 };
