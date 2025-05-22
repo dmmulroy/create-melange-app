@@ -356,19 +356,6 @@ type step =
   | Overwrite_preference
   | Complete;
 
-let step_to_string =
-  fun
-  | Name => "Name"
-  | Syntax_preference => "Syntax_preference"
-  | React_app => "React_app"
-  | Tests => "Tests"
-  | Bundler => "Bundler"
-  | Git => "Git"
-  | Npm => "Npm"
-  | OCaml_toolchain => "OCaml_toolchain"
-  | Overwrite_preference => "Overwrite_preference"
-  | Complete => "Complete";
-
 [@react.component]
 let make =
     (
