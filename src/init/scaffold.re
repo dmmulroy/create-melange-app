@@ -9,9 +9,11 @@ type step =
   | Initialize_bundler
   // Section 3 - Initialize app files
   | Initialize_app_files
-  // Section 4 - Initialize test files
+  // Section 4 - Initialize backend files (fullstack only)
+  | Initialize_backend_files
+  // Section 5 - Initialize test files
   | Initialize_test_files
-  // Section 5 - Compile templates
+  // Section 6 - Compile templates
   | Compile_templates
   // Section 6 - Optional - Initialize node package manager
   | Node_pkg_manager_install
@@ -33,18 +35,19 @@ let step_to_int = step =>
   | Create_base_project => 0
   | Initialize_bundler => 1
   | Initialize_app_files => 2
-  | Initialize_test_files => 3
-  | Compile_templates => 4
-  | Node_pkg_manager_install => 5
-  | Opam_update => 6
-  | Opam_create_switch => 7
-  | Opam_install_dune => 8
-  | Dune_install => 9
-  | Opam_install_dev_deps => 10
-  | Opam_install_deps => 11
-  | Dune_build => 12
-  | Initialize_git => 13
-  | Finished => 14
+  | Initialize_backend_files => 3
+  | Initialize_test_files => 4
+  | Compile_templates => 5
+  | Node_pkg_manager_install => 6
+  | Opam_update => 7
+  | Opam_create_switch => 8
+  | Opam_install_dune => 9
+  | Dune_install => 10
+  | Opam_install_dev_deps => 11
+  | Opam_install_deps => 12
+  | Dune_build => 13
+  | Initialize_git => 14
+  | Finished => 15
   };
 
 type state = {
@@ -209,6 +212,24 @@ module App_files = {
        );
 };
 
+module Backend_files = {
+  module Copy_files = {
+    let fn = state =>
+      if (Configuration.is_fullstack(state.configuration)) {
+        state.configuration.directory
+        |> Engine.copy_backend_files(
+             ~backend_framework=state.configuration.backend_framework,
+             ~project_name=state.configuration.name,
+           );
+      } else {
+        Promise_result.resolve_ok();
+      };
+  };
+
+  let initializeBackendFiles = state =>
+    Copy_files.fn(state) |> Promise_result.map(() => state);
+};
+
 module Test_files = {
   module Copy_files = {
     let fn = state =>
@@ -282,6 +303,18 @@ module Compile = {
     let fn = state => state.readme |> Engine.compile;
   };
 
+  module Compile_backend_templates = {
+    let fn = state =>
+      if (Configuration.is_fullstack(state.configuration)) {
+        Engine.compile_backend_templates(
+          ~project_name=state.configuration.name,
+          ~project_directory=state.configuration.directory,
+        );
+      } else {
+        Promise_result.resolve_ok();
+      };
+  };
+
   let compile = state => {
     open Promise_result.Syntax.Let;
 
@@ -292,6 +325,7 @@ module Compile = {
     let+ test_dune_file = Compile_test_dune_file.fn(state);
     let+ app_module = Compile_app_module.fn(state);
     let+ readme = Compile_readme.fn(state);
+    let+ _ = Compile_backend_templates.fn(state);
 
     Promise_result.resolve_ok({
       ...state,
@@ -380,6 +414,8 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
               configuration.syntax_preference == `OCaml
               && configuration.is_react_app;
             },
+            ~is_fullstack=Configuration.is_fullstack(configuration),
+            (),
           ),
         root_dune_file:
           Dune.Dune_file.template(
@@ -472,10 +508,23 @@ let make = (~configuration: Configuration.t, ~onComplete) => {
       loadingLabel="Copying application files..."
       successLabel={j|✔ Successfully copied application files!|j}
       onComplete={goToNextStepWithNewState(
-        configuration.has_tests ? Initialize_test_files : Compile_templates,
+        Configuration.is_fullstack(configuration)
+          ? Initialize_backend_files
+          : configuration.has_tests ? Initialize_test_files : Compile_templates,
       )}
       onError
       fn={() => App_files.copyApplicationFiles(state)}
+    />
+    <Progress_display
+      startStep=Initialize_backend_files
+      currentStep={state.step}
+      loadingLabel="Setting up backend files..."
+      successLabel={j|✔ Successfully set up backend files!|j}
+      onComplete={goToNextStepWithNewState(
+        configuration.has_tests ? Initialize_test_files : Compile_templates,
+      )}
+      onError
+      fn={() => Backend_files.initializeBackendFiles(state)}
     />
     <Progress_display
       startStep=Initialize_test_files

@@ -8,8 +8,7 @@ let template (configuration : Configuration.t) =
   in
   let name =
     match (configuration.syntax_preference, configuration.is_react_app) with
-    | `ReasonML, true 
-    | `ReasonML, false -> "App.re.tmpl"
+    | `ReasonML, true | `ReasonML, false -> "App.re.tmpl"
     | `OCaml, true -> "App.mlx.tmpl"
     | `OCaml, false -> "App.ml.tmpl"
   in

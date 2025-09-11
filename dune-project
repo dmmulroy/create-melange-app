@@ -36,6 +36,10 @@
   (reason-react
    (>= 0.15.0))
   reason-react-ppx
-  ppx_deriving)
+  ppx_deriving
+  (ocamlformat
+   (and
+    (= 0.26.2)
+    :with-dev-setup)))
  (tags
   (cli, react, reasonml, ocaml, melange)))

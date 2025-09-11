@@ -17,6 +17,7 @@ depends: [
   "reason-react" {>= "0.15.0"}
   "reason-react-ppx"
   "ppx_deriving"
+  "ocamlformat" {= "0.26.2" & with-dev-setup}
   "odoc" {with-doc}
 ]
 build: [

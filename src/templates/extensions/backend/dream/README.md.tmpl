@@ -1,0 +1,29 @@
+# {{name}} Backend
+
+This is the backend service for {{name}}, built with [OCaml Dream](https://aantron.github.io/dream/).
+
+## Getting Started
+
+The backend server can be built and run using Dune:
+
+```bash
+# Build the backend
+dune build
+
+# Run the backend server
+dune exec backend/bin/main.exe
+```
+
+The server will start on `http://127.0.0.1:8080` by default.
+
+## Project Structure
+
+- `bin/` - Contains the main executable
+  - `main.ml` - Main server entry point
+  - `dune` - Build configuration for the executable
+- `dune` - Backend-specific build configuration
+- `README.md` - This file
+
+## API Endpoints
+
+- `GET /` - Returns a JSON hello world message

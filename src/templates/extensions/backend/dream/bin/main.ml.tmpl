@@ -1,0 +1,12 @@
+let hello_handler _request =
+  Dream.json "{\"message\": \"Hello World from OCaml Dream!\"}"
+
+
+let () =
+  Dream.run
+    ~port:8080
+    ~interface:"127.0.0.1"
+  @@ Dream.logger
+  @@ Dream.router [
+    Dream.get "/" hello_handler;
+  ]

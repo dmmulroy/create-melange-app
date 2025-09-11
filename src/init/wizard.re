@@ -344,9 +344,94 @@ module Overwrite_preference = {
   };
 };
 
+module Project_type = {
+  let options: array(Ui.Select.select_option) = [|
+    Ui.Select.{
+      value: "frontend",
+      label: "Frontend only (Melange)",
+    },
+    Ui.Select.{
+      value: "fullstack",
+      label: "Fullstack (Melange frontend + OCaml backend)",
+    },
+  |];
+
+  [@react.component]
+  let make = (~onSubmit, ~isDisabled) => {
+    let onChange =
+      React.useCallback1(
+        (value: string) => {
+          onSubmit(Core.Configuration.project_type_of_string(value))
+        },
+        [|onSubmit|],
+      );
+    <Box flexDirection=`column>
+      <Text>
+        {React.string("What type of project would you like to create?")}
+      </Text>
+      <Ui.Select options onChange isDisabled />
+    </Box>;
+  };
+};
+
+module Backend_framework = {
+  let options: array(Ui.Select.select_option) = [|
+    Ui.Select.{
+      value: "dream",
+      label: "Dream (modern, batteries-included web framework)",
+    },
+  |];
+
+  [@react.component]
+  let make = (~onSubmit, ~isDisabled) => {
+    let onChange =
+      React.useCallback1(
+        (value: string) => {
+          onSubmit(Core.Configuration.backend_framework_of_string(value))
+        },
+        [|onSubmit|],
+      );
+    <Box flexDirection=`column>
+      <Text>
+        {React.string("Which backend framework would you like to use?")}
+      </Text>
+      <Ui.Select options onChange isDisabled />
+    </Box>;
+  };
+};
+
+module API_features = {
+  let options: array(Ui.Select.select_option) = [|
+    Ui.Select.{
+      value: "rest",
+      label: "REST endpoints (JSON API)",
+    },
+  |];
+
+  [@react.component]
+  let make = (~onSubmit, ~isDisabled) => {
+    let onChange =
+      React.useCallback1(
+        (value: string) => {
+          onSubmit(Core.Configuration.api_features_of_string(value))
+        },
+        [|onSubmit|],
+      );
+    <Box flexDirection=`column>
+      <Text>
+        {React.string("What API features would you like to include?")}
+      </Text>
+      <Ui.Select options onChange isDisabled />
+    </Box>;
+  };
+};
+
 type step =
   | Name
   | Syntax_preference
+  | Project_type
+  | Backend_framework
+  | API_features
   | React_app
   | Tests
   | Bundler
@@ -376,6 +461,12 @@ let make =
     React.useState(() => initial_configuration.directory);
   let (syntax_preference, set_syntax_preference) =
     React.useState((): option(Configuration.syntax_preference) => None);
+  let (project_type, set_project_type) =
+    React.useState((): option(Configuration.project_type) => None);
+  let (backend_framework, set_backend_framework) =
+    React.useState((): option(Configuration.backend_framework) => None);
+  let (api_features, set_api_features) =
+    React.useState((): option(Configuration.api_features) => None);
   let (is_react_app, set_is_react_app) =
     React.useState((): option(bool) => None);
   let (has_tests, set_has_tests) = React.useState((): option(bool) => None);
@@ -413,6 +504,39 @@ let make =
       (syntax_preference: Configuration.syntax_preference) =>
         if (active_step == Syntax_preference) {
           set_syntax_preference(_ => Some(syntax_preference));
+          set_active_step(_ => Project_type);
+        },
+      [|active_step|],
+    );
+
+  let onSubmitProjectType =
+    React.useCallback1(
+      (project_type: Configuration.project_type) =>
+        if (active_step == Project_type) {
+          set_project_type(_ => Some(project_type));
+          switch (project_type) {
+          | `Frontend => set_active_step(_ => React_app)
+          | `Fullstack => set_active_step(_ => Backend_framework)
+          };
+        },
+      [|active_step|],
+    );
+
+  let onSubmitBackendFramework =
+    React.useCallback1(
+      (framework: Configuration.backend_framework) =>
+        if (active_step == Backend_framework) {
+          set_backend_framework(_ => Some(framework));
+          set_active_step(_ => API_features);
+        },
+      [|active_step|],
+    );
+
+  let onSubmitAPIFeatures =
+    React.useCallback1(
+      (features: Configuration.api_features) =>
+        if (active_step == API_features) {
+          set_api_features(_ => Some(features));
           set_active_step(_ => React_app);
         },
       [|active_step|],
@@ -514,6 +638,9 @@ let make =
             ~syntax_preference={
               Option.get(syntax_preference);
             },
+            ~project_type={
+              Option.get(project_type);
+            },
             ~bundler={
               Option.get(bundler);
             },
@@ -533,6 +660,9 @@ let make =
             ~overwrite={
               overwrite_preference;
             },
+            ~backend_framework,
+            ~api_features,
+            (),
           ),
         );
       };
@@ -544,7 +674,15 @@ let make =
 
   let show_name_step = Option.is_none(initial_configuration.name);
   let show_syntax_preference_step = Option.is_some(name);
-  let show_react_step = Option.is_some(syntax_preference);
+  let show_project_type_step = Option.is_some(syntax_preference);
+  let show_backend_framework_step =
+    Option.is_some(project_type)
+    && Option.map(pt => pt == `Fullstack, project_type) == Some(true);
+  let show_api_features_step = Option.is_some(backend_framework);
+  let show_react_step =
+    Option.is_some(project_type)
+    && Option.map(pt => pt == `Frontend, project_type) == Some(true)
+    || Option.is_some(api_features);
   let show_add_tests_step = Option.is_some(is_react_app);
   let show_bundler_step = Option.is_some(has_tests);
   let show_git_step = Option.is_some(bundler) && should_prompt_git;
@@ -569,6 +707,24 @@ let make =
       <Syntax
         onSubmit=onSubmitSyntaxPreference
         isDisabled={active_step != Syntax_preference}
+      />
+    </Step>
+    <Step visible=show_project_type_step>
+      <Project_type
+        onSubmit=onSubmitProjectType
+        isDisabled={active_step != Project_type}
+      />
+    </Step>
+    <Step visible=show_backend_framework_step>
+      <Backend_framework
+        onSubmit=onSubmitBackendFramework
+        isDisabled={active_step != Backend_framework}
+      />
+    </Step>
+    <Step visible=show_api_features_step>
+      <API_features
+        onSubmit=onSubmitAPIFeatures
+        isDisabled={active_step != API_features}
       />
     </Step>
     <Step visible=show_react_step>

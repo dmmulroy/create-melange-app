@@ -113,6 +113,16 @@ be coming soon! In the mean time, please check in at
 [The Caravan Discord](https://discord.gg/fNvVdsUWHE) for
 help getting started working on `create-melange-app`.
 
+<h3 id="run-locally">Run the CLI locally</h3>
+
+```bash
+npm install
+opam install . --dps-only
+dune build
+
+node ./build/src/cli.mjs
+```
+
 <div align="center">
 <a href="https://github.com/dmmulroy/create-melange-app/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=dmmulroy/create-melange-app" />

@@ -93,6 +93,11 @@ let extend_dune_project_with_app_settings ~(is_react_app : bool)
            (Dune.Dune_project.add_dependencies React.Dune_project.dependencies)
 ;;
 
+let copy_backend_files ~backend_framework ~project_name project_directory =
+  let open Backend_files in
+  Copy.exec { project_directory; backend_framework; project_name }
+;;
+
 let copy_test_files ~syntax_preference ~is_react_app project_directory =
   let open Test_files in
   Copy.exec { project_directory; syntax_preference; is_react_app }
@@ -116,6 +121,43 @@ let extend_dune_project_with_tests ~(is_react_app : bool)
   |> Template.map
        (Dune.Dune_project.add_dependencies
           (if is_react_app then Fest.Dune_project.react_dependencies else []))
+;;
+
+let compile_backend_templates ~project_name ~project_directory =
+  let open Promise_result.Syntax.Let in
+  let backend_data = Js.Dict.empty () in
+  Js.Dict.set backend_data "name" (Js.Json.string project_name);
+  let backend_json = Js.Json.object_ backend_data in
+
+  let main_ml_template =
+    Template.make ~name:"main.ml.tmpl" ~value:backend_json
+      ~dir:(Node.Path.join [| project_directory; "backend"; "bin" |])
+      ~to_json:(fun x -> x)
+  in
+  let+ _ = Template.compile main_ml_template in
+
+  let bin_dune_template =
+    Template.make ~name:"dune.tmpl" ~value:backend_json
+      ~dir:(Node.Path.join [| project_directory; "backend"; "bin" |])
+      ~to_json:(fun x -> x)
+  in
+  let+ _ = Template.compile bin_dune_template in
+
+  let backend_dune_template =
+    Template.make ~name:"dune.tmpl" ~value:backend_json
+      ~dir:(Node.Path.join [| project_directory; "backend" |])
+      ~to_json:(fun x -> x)
+  in
+  let+ _ = Template.compile backend_dune_template in
+
+  let readme_template =
+    Template.make ~name:"README.md.tmpl" ~value:backend_json
+      ~dir:(Node.Path.join [| project_directory; "backend" |])
+      ~to_json:(fun x -> x)
+  in
+  let+ _ = Template.compile readme_template in
+
+  Promise_result.resolve_ok ()
 ;;
 
 let compile = Template.compile

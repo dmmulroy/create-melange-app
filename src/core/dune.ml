@@ -98,6 +98,10 @@ module Dune_project = struct
     let make ?version name = { name; version }
   end
 
+  let backend_dependencies =
+    [ Dependency.make "dream"; Dependency.make "lwt"; Dependency.make "yojson" ]
+  ;;
+
   let default_dependencies =
     [
       Dependency.make ~version:">= 5.1.1" "ocaml";
@@ -149,10 +153,23 @@ module Dune_project = struct
     Js.Json.object_ dict
   ;;
 
-  let template ~project_name ~project_directory ~is_mlx =
+  let make_with_backend_deps ~name ~is_fullstack =
+    let base_deps : Dependency.t String_map.t = default_dependencies in
+    let deps =
+      if is_fullstack then
+        List.fold_left
+          (fun acc (dep : Dependency.t) -> String_map.add dep.name dep acc)
+          base_deps backend_dependencies
+      else base_deps
+    in
+    { name; depends = deps; is_mlx = false }
+  ;;
+
+  let template ~project_name ~project_directory ~is_mlx:_
+      ?(is_fullstack = false) () =
     let template_directory = Node.Path.join [| project_directory; "./" |] in
     Template.make ~name:"dune-project.tmpl"
-      ~value:{ empty with name = project_name; is_mlx }
+      ~value:(make_with_backend_deps ~name:project_name ~is_fullstack)
       ~dir:template_directory ~to_json
   ;;
 end
