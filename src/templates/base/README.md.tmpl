@@ -9,6 +9,7 @@
 ### Table of Contents
 
 - [Getting Started](#getting-started)
+- [Setup Instructions](#setup-instructions)
 - [Your project layout](#your-project-layout)
 - [Installing {{syntax_preference}} packages](#installing-{{syntax_preference}}-packages)
 - [Getting Help](#getting-help)
@@ -132,6 +133,24 @@ and help for learning and getting started with `{{syntax_preference}}` and `Mela
 ├── {{config_file_name}}
 ├── README
 └── node_modules/
+```
+
+## Setup Instructions
+
+If you didn't initialize the OCaml toolchain and npm packages during project creation, follow these steps to set up your project:
+
+```sh
+# 1. Create an opam switch for this project (installs OCaml 5.1.1 and sets up local environment)
+opam switch create . 5.1.1 --deps-only --yes
+
+# 2. Install opam/OCaml dependencies (dune, melange, reason, etc.)
+opam install . --deps-only --yes
+
+# 3. Install npm/JavaScript dependencies (vite, react, etc.)
+{{node_package_manager}} install
+
+# 4. Now you can run the dev server
+{{node_package_manager}} run dev
 ```
 
 ## Installing {{syntax_preference}} packages
