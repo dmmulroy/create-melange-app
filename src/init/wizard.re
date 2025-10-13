@@ -4,16 +4,33 @@ open Ink;
 open Ui;
 open Core;
 
+module StableSelect = {
+  [@react.component]
+  let make =
+      (~options: array(Ui.Select.select_option), ~onSubmit, ~isDisabled) => {
+    let (state, set_state) = React.useState(() => None);
+
+    React.useEffect1(
+      () => {
+        switch (state) {
+        | Some(v) => onSubmit(v)
+        | None => ()
+        };
+
+        None;
+      },
+      [|state|],
+    );
+    <Ui.Select options onChange={v => set_state(_ => Some(v))} isDisabled />;
+  };
+};
+
 module Step = {
   [@react.component]
   let make = (~visible, ~children) => {
-    let display =
-      if (visible == true) {
-        `flex;
-      } else {
-        `none;
-      };
-    <> <Box display key="Box"> children </Box> <Spacer key="spaced" /> </>;
+    visible
+      ? <Box flexDirection=`column> <Spacer /> children <Spacer /> </Box>
+      : React.null;
   };
 };
 
@@ -70,6 +87,39 @@ module Name = {
   };
 };
 
+module YesNoSelector = {
+  let options: array(Ui.Select.select_option) = [|
+    Ui.Select.{
+      value: "yes",
+      label: "Yes",
+    },
+    Ui.Select.{
+      value: "no",
+      label: "No",
+    },
+  |];
+
+  [@react.component]
+  let make = (~label, ~isDisabled, ~onSubmit) => {
+    <Box flexDirection=`column>
+      <Text> {React.string(label)} </Text>
+      <StableSelect
+        options
+        isDisabled
+        onSubmit={value =>
+          onSubmit(
+            switch (value) {
+            | "yes" => true
+            | "no" => false
+            | _ => failwith("Invalid value")
+            },
+          )
+        }
+      />
+    </Box>;
+  };
+};
+
 module Syntax = {
   let options: array(Ui.Select.select_option) = [|
     Ui.Select.{
@@ -84,16 +134,15 @@ module Syntax = {
 
   [@react.component]
   let make = (~onSubmit, ~isDisabled) => {
-    let onChange =
-      React.useCallback1(
-        (value: string) => {
-          onSubmit(Core.Configuration.syntax_preference_of_string(value))
-        },
-        [|onSubmit|],
-      );
     <Box flexDirection=`column>
       <Text> {React.string("Which syntax do your prefer?")} </Text>
-      <Ui.Select options onChange isDisabled />
+      <StableSelect
+        options
+        onSubmit={(value: string) => {
+          onSubmit(Core.Configuration.syntax_preference_of_string(value))
+        }}
+        isDisabled
+      />
     </Box>;
   };
 };
@@ -113,197 +162,59 @@ module Bundler = {
 
   [@react.component]
   let make = (~onSubmit, ~isDisabled) => {
-    let onChange =
-      React.useCallback1(
-        (bundler_str: string) => {
-          onSubmit(Core.Bundler.of_string(bundler_str))
-        },
-        [|onSubmit|],
-      );
-
     <Box flexDirection=`column>
       <Text> {React.string("Which bundler would you like to use?")} </Text>
-      <Ui.Select options=bundler_select_options onChange isDisabled />
+      <StableSelect
+        options=bundler_select_options
+        onSubmit={value => {onSubmit(Core.Bundler.of_string(value))}}
+        isDisabled
+      />
     </Box>;
   };
 };
 
 module React_app = {
-  let options: array(Ui.Select.select_option) = [|
-    Ui.Select.{
-      value: "yes",
-      label: "Yes",
-    },
-    Ui.Select.{
-      value: "no",
-      label: "No",
-    },
-  |];
-
-  [@react.component]
-  let make = (~onSubmit, ~isDisabled) => {
-    let onChange =
-      React.useCallback1(
-        (value: string) => {
-          switch (value) {
-          | "yes" => onSubmit(true)
-          | _ => onSubmit(false)
-          }
-        },
-        [|onSubmit|],
-      );
-    <Box flexDirection=`column>
-      <Text> {React.string("Will this be a React app?")} </Text>
-      <Ui.Select options onChange isDisabled />
-    </Box>;
-  };
+  let make = YesNoSelector.make;
+  let makeProps = YesNoSelector.makeProps(~label="Will this be a React app?");
 };
 
 module Git = {
-  let git_select_options: array(Ui.Select.select_option) = [|
-    Ui.Select.{
-      value: "yes",
-      label: "Yes",
-    },
-    Ui.Select.{
-      value: "no",
-      label: "No",
-    },
-  |];
-
-  [@react.component]
-  let make = (~onSubmit, ~isDisabled) => {
-    let onChange =
-      React.useCallback1(
-        (value: string) => {
-          switch (value) {
-          | "yes" => onSubmit(true)
-          | _ => onSubmit(false)
-          }
-        },
-        [|onSubmit|],
-      );
-    <Box flexDirection=`column>
-      <Text>
-        {React.string(
-           "Should we initialize a Git repository and stage the changes?",
-         )}
-      </Text>
-      <Ui.Select options=git_select_options onChange isDisabled />
-    </Box>;
-  };
+  let make = YesNoSelector.make;
+  let makeProps =
+    YesNoSelector.makeProps(
+      ~label="Should we initialize a Git repository and stage the changes?",
+    );
 };
 
 module Npm = {
-  let git_select_options: array(Ui.Select.select_option) = [|
-    Ui.Select.{
-      value: "yes",
-      label: "Yes",
-    },
-    Ui.Select.{
-      value: "no",
-      label: "No",
-    },
-  |];
-
-  [@react.component]
-  let make = (~onSubmit, ~isDisabled) => {
-    let onChange =
-      React.useCallback1(
-        (value: string) => {
-          switch (value) {
-          | "yes" => onSubmit(true)
-          | _ => onSubmit(false)
-          }
-        },
-        [|onSubmit|],
-      );
-
-    let pkg_manager = Nodejs.Process.npm_config_user_agent;
-
-    <Box flexDirection=`column>
-      <Text>
-        {React.string(
-           "Should we run '"
-           ++ Nodejs.Process.npm_user_agent_to_string(pkg_manager)
-           ++ " install' for you?",
-         )}
-      </Text>
-      <Ui.Select options=git_select_options onChange isDisabled />
-    </Box>;
-  };
+  let pkg_manager = Nodejs.Process.npm_config_user_agent;
+  let make = YesNoSelector.make;
+  let makeProps =
+    YesNoSelector.makeProps(
+      ~label=
+        "Should we run '"
+        ++ Nodejs.Process.npm_user_agent_to_string(pkg_manager)
+        ++ " install' for you?",
+    );
 };
 
 module OCaml_toolchain = {
-  let options: array(Ui.Select.select_option) = [|
-    Ui.Select.{
-      value: "yes",
-      label: "Yes",
-    },
-    Ui.Select.{
-      value: "no",
-      label: "No",
-    },
-  |];
-
-  [@react.component]
-  let make = (~onSubmit, ~isDisabled) => {
-    let onChange =
-      React.useCallback1(
-        (value: string) => {
-          switch (value) {
-          | "yes" => onSubmit(true)
-          | _ => onSubmit(false)
-          }
-        },
-        [|onSubmit|],
-      );
-
-    <Box flexDirection=`column>
-      <Text>
-        {React.string("Should we initialize the OCaml toolchain for you?")}
-      </Text>
-      <Ui.Select options onChange isDisabled />
-    </Box>;
-  };
+  let make = YesNoSelector.make;
+  let makeProps =
+    YesNoSelector.makeProps(
+      ~label="Should we initialize the OCaml toolchain for you?",
+    );
 };
 
 module Tests = {
-  let options: array(Ui.Select.select_option) = [|
-    Ui.Select.{
-      value: "yes",
-      label: "Yes",
-    },
-    Ui.Select.{
-      value: "no",
-      label: "No",
-    },
-  |];
-
-  [@react.component]
-  let make = (~onSubmit, ~isDisabled) => {
-    let onChange =
-      React.useCallback1(
-        (value: string) => {
-          switch (value) {
-          | "yes" => onSubmit(true)
-          | _ => onSubmit(false)
-          }
-        },
-        [|onSubmit|],
-      );
-    <Box flexDirection=`column>
-      <Text>
-        {React.string("Do you want to add tests with melange-fest?")}
-      </Text>
-      <Ui.Select options onChange isDisabled />
-    </Box>;
-  };
+  let make = YesNoSelector.make;
+  let makeProps =
+    YesNoSelector.makeProps(
+      ~label="Do you want to add tests with melange-fest?",
+    );
 };
 
 module Overwrite_preference = {
-  open Ui;
-
   let options: array(Select.select_option) = [|
     {
       value: "abort",
@@ -356,6 +267,20 @@ type step =
   | Overwrite_preference
   | Complete;
 
+let step_to_int = step =>
+  switch (step) {
+  | Name => 0
+  | Syntax_preference => 1
+  | React_app => 2
+  | Tests => 3
+  | Bundler => 4
+  | Git => 5
+  | Npm => 6
+  | OCaml_toolchain => 7
+  | Overwrite_preference => 8
+  | Complete => 9
+  };
+
 [@react.component]
 let make =
     (
@@ -363,129 +288,113 @@ let make =
       ~onComplete: Configuration.t => unit,
       ~should_prompt_git,
     ) => {
+  let (configuration, setConfiguration) =
+    React.useState(() => initial_configuration);
+
   let (active_step, set_active_step) =
     React.useState(() =>
-      if (Option.is_none(initial_configuration.name)) {
-        Name;
-      } else {
-        Syntax_preference;
+      switch (initial_configuration.name) {
+      | Some(_) => Syntax_preference
+      | None => Name
       }
     );
-  let (name, set_name) = React.useState(() => initial_configuration.name);
-  let (directory, set_directory) =
-    React.useState(() => initial_configuration.directory);
-  let (syntax_preference, set_syntax_preference) =
-    React.useState((): option(Configuration.syntax_preference) => None);
-  let (is_react_app, set_is_react_app) =
-    React.useState((): option(bool) => None);
-  let (has_tests, set_has_tests) = React.useState((): option(bool) => None);
-  let (bundler, set_bundler) =
-    React.useState((): option(Core.Bundler.t) => None);
-  let (initialize_git, set_initialize_git) =
-    React.useState((): option(bool) => None);
-  let (initialize_npm, set_initialize_npm) =
-    React.useState((): option(bool) => None);
-  let (initialize_ocaml_toolchain, set_initialize_ocaml_toolchain) =
-    React.useState((): option(bool) => None);
+
   let (overwrite_preference, set_overwrite_preference) =
-    React.useState(
-      (): option(
-            [
-              | `Clear
-              | `Overwrite
-            ],
-          ) => None);
+    React.useState(_ => None);
+
   let (error, set_error) = React.useState(() => None);
 
-  let onSubmitName =
-    React.useCallback1(
-      ((name, directory)) =>
-        if (active_step == Name) {
-          set_name(_ => Some(name));
-          set_directory(_ => Some(directory));
-          set_active_step(_ => Syntax_preference);
-        },
-      [|active_step|],
+  let onSubmitName = ((name, directory)) => {
+    setConfiguration(_ =>
+      {
+        ...configuration,
+        name: Some(name),
+        directory: Some(directory),
+      }
     );
+    set_active_step(_ => Syntax_preference);
+  };
 
   let onSubmitSyntaxPreference =
-    React.useCallback1(
-      (syntax_preference: Configuration.syntax_preference) =>
-        if (active_step == Syntax_preference) {
-          set_syntax_preference(_ => Some(syntax_preference));
-          set_active_step(_ => React_app);
-        },
-      [|active_step|],
+      (syntax_preference: Configuration.syntax_preference) => {
+    setConfiguration(_ =>
+      {
+        ...configuration,
+        syntax_preference: Some(syntax_preference),
+      }
+    );
+    set_active_step(_ => React_app);
+  };
+
+  let onSubmitReact = (is_react_app: bool) => {
+    setConfiguration(_ =>
+      {
+        ...configuration,
+        is_react_app: Some(is_react_app),
+      }
+    );
+    set_active_step(_ => Tests);
+  };
+
+  let onSubnitHasTests = (should_add_tests: bool) => {
+    setConfiguration(_ =>
+      {
+        ...configuration,
+        has_tests: Some(should_add_tests),
+      }
+    );
+    set_active_step(_ => Bundler);
+  };
+
+  let onSubmitBundler = (new_bundler: Core.Bundler.t) => {
+    setConfiguration(_ =>
+      {
+        ...configuration,
+        bundler: Some(new_bundler),
+      }
+    );
+    set_active_step(_ => should_prompt_git ? Git : Npm);
+  };
+
+  let onSubmitGit = value => {
+    setConfiguration(_ =>
+      {
+        ...configuration,
+        initialize_git: Some(value),
+      }
+    );
+    set_active_step(_ => Npm);
+  };
+
+  let onSubmitNpm = value =>
+    if (active_step == Npm) {
+      setConfiguration(_ =>
+        {
+          ...configuration,
+          initialize_npm: Some(value),
+        }
+      );
+      set_active_step(_ => OCaml_toolchain);
+    };
+
+  let onSubmitOcamlToolchain = value => {
+    setConfiguration(_ =>
+      {
+        ...configuration,
+        initialize_ocaml_toolchain: Some(value),
+      }
     );
 
-  let onSubmitReact =
-    React.useCallback1(
-      (is_react_app: bool) =>
-        if (active_step == React_app) {
-          set_is_react_app(_ => Some(is_react_app));
-
-          set_active_step(_ => Tests);
-        },
-      [|active_step|],
-    );
-
-  let onSubnitHasTests =
-    React.useCallback1(
-      (should_add_tests: bool) =>
-        if (active_step == Tests) {
-          set_has_tests(_ => Some(should_add_tests));
-          set_active_step(_ => Bundler);
-        },
-      [|active_step|],
-    );
-
-  let onSubmitBundler =
-    React.useCallback1(
-      (new_bundler: Core.Bundler.t) =>
-        if (active_step == Bundler) {
-          set_bundler(_ => Some(new_bundler));
-          let next_step = if (should_prompt_git) {Git} else {Npm};
-          set_active_step(_ => next_step);
-        },
-      [|active_step|],
-    );
-
-  let onSubmitGit =
-    React.useCallback1(
-      value =>
-        if (active_step == Git) {
-          set_initialize_git(_ => Some(value));
-          set_active_step(_ => Npm);
-        },
-      [|active_step|],
-    );
-
-  let onSubmitNpm =
-    React.useCallback1(
-      value =>
-        if (active_step == Npm) {
-          set_initialize_npm(_ => Some(value));
-          set_active_step(_ => OCaml_toolchain);
-        },
-      [|active_step|],
-    );
-
-  let onSubmitOcamlToolchain =
-    React.useCallback1(
-      value => {
-        set_initialize_ocaml_toolchain(_ => Some(value));
-        Option.get(directory)
-        |> Engine.directory_exists
-        |> Promise_result.perform(result =>
-             switch (result) {
-             | Ok(true) => set_active_step(_ => Overwrite_preference)
-             | Ok(false) => set_active_step(_ => Complete)
-             | Error(error) => set_error(_ => Some(error))
-             }
-           );
-      },
-      [|directory|],
-    );
+    Option.get(configuration.directory)
+    |> Engine.directory_exists
+    |> Promise_result.perform(result =>
+         switch (result) {
+         | Ok(true) => set_active_step(_ => Overwrite_preference)
+         | Ok(false) => set_active_step(_ => Complete)
+         | Error(error) => set_error(_ => Some(error))
+         }
+       );
+  };
 
   let onSubmitOverwrite_preference =
     React.useCallback0(value => {
@@ -503,38 +412,37 @@ let make =
   React.useEffect1(
     () => {
       if (active_step == Complete) {
-        onComplete(
-          Core.Configuration.make(
-            ~name={
-              Option.get(name);
-            },
-            ~directory={
-              Option.get(directory);
-            },
-            ~syntax_preference={
-              Option.get(syntax_preference);
-            },
-            ~bundler={
-              Option.get(bundler);
-            },
-            ~is_react_app={
-              Option.value(~default=false, is_react_app);
-            },
-            ~has_tests=Option.value(~default=false, has_tests),
-            ~initialize_git={
-              Option.value(~default=false, initialize_git);
-            },
-            ~initialize_npm={
-              Option.value(~default=false, initialize_npm);
-            },
-            ~initialize_ocaml_toolchain={
-              Option.value(~default=false, initialize_ocaml_toolchain);
-            },
-            ~overwrite={
-              overwrite_preference;
-            },
-          ),
-        );
+        Core.Configuration.make(
+          ~name={
+            Option.get(configuration.name);
+          },
+          ~directory={
+            Option.get(configuration.directory);
+          },
+          ~syntax_preference={
+            Option.get(configuration.syntax_preference);
+          },
+          ~bundler={
+            Option.get(configuration.bundler);
+          },
+          ~is_react_app={
+            Option.get(configuration.is_react_app);
+          },
+          ~has_tests=Option.get(configuration.has_tests),
+          ~initialize_git={
+            Option.get(configuration.initialize_git);
+          },
+          ~initialize_npm={
+            Option.get(configuration.initialize_npm);
+          },
+          ~initialize_ocaml_toolchain={
+            Option.get(configuration.initialize_ocaml_toolchain);
+          },
+          ~overwrite={
+            overwrite_preference;
+          },
+        )
+        ->onComplete;
       };
 
       None;
@@ -542,68 +450,53 @@ let make =
     [|active_step|],
   );
 
-  let show_name_step = Option.is_none(initial_configuration.name);
-  let show_syntax_preference_step = Option.is_some(name);
-  let show_react_step = Option.is_some(syntax_preference);
-  let show_add_tests_step = Option.is_some(is_react_app);
-  let show_bundler_step = Option.is_some(has_tests);
-  let show_git_step = Option.is_some(bundler) && should_prompt_git;
-  let show_npm_step =
-    Option.is_some(initialize_git)
-    || Option.is_some(bundler)
-    && !should_prompt_git;
-  let show_ocaml_toolchain_step = Option.is_some(initialize_npm);
-  let show_overwrite_step =
-    Option.is_some(initialize_ocaml_toolchain)
-    && (
-      active_step == Overwrite_preference
-      || active_step == Complete
-      && Option.is_some(overwrite_preference)
-    );
+  let show_step = step => step_to_int(step) <= step_to_int(active_step);
 
-  <Box flexDirection=`column gap=1>
-    <Step visible=show_name_step>
+  <Box overflow=`hidden flexDirection=`column gap=2>
+    <Step visible={show_step(Name)}>
       <Name onSubmit=onSubmitName isDisabled={active_step != Name} />
     </Step>
-    <Step visible=show_syntax_preference_step>
+    <Step visible={show_step(Syntax_preference)}>
       <Syntax
         onSubmit=onSubmitSyntaxPreference
         isDisabled={active_step != Syntax_preference}
       />
     </Step>
-    <Step visible=show_react_step>
+    <Step visible={show_step(React_app)}>
       <React_app
         onSubmit=onSubmitReact
         isDisabled={active_step != React_app}
       />
     </Step>
-    <Step visible=show_add_tests_step>
+    <Step visible={show_step(Tests)}>
       <Tests onSubmit=onSubnitHasTests isDisabled={active_step != Tests} />
     </Step>
-    <Step visible=show_bundler_step>
+    <Step visible={show_step(Bundler)}>
       <Bundler onSubmit=onSubmitBundler isDisabled={active_step != Bundler} />
     </Step>
-    <Step visible=show_git_step>
+    <Step visible={show_step(Git)}>
       <Git onSubmit=onSubmitGit isDisabled={active_step != Git} />
     </Step>
-    <Step visible=show_npm_step>
+    <Step visible={show_step(Npm)}>
       <Npm onSubmit=onSubmitNpm isDisabled={active_step != Npm} />
     </Step>
-    <Step visible=show_ocaml_toolchain_step>
+    <Step visible={show_step(OCaml_toolchain)}>
       <OCaml_toolchain
         onSubmit=onSubmitOcamlToolchain
         isDisabled={active_step != OCaml_toolchain}
       />
     </Step>
-    {Option.is_some(name)
-       ? <Step visible=show_overwrite_step>
-           <Overwrite_preference
-             name={Option.get(name)}
-             onSubmit=onSubmitOverwrite_preference
-             isDisabled={active_step != Overwrite_preference}
-           />
-         </Step>
-       : React.null}
+    <Step visible={show_step(Overwrite_preference)}>
+      {switch (configuration.name) {
+       | Some(name) =>
+         <Overwrite_preference
+           name
+           onSubmit=onSubmitOverwrite_preference
+           isDisabled={active_step != Overwrite_preference}
+         />
+       | None => React.null
+       }}
+    </Step>
     {switch (error) {
      | Some(error) =>
        <Box display=`flex>

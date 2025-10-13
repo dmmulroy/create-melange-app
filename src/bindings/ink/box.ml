@@ -1,6 +1,6 @@
 external make :
-  ?width:[ `int of int | `string of string ] ->
-  ?height:[ `int of int | `string of string ] ->
+  ?width:int ->
+  ?height:int ->
   ?minHeight:int ->
   ?minWidth:int ->
   ?paddingTop:int ->
@@ -47,7 +47,7 @@ external make :
   ?display:[ `flex | `none ] ->
   ?overflowX:[ `visible | `hidden ] ->
   ?overflowY:[ `visible | `hidden ] ->
-  ?overflow:[ `visible | `hidden ] ->
+  ?overflow:[ `visible | `hidden | `scroll ] ->
   ?borderStyle:
     [ `solid
     | `double

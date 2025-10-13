@@ -190,9 +190,12 @@ let make = (~name as initial_name) => {
       [|parsed_name_and_dir|],
     );
 
-  <>
-    <Banner key="banner" />
-    <Box key="box" flexDirection=`column gap=1>
+  let _height: int = [%raw "process.stdout.rows"];
+  <Box overflow=`scroll flexDirection=`column gap=1>
+    // <Box overflow=`scroll flexDirection=`column gap=1>
+
+      <Banner key="banner" />
+      // <Box key="box" flexDirection=`column gap=1>
       {switch (initial_name_is_valid) {
        | Some(Error(`Msg(error))) =>
          <Ui.Badge color=`red> {React.string(error)} </Ui.Badge>
@@ -239,6 +242,6 @@ let make = (~name as initial_name) => {
            </>
          }
        }}
-    </Box>
-  </>;
+    </Box>;
+  // </Box>
 };
