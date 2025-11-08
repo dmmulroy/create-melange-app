@@ -4,7 +4,7 @@
   "description": "create-melange-app",
   "repository": {
     "type": "git",
-    "url": "github.com/dmmulroy/create-melange-app"
+    "url": "github.com/melange-community/create-melange-app"
   },
   "author": "Dillon Mulroy <dillon.mulroy@gmail.com>",
   "license": "MIT",

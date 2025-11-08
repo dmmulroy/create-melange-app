@@ -13,24 +13,24 @@ struct
     {|
     Failed attempting to build your project with Dune
 
-    The scaffolding process failed while running `opam exec -- dune build`. 
-    Dune is OCaml and ReasonML's build tool. 
+    The scaffolding process failed while running `opam exec -- dune build`.
+    Dune is OCaml and ReasonML's build tool.
 
-    Please try `cd`ing into the project directory created by 
+    Please try `cd`ing into the project directory created by
     `create-melange-app` and running the following commands:
 
     eval $(opam env)
     dune build
 
-    If the problem persists, please open an issue at 
-    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    If the problem persists, please open an issue at
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for
     help at https://discord.gg/fNvVdsUWHE.
 
-    If you open an issue, please `cd` into the directory created by 
-    `create-melange-app` and include the output from the following commands: 
+    If you open an issue, please `cd` into the directory created by
+    `create-melange-app` and include the output from the following commands:
 
     `opam switch list`,
-    `dune build`, 
+    `dune build`,
     `cat dune-project`, and `cat dune`
   |}
   ;;
@@ -57,17 +57,17 @@ struct
 
   let error_message =
     {|
-    Failed to generate your opam file while running `dune build @install`. 
+    Failed to generate your opam file while running `dune build @install`.
 
     The scaffolding process failed while running `dune build @install`. Dune is
-    Ocaml and ReasonML's  build tool. Please try running `create-melange-app` 
-    again and choose to `Clear` the project directory created by this run. If 
-    the problem persists, please open an issue at 
-    github.com/dmmulroy/create-melange-app/issues, and or join our discord for 
+    Ocaml and ReasonML's  build tool. Please try running `create-melange-app`
+    again and choose to `Clear` the project directory created by this run. If
+    the problem persists, please open an issue at
+    github.com/dmmulroy/create-melange-app/issues, and or join our discord for
     help at https://discord.gg/fNvVdsUWHE.
 
-    If you open an issue, please `cd` into the directory created by 
-    `create-melange-app` and include the out put from the following commands: 
+    If you open an issue, please `cd` into the directory created by
+    `create-melange-app` and include the out put from the following commands:
 
     `opam switch list`,`dune build @install`, `cat dune-project`, and `cat dune`
   |}
@@ -88,14 +88,29 @@ module Dune_project = struct
   module String_map = Map.Make (String)
 
   module Dependency = struct
+    (* Represents an opam dependency in a dune-project file.
+
+       Examples:
+       - Basic dependency: Dependency.make "ppx_deriving"
+         Generates: ppx_deriving
+
+       - With version constraint: Dependency.make ~version:">= 5.1.1" "ocaml"
+         Generates: (ocaml (>= 5.1.1))
+
+       - With filter (e.g., dev dependencies): Dependency.make ~filter:":with-dev-setup" "ocamlformat"
+         Generates: (ocamlformat :with-dev-setup)
+
+       - With both version and filter: Dependency.make ~version:">= 0.26.0" ~filter:":with-dev-setup" "ocamlformat"
+         Generates: (ocamlformat (and (>= 0.26.0) :with-dev-setup))
+    *)
     type t = {
       name : string;
       version : string option;
+      filter : string option;
           (* TODO: Add version_constraint: version_constraint option *)
-          (* TODO: Add filter: filter option *)
     }
 
-    let make ?version name = { name; version }
+    let make ?version ?filter name = { name; version; filter }
   end
 
   let default_dependencies =
@@ -106,6 +121,8 @@ module Dune_project = struct
       Dependency.make ~version:">= 3.11.0" "reason";
       Dependency.make "opam-check-npm-deps";
       Dependency.make "ppx_deriving";
+      Dependency.make ~version:"= 0.26.1" ~filter:":with-dev-setup" "ocamlformat";
+      Dependency.make ~filter:":with-dev-setup" "ocaml-lsp-server";
     ]
     |> List.fold_left
          (fun acc (dependency : Dependency.t) ->
@@ -137,12 +154,15 @@ module Dune_project = struct
     let depends =
       String_map.to_list dune_project.depends
       |> List.map (fun (key, (dependency : Dependency.t)) ->
-             let version_json =
-               match dependency.version with
-               | None -> Js.Json.null
-               | Some version -> Js.Json.string version
+             let dependency_spec =
+               match dependency.version, dependency.filter with
+               | None, None -> Js.Json.null
+               | Some version, None -> Js.Json.string ("(" ^ version ^ ")")
+               | None, Some filter -> Js.Json.string filter
+               | Some version, Some filter ->
+                   Js.Json.string ("(and (" ^ version ^ ") " ^ filter ^ ")")
              in
-             (key, version_json))
+             (key, dependency_spec))
       |> Js.Dict.fromList |> Js.Json.object_
     in
     Js.Dict.set dict "depends" depends;
