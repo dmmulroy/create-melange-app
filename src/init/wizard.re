@@ -4,10 +4,11 @@ open Ink;
 open Ui;
 open Core;
 
+/* Prevents flickering in Ink by deferring onSubmit to useEffect instead of calling it directly in onChange */
 module StableSelect = {
   [@react.component]
   let make =
-      (~options: array(Ui.Select.select_option), ~onSubmit, ~isDisabled) => {
+      (~options: array(Ui.Select.select_option), ~isDisabled, ~onSubmit) => {
     let (state, set_state) = React.useState(() => None);
 
     React.useEffect1(
