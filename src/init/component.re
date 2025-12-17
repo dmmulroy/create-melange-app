@@ -190,58 +190,53 @@ let make = (~name as initial_name) => {
       [|parsed_name_and_dir|],
     );
 
-  let _height: int = [%raw "process.stdout.rows"];
   <Box overflow=`scroll flexDirection=`column gap=1>
-    // <Box overflow=`scroll flexDirection=`column gap=1>
-
-      <Banner key="banner" />
-      // <Box key="box" flexDirection=`column gap=1>
-      {switch (initial_name_is_valid) {
-       | Some(Error(`Msg(error))) =>
-         <Ui.Badge color=`red> {React.string(error)} </Ui.Badge>
-       | _ =>
-         switch (env_check_result, configuration, scaffold_result) {
-         | (None, _, _) => <Env_check.Component onEnvCheck=on_env_check />
-         | (Some(`Fail), _, _) =>
-           <Env_check.Component onEnvCheck=on_env_check />
-         | (Some(`Pass), None, _) =>
-           <Wizard
-             initial_configuration
-             onComplete=on_complete_wizard
-             should_prompt_git
-           />
-         | (Some(`Pass), Some(configuration), None) =>
-           <Scaffold configuration onComplete=on_complete_scaffold />
-         | (Some(`Pass), Some(_), Some(Error(msg))) =>
-           <>
-             <Ui.Badge color=`red> {React.string("Error")} </Ui.Badge>
-             <Text> {React.string(msg)} </Text>
-           </>
-         | (Some(`Pass), Some(configuration), Some(Ok(_))) =>
-           <>
-             <Text color="green">
-               {React.string({j|✔ |j})}
-               <Text color="cyan" bold=true>
-                 {React.string(configuration.name)}
-               </Text>
-               {React.string(" scaffolded successfully!")}
+    <Banner key="banner" />
+    {switch (initial_name_is_valid) {
+     | Some(Error(`Msg(error))) =>
+       <Ui.Badge color=`red> {React.string(error)} </Ui.Badge>
+     | _ =>
+       switch (env_check_result, configuration, scaffold_result) {
+       | (None, _, _) => <Env_check.Component onEnvCheck=on_env_check />
+       | (Some(`Fail), _, _) =>
+         <Env_check.Component onEnvCheck=on_env_check />
+       | (Some(`Pass), None, _) =>
+         <Wizard
+           initial_configuration
+           onComplete=on_complete_wizard
+           should_prompt_git
+         />
+       | (Some(`Pass), Some(configuration), None) =>
+         <Scaffold configuration onComplete=on_complete_scaffold />
+       | (Some(`Pass), Some(_), Some(Error(msg))) =>
+         <>
+           <Ui.Badge color=`red> {React.string("Error")} </Ui.Badge>
+           <Text> {React.string(msg)} </Text>
+         </>
+       | (Some(`Pass), Some(configuration), Some(Ok(_))) =>
+         <>
+           <Text color="green">
+             {React.string({j|✔ |j})}
+             <Text color="cyan" bold=true>
+               {React.string(configuration.name)}
              </Text>
-             <Next_steps configuration />
-             <Text color="cyan">
-               {React.string(
-                  "For more information about your project, including where to find help, be sure to check out the ",
-                )}
-               <Text bold=true> {React.string("README!")} </Text>
-             </Text>
-             <Text color="cyan">
-               {React.string("Visit the Melange docs at: ")}
-               <Link url="https://melange.re" fallback=false>
-                 <Text bold=true> {React.string("https://melange.re")} </Text>
-               </Link>
-             </Text>
-           </>
-         }
-       }}
-    </Box>;
-  // </Box>
+             {React.string(" scaffolded successfully!")}
+           </Text>
+           <Next_steps configuration />
+           <Text color="cyan">
+             {React.string(
+                "For more information about your project, including where to find help, be sure to check out the ",
+              )}
+             <Text bold=true> {React.string("README!")} </Text>
+           </Text>
+           <Text color="cyan">
+             {React.string("Visit the Melange docs at: ")}
+             <Link url="https://melange.re" fallback=false>
+               <Text bold=true> {React.string("https://melange.re")} </Text>
+             </Link>
+           </Text>
+         </>
+       }
+     }}
+  </Box>;
 };
