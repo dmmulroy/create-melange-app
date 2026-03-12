@@ -75,7 +75,7 @@ let to_string config =
 let to_json (configuration : t) =
   let dict = Js.Dict.empty () in
   Js.Dict.set dict "name" (Js.Json.string configuration.name);
-  Js.Dict.set dict "directory" (Js.Json.string configuration.directory);
+  Js.Dict.set dict "directory" (Js.Json.string configuration.name);
   Js.Dict.set dict "node_package_manager"
     (Js.Json.string
        (configuration.node_package_manager
