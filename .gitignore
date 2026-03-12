@@ -9,3 +9,5 @@ node_modules/
 **/dist
 **/build
 .direnv/
+bun.lockb
+bun.lock
