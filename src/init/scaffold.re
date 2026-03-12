@@ -205,6 +205,7 @@ module App_files = {
          {
            ...state,
            pkg_json: Extend_package_json.fn(state),
+           dune_project: Extend_dune_project.fn(state),
          }
        );
 };
